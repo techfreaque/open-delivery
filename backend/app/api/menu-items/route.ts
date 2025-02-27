@@ -1,57 +1,71 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
-import { menuItems } from "@/lib/db/schema"
-import { getCurrentUser } from "@/lib/auth"
-import { eq } from "drizzle-orm"
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-  try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db/prisma";
 
-    // Get restaurant ID from query params
-    const { searchParams } = new URL(request.url)
-    const restaurantId = searchParams.get("restaurantId")
-
-    if (!restaurantId) {
-      return NextResponse.json({ error: "Restaurant ID is required" }, { status: 400 })
-    }
-
-    const items = await db.select().from(menuItems).where(eq(menuItems.restaurantId, restaurantId))
-
-    return NextResponse.json(items)
-  } catch (error) {
-    console.error("Error fetching menu items:", error)
-    return NextResponse.json({ error: "An error occurred" }, { status: 500 })
-  }
+interface MenuItem {
+  id: string;
+  restaurantId: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  image: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
+    const user = await getCurrentUser();
+
     if (!user || user.role !== "restaurant") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
+    const body = (await request.json()) as MenuItem;
+    const { restaurantId, name, description, price, category, image } = body;
 
-    // Add validation here
+    // Validate inputs
+    if (!restaurantId || !name || !description || !price || !category) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+    }
 
-    const newMenuItem = await db
-      .insert(menuItems)
-      .values({
-        ...body,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      })
-      .returning()
+    // Verify restaurant ownership
+    const restaurant = await prisma.restaurant.findUnique({
+      where: {
+        id: restaurantId,
+        userId: user.id,
+      },
+    });
 
-    return NextResponse.json(newMenuItem[0])
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: "Restaurant not found or you don't have permission" },
+        { status: 404 },
+      );
+    }
+
+    // Create menu item
+    const menuItem = await prisma.menuItem.create({
+      data: {
+        restaurantId,
+        name,
+        description,
+        price: parseFloat(price.toString()),
+        category,
+        image: image || "/food-placeholder.jpg",
+      },
+    });
+
+    return NextResponse.json(menuItem);
   } catch (error) {
-    console.error("Error creating menu item:", error)
-    return NextResponse.json({ error: "An error occurred" }, { status: 500 })
+    console.error("Error creating menu item:", error);
+    return NextResponse.json(
+      { error: "Failed to create menu item" },
+      { status: 500 },
+    );
   }
 }
-

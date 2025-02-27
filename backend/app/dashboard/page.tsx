@@ -1,41 +1,70 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { ArrowRight, ArrowUpRight, ChevronRight, DollarSign, Package, ShoppingBag, Users } from "lucide-react"
+import {
+  ArrowRight,
+  ArrowUpRight,
+  ChevronRight,
+  DollarSign,
+  Package,
+  ShoppingBag,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { mockData } from "@/lib/utils"
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { mockData } from "@/lib/utils";
 
 interface User {
-  email: string
-  role: string
-  name?: string
+  email: string;
+  role: string;
+  name?: string;
 }
 
 export default function Dashboard() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Get user from localStorage
-    const storedUser = localStorage.getItem("user")
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      setUser(JSON.parse(storedUser));
     }
-  }, [])
+  }, []);
 
   if (!user) {
-    return null // Or a loading spinner
+    return null; // Or a loading spinner
   }
 
   // Get recent orders
-  const recentOrders = mockData.orders.slice(0, 5)
+  const recentOrders = mockData.orders.slice(0, 5);
 
   // Get statistics based on user role
-  let stats = []
+  let stats = [];
 
   if (user.role === "restaurant") {
     stats = [
@@ -71,7 +100,7 @@ export default function Dashboard() {
         change: "+2.1%",
         changeType: "positive",
       },
-    ]
+    ];
   } else if (user.role === "driver") {
     stats = [
       {
@@ -106,7 +135,7 @@ export default function Dashboard() {
         change: "+0.2",
         changeType: "positive",
       },
-    ]
+    ];
   } else if (user.role === "admin") {
     stats = [
       {
@@ -141,14 +170,16 @@ export default function Dashboard() {
         change: "+18.2%",
         changeType: "positive",
       },
-    ]
+    ];
   }
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-8">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's an overview of your {user.role} account.</p>
+        <p className="text-muted-foreground">
+          Welcome back! Here's an overview of your {user.role} account.
+        </p>
       </div>
 
       {/* Stats cards */}
@@ -156,12 +187,16 @@ export default function Dashboard() {
         {stats.map((stat, index) => (
           <Card key={index}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {stat.title}
+              </CardTitle>
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {stat.description}
+              </p>
               <div className="mt-2 flex items-center gap-1 text-xs">
                 <span
                   className={`flex items-center ${
@@ -172,7 +207,9 @@ export default function Dashboard() {
                         : "text-muted-foreground"
                   }`}
                 >
-                  {stat.changeType === "positive" && <ArrowUpRight className="h-3 w-3" />}
+                  {stat.changeType === "positive" && (
+                    <ArrowUpRight className="h-3 w-3" />
+                  )}
                   {stat.change}
                 </span>
                 <span className="text-muted-foreground">from last month</span>
@@ -186,15 +223,28 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Revenue Overview</CardTitle>
-          <CardDescription>Monthly revenue for the current year</CardDescription>
+          <CardDescription>
+            Monthly revenue for the current year
+          </CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={mockData.revenue} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={mockData.revenue}
+              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            >
               <defs>
                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  <stop
+                    offset="5%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
               <XAxis dataKey="month" />
@@ -261,11 +311,17 @@ export default function Dashboard() {
                               : "bg-yellow-500"
                         }`}
                       />
-                      <span className="capitalize">{order.status.replace("_", " ")}</span>
+                      <span className="capitalize">
+                        {order.status.replace("_", " ")}
+                      </span>
                     </div>
                   </TableCell>
-                  <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                  <TableCell>
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ${order.total.toFixed(2)}
+                  </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" asChild>
                       <Link href={`/dashboard/${user.role}/orders/${order.id}`}>
@@ -281,6 +337,5 @@ export default function Dashboard() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

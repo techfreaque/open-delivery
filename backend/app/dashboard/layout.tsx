@@ -1,12 +1,22 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { BarChart3, Home, LogOut, Menu, Package, Settings, ShoppingBag, User, Users } from "lucide-react"
+import {
+  BarChart3,
+  Home,
+  LogOut,
+  Menu,
+  Package,
+  Settings,
+  ShoppingBag,
+  User,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type React from "react";
+import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,72 +24,72 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Toaster } from "@/components/ui/toaster"
-import { useToast } from "@/components/ui/use-toast"
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 
 interface User {
-  id: string
-  email: string
-  name: string
-  role: string
+  id: string;
+  email: string;
+  name: string;
+  role: string;
 }
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter();
+  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchUser() {
       try {
-        const response = await fetch("/api/auth/me")
+        const response = await fetch("/api/auth/me");
         if (!response.ok) {
-          throw new Error("Not authenticated")
+          throw new Error("Not authenticated");
         }
-        const data = await response.json()
-        setUser(data.user)
+        const data = await response.json();
+        setUser(data.user);
       } catch (error) {
-        router.push("/auth/login")
+        router.push("/auth/login");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchUser()
-  }, [router])
+    fetchUser();
+  }, [router]);
 
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", {
         method: "POST",
-      })
+      });
       toast({
         title: "Logged out",
         description: "You have been successfully logged out",
-      })
-      router.push("/auth/login")
+      });
+      router.push("/auth/login");
     } catch (error) {
-      console.error("Logout error:", error)
+      console.error("Logout error:", error);
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return null
+    return null;
   }
 
   const navItems = [
@@ -142,7 +152,7 @@ export default function DashboardLayout({
           },
         ]
       : []),
-  ]
+  ];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -172,7 +182,10 @@ export default function DashboardLayout({
         </Sheet>
 
         <div className="flex items-center gap-2">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 font-semibold"
+          >
             <Package className="h-6 w-6" />
             <span className="hidden md:inline">OpenEats</span>
           </Link>
@@ -191,7 +204,9 @@ export default function DashboardLayout({
             <DropdownMenuLabel>
               <div className="flex flex-col">
                 <span>{user.name}</span>
-                <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {user.role}
+                </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -233,6 +248,5 @@ export default function DashboardLayout({
 
       <Toaster />
     </div>
-  )
+  );
 }
-

@@ -1,16 +1,26 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
 }
 
 // Mock data for the application
 export const mockData = {
   // User data
   users: [
-    { id: "1", email: "restaurant@example.com", name: "Tasty Bites", role: "restaurant" },
-    { id: "2", email: "driver@example.com", name: "John Driver", role: "driver" },
+    {
+      id: "1",
+      email: "restaurant@example.com",
+      name: "Tasty Bites",
+      role: "restaurant",
+    },
+    {
+      id: "2",
+      email: "driver@example.com",
+      name: "John Driver",
+      role: "driver",
+    },
     { id: "3", email: "admin@example.com", name: "Admin User", role: "admin" },
   ],
 
@@ -172,5 +182,4 @@ export const mockData = {
     taxRate: 0.08, // 8%
     defaultDeliveryFee: 2.99,
   },
-}
-
+};

@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  restaurants Restaurant[]
+  orders      Order[]       @relation("CustomerOrders")
+  deliveries  Order[]       @relation("DriverOrders")
+  driver      Driver?
+
+  @@map("users")
+}
+
+model Restaurant {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  description String
+  address     String
+  phone       String
+  email       String
+  image       String
+  rating      Float    @default(0)
+  cuisine     String
+  isOpen      Boolean  @default(true) @map("is_open")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id])
+  menuItems  MenuItem[]
+  orders     Order[]
+
+  @@map("restaurants")
+}
+
+model MenuItem {
+  id           String   @id @default(uuid())
+  restaurantId String   @map("restaurant_id")
+  name         String
+  description  String
+  price        Float
+  image        String
+  category     String
+  isAvailable  Boolean  @default(true) @map("is_available")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  restaurant  Restaurant   @relation(fields: [restaurantId], references: [id])
+  orderItems  OrderItem[]
+
+  @@map("menu_items")
+}
+
+model Order {
+  id           String    @id @default(uuid())
+  restaurantId String    @map("restaurant_id")
+  customerId   String    @map("customer_id")
+  driverId     String?   @map("driver_id")
+  status       String
+  total        Float
+  deliveryFee  Float     @map("delivery_fee")
+  tax          Float
+  address      String
+  createdAt    DateTime  @default(now()) @map("created_at")
+  deliveredAt  DateTime? @map("delivered_at")
+
+  // Relations
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  customer     User       @relation("CustomerOrders", fields: [customerId], references: [id])
+  driver       User?      @relation("DriverOrders", fields: [driverId], references: [id])
+  orderItems   OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String @id @default(uuid())
+  orderId    String @map("order_id")
+  menuItemId String @map("menu_item_id")
+  quantity   Int
+  price      Float
+
+  // Relations
+  order     Order    @relation(fields: [orderId], references: [id])
+  menuItem  MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+model Driver {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  vehicle      String
+  licensePlate String   @map("license_plate")
+  isActive     Boolean  @default(true) @map("is_active")
+  rating       Float    @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id])
+  earnings  Earning[]
+
+  @@map("drivers")
+}
+
+model Earning {
+  id         String   @id @default(uuid())
+  driverId   String   @map("driver_id")
+  date       DateTime
+  amount     Float
+  deliveries Int
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  driver     Driver   @relation(fields: [driverId], references: [id])
+
+  @@map("earnings")
+}

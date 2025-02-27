@@ -1,37 +1,53 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { ChevronLeft } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/components/ui/use-toast"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z
   .object({
     name: z.string().min(2, { message: "Name must be at least 2 characters" }),
     email: z.string().email({ message: "Invalid email address" }),
-    password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters" }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
-  })
+  });
 
 export default function SignUpPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [role, setRole] = useState("restaurant")
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const { toast } = useToast();
+  const [role, setRole] = useState("restaurant");
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,10 +57,10 @@ export default function SignUpPage() {
       password: "",
       confirmPassword: "",
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/auth/signup", {
@@ -53,29 +69,30 @@ export default function SignUpPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ ...values, role }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Sign up failed")
+        throw new Error(data.error || "Sign up failed");
       }
 
       toast({
         title: "Sign up successful",
         description: `Welcome to OpenEats, ${data.user.name}!`,
-      })
+      });
 
-      router.push("/dashboard")
-      router.refresh()
+      router.push("/dashboard");
+      router.refresh();
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Sign up failed",
-        description: error instanceof Error ? error.message : "An error occurred",
-      })
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -92,7 +109,9 @@ export default function SignUpPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Sign Up</CardTitle>
-          <CardDescription>Create an account to become a partner or driver</CardDescription>
+          <CardDescription>
+            Create an account to become a partner or driver
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={role} onValueChange={setRole} className="mb-6">
@@ -137,7 +156,11 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Create a password" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="Create a password"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,7 +173,11 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Confirm your password" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="Confirm your password"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -172,6 +199,5 @@ export default function SignUpPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
-

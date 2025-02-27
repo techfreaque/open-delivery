@@ -1,32 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { ChevronLeft } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/components/ui/use-toast"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   email: z.string().min(1, { message: "Email is required" }),
   password: z.string().min(1, { message: "Password is required" }),
-})
+});
 
 export default function LoginPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const searchParams = useSearchParams()
-  const defaultRole = searchParams.get("role") || "restaurant"
-  const [role, setRole] = useState(defaultRole)
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const defaultRole = searchParams.get("role") || "restaurant";
+  const [role, setRole] = useState(defaultRole);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,10 +48,10 @@ export default function LoginPage() {
       email: "",
       password: "",
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -46,29 +60,30 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ ...values, role }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Login failed")
+        throw new Error(data.error || "Login failed");
       }
 
       toast({
         title: "Login successful",
         description: `Welcome back, ${data.user.name}`,
-      })
+      });
 
-      router.push("/dashboard")
-      router.refresh()
+      router.push("/dashboard");
+      router.refresh();
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: error instanceof Error ? error.message : "An error occurred",
-      })
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -85,7 +100,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Login</CardTitle>
-          <CardDescription>Enter your credentials to access the partner portal</CardDescription>
+          <CardDescription>
+            Enter your credentials to access the partner portal
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={role} onValueChange={setRole} className="mb-6">
@@ -105,7 +122,10 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email or Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email or username" {...field} />
+                      <Input
+                        placeholder="Enter your email or username"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -118,7 +138,11 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,6 +170,5 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
-

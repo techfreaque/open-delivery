@@ -1,42 +1,49 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import { verifyJWT } from "./lib/auth"
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname
+  const path = request.nextUrl.pathname;
 
   // Define public paths that don't require authentication
-  const isPublicPath = path === "/" || path.startsWith("/auth/")
+  const isPublicPath = path === "/" || path.startsWith("/auth/");
 
   // Get token from cookies
-  const token = request.cookies.get("token")?.value
+  const token = request.cookies.get("token")?.value;
 
   // If the path is public, allow access
   if (isPublicPath) {
     // If user is already logged in and trying to access login page, redirect to dashboard
     if (token && path.startsWith("/auth/")) {
       try {
-        await verifyJWT(token)
-        return NextResponse.redirect(new URL("/dashboard", request.url))
+        if (process.env.NEXT_RUNTIME !== "edge") {
+          const { verifyJWT } = await import("./lib/auth");
+          await verifyJWT(token);
+          return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         // Token is invalid, let them access the login page
       }
     }
-    return NextResponse.next()
+    return NextResponse.next();
   }
 
   // If no token exists and path requires authentication, redirect to login
   if (!token) {
-    return NextResponse.redirect(new URL("/auth/login", request.url))
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
   try {
-    // Verify the token
-    await verifyJWT(token)
-    return NextResponse.next()
+    if (process.env.NEXT_RUNTIME !== "edge") {
+      const { verifyJWT } = await import("./lib/auth");
+      // Verify the token
+      await verifyJWT(token);
+      return NextResponse.next();
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     // Token is invalid, redirect to login
-    return NextResponse.redirect(new URL("/auth/login", request.url))
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 }
 
@@ -52,5 +59,4 @@ export const config = {
      */
     "/((?!api/auth|_next|static|favicon.ico|robots.txt).*)",
   ],
-}
-
+};

@@ -1,52 +1,94 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { CalendarIcon, Download } from "lucide-react"
-import { format } from "date-fns"
+import { format } from "date-fns";
+import { CalendarIcon, Download } from "lucide-react";
+import { useState } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { mockData } from "@/lib/utils"
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { mockData } from "@/lib/utils";
 
 export default function DriverEarnings() {
-  const [date, setDate] = useState<Date | undefined>(new Date())
-  const [period, setPeriod] = useState("week")
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [period, setPeriod] = useState("week");
 
   // Get earnings data
-  const earnings = mockData.earnings
+  const earnings = mockData.earnings;
 
   // Calculate total earnings
-  const totalEarnings = earnings.reduce((acc, day) => acc + day.amount, 0)
-  const totalDeliveries = earnings.reduce((acc, day) => acc + day.deliveries, 0)
-  const averagePerDelivery = totalEarnings / totalDeliveries
+  const totalEarnings = earnings.reduce((acc, day) => acc + day.amount, 0);
+  const totalDeliveries = earnings.reduce(
+    (acc, day) => acc + day.deliveries,
+    0,
+  );
+  const averagePerDelivery = totalEarnings / totalDeliveries;
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-8">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Earnings</h1>
-        <p className="text-muted-foreground">View your earnings and payment history.</p>
+        <p className="text-muted-foreground">
+          View your earnings and payment history.
+        </p>
       </div>
 
       {/* Summary cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Earnings
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalEarnings.toFixed(2)}</div>
+            <div className="text-2xl font-bold">
+              ${totalEarnings.toFixed(2)}
+            </div>
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Completed Deliveries</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Completed Deliveries
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalDeliveries}</div>
@@ -56,10 +98,14 @@ export default function DriverEarnings() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Average Per Delivery</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Average Per Delivery
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${averagePerDelivery.toFixed(2)}</div>
+            <div className="text-2xl font-bold">
+              ${averagePerDelivery.toFixed(2)}
+            </div>
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
@@ -85,11 +131,22 @@ export default function DriverEarnings() {
         </CardHeader>
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={earnings} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart
+              data={earnings}
+              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            >
               <defs>
                 <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  <stop
+                    offset="5%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
               <XAxis dataKey="date" />
@@ -113,18 +170,28 @@ export default function DriverEarnings() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Earnings History</CardTitle>
-            <CardDescription>Detailed breakdown of your earnings</CardDescription>
+            <CardDescription>
+              Detailed breakdown of your earnings
+            </CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                <Button
+                  variant="outline"
+                  className="w-[240px] justify-start text-left font-normal"
+                >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {date ? format(date, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                />
               </PopoverContent>
             </Popover>
             <Button variant="outline" size="icon">
@@ -149,7 +216,9 @@ export default function DriverEarnings() {
                   <TableCell>{day.date}</TableCell>
                   <TableCell>{day.deliveries}</TableCell>
                   <TableCell>{(day.deliveries * 0.5).toFixed(1)}</TableCell>
-                  <TableCell className="text-right font-medium">${day.amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    ${day.amount.toFixed(2)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -157,6 +226,5 @@ export default function DriverEarnings() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
