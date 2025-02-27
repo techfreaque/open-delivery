@@ -82,7 +82,7 @@ And setup is easy, e.g. scan products from image of a menu
 
 ### One smaller town after the other
 
-1. A person will personally talk to each restaurant owner in the city and get as much signatures as possible.
+1. A person will personally talk to each restaurant owner in the city and get as much signatures as possible. For both as a restaurant and as a driver.
 2. Then another round he will go from store to store and make them do the setup steps in the app, if they haven't already. Or do it yourself.
 
 
@@ -92,6 +92,8 @@ Should be easy because:
     Online Payment (offline cash/card is free)
     Delivery Network (for free if you deliver)
 - Free website + app that will do it for 80%
+- Order by app on the table (for free)
+    + upsell Mc Donalds Type Screens in all sizes
 - Partners can bring their own domain or use a subdomain for free
 - Optional:
     - Premium Website Customization via AI e.g. integrate https://v0.dev
