@@ -41,8 +41,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { mockData } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { mockData } from "@/lib/utils";
 
 interface MenuItem {
   id: string;
