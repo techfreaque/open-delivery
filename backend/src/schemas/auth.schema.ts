@@ -2,20 +2,31 @@ import { UserRoleValue } from "@prisma/client";
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters" }),
 });
 
 export const logoutResponseSchema = z.object({
   message: z.string(), // Fix: changed from z.string().email() to z.string()
 });
 
-export const registerSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
-  name: z.string().min(2, "Name must be at least 2 characters long"),
-  role: z.nativeEnum(UserRoleValue),
-});
+export const registerSchema = z
+  .object({
+    name: z.string().min(1, { message: "Name is required" }),
+    email: z.string().email({ message: "Please enter a valid email address" }),
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters" }),
+    confirmPassword: z
+      .string()
+      .min(8, { message: "Password confirmation is required" }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 export const userResponseSchema = z.object({
   id: z.string().uuid(),
@@ -31,21 +42,22 @@ export const loginResponseSchema = z.object({
   token: z.string(),
 });
 
+// Rename to match imports in types.ts
 export const resetPasswordRequestSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().email({ message: "Please enter a valid email address" }),
 });
 
 export const resetPasswordConfirmSchema = z
   .object({
     token: z.string(),
-    newPassword: z
+    password: z
       .string()
-      .min(6, "Password must be at least 6 characters long"),
-    confirmNewPassword: z
+      .min(8, { message: "Password must be at least 8 characters" }),
+    confirmPassword: z
       .string()
-      .min(6, "Password must be at least 6 characters long"),
+      .min(8, { message: "Password confirmation is required" }),
   })
-  .refine(
-    ({ newPassword, confirmNewPassword }) => newPassword === confirmNewPassword,
-    { message: "Passwords do not match", path: ["confirmNewPassword"] },
-  );
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });

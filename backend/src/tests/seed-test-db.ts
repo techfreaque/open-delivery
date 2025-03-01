@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 /**
  * Seeds the test database with standard test data
  */
-async function seedTestDatabase(): Promise<Record<string, any>> {
+async function seedTestDatabase(): Promise<Record<string, unknown>> {
   console.log("Seeding test database...");
 
   try {

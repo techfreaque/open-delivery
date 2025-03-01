@@ -7,7 +7,19 @@ import { useState } from "react";
 import { z } from "zod";
 
 import { registerSchema } from "@/schemas/auth.schema";
-import type { RegisterData } from "@/types/types";
+import type { LoginResponse, RegisterData } from "@/types/types";
+
+// Add missing type definitions
+interface ValidationErrors {
+  [key: string]: string | undefined;
+}
+
+interface SignupFormFields {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
 export default function SignupPage(): JSX.Element {
   const router = useRouter();
@@ -70,10 +82,10 @@ export default function SignupPage(): JSX.Element {
         body: JSON.stringify(dataToSubmit),
       });
 
-      const data = (await response.json()) as SignupResponse;
+      const data = (await response.json()) as LoginResponse;
 
       if (!response.ok) {
-        throw new Error(data.message || "Signup failed");
+        throw new Error(JSON.stringify(data) || "Signup failed");
       }
 
       // Redirect to login page after successful signup

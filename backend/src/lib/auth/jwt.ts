@@ -1,19 +1,23 @@
 import "server-only";
 
-import { SignJWT, jwtVerify } from "jose";
-import { env } from "@/lib/env";
+import { jwtVerify, SignJWT } from "jose";
 
+import { env } from "@/lib/env";
 import type { UserResponse } from "@/types/types";
 
 const getSecretKey = () => {
   const key = env.JWT_SECRET_KEY;
   if (!key) {
     // This is a safety net that should never trigger with our updated env validation
-    console.warn("Warning: JWT_SECRET_KEY is not set, using fallback for development only");
+    console.warn(
+      "Warning: JWT_SECRET_KEY is not set, using fallback for development only",
+    );
     if (process.env.NODE_ENV === "production") {
       throw new Error("JWT_SECRET_KEY is not defined in production!");
     }
-    return new TextEncoder().encode("development-secret-key-not-for-production");
+    return new TextEncoder().encode(
+      "development-secret-key-not-for-production",
+    );
   }
   return new TextEncoder().encode(key);
 };
@@ -25,6 +29,8 @@ console.log(
 
 // Sign a JWT token
 export async function signJwt(payload: UserResponse): Promise<string> {
+  console.log("Signing JWT with payload:", payload);
+
   const token = await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()

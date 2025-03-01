@@ -7,8 +7,9 @@ import { startServer, stopServer } from "./test-server";
 // Add at the beginning:
 const DEBUG = process.env.DEBUG_TESTS === "true";
 
-function debugLog(...args: any[]) {
+function debugLog(...args: unknown[]): void {
   if (DEBUG) {
+    // eslint-disable-next-line no-console
     console.log("[TEST DEBUG]", ...args);
   }
 }
@@ -16,24 +17,17 @@ function debugLog(...args: any[]) {
 // Declare globals that will be available to all tests
 declare global {
   var testTokens: TestAuthTokens;
-
   var customerAuthToken: string;
-
   var restaurantAuthToken: string;
-
   var driverAuthToken: string;
-
   var adminAuthToken: string;
-
-  var testData: Record<string, any>;
-
+  var testData: Record<string, unknown>;
   var testBaseUrl: string;
 }
 
 // Use a mutex pattern to ensure one DB seeding at a time
 let setupComplete = false;
 let setupPromise: Promise<void> | null = null;
-let setupError: Error | null = null;
 
 // Setup global test database
 beforeAll(async () => {
@@ -48,7 +42,7 @@ beforeAll(async () => {
   }
 
   // Create setup promise
-  setupPromise = (async () => {
+  setupPromise = (async (): Promise<void> => {
     try {
       debugLog(
         `Worker ${process.env.VITEST_WORKER_ID || "unknown"}: Starting setup...`,
@@ -76,15 +70,16 @@ beforeAll(async () => {
         );
         setupComplete = true;
       } catch (dbError) {
+        // eslint-disable-next-line no-console
         console.error("Database seeding failed:", dbError);
         throw dbError;
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(
         `Worker ${process.env.VITEST_WORKER_ID || "unknown"}: Setup failed:`,
         error,
       );
-      setupError = error as Error;
       throw error;
     } finally {
       // Always set promise to null so we can retry if needed
