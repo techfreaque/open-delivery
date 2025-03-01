@@ -7,7 +7,12 @@ const prisma = new PrismaClient();
 async function seedDatabase(): Promise<void> {
   console.log("Seeding database...");
 
-  // Clear existing data
+  // Clear existing data in the correct order
+  await prisma.cartItem.deleteMany({});
+  await prisma.cartItem.deleteMany({});
+  await prisma.session.deleteMany({}); // Delete sessions before users
+  await prisma.menuItem.deleteMany({});
+  await prisma.restaurant.deleteMany({});
   await prisma.userRole.deleteMany({});
   await prisma.user.deleteMany({});
 

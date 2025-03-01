@@ -22,11 +22,10 @@ export const dateRangeSchema = z.object({
 // Common response schemas
 export const errorResponseSchema = z.object({
   success: z.literal(false),
-  message: z.string(),
-  errors: z.record(z.array(z.string())).optional(),
+  data: z.string(),
 });
 
 export const successResponseSchema = z.object({
   success: z.literal(true),
-  message: z.string().optional(),
+  data: z.string().optional(),
 });

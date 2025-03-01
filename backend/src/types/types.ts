@@ -24,6 +24,7 @@ import type {
   idSchema,
   loginResponseSchema,
   loginSchema,
+  logoutResponseSchema,
   menuItemCreateSchema,
   menuItemSchema,
   menuItemSearchSchema,
@@ -51,6 +52,7 @@ export type AddressUpdateFormData = z.infer<typeof addressUpdateSchema>;
 export type AddressResponse = z.infer<typeof addressResponseSchema>;
 
 export type LoginData = z.infer<typeof loginSchema>;
+export type LogoutResponse = z.infer<typeof logoutResponseSchema>;
 export type RegisterData = z.infer<typeof registerSchema>;
 export type UserResponse = z.infer<typeof userResponseSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;

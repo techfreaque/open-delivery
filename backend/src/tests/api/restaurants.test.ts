@@ -1,27 +1,35 @@
 /* eslint-disable no-console */
 
-import "../setup"; // Import to ensure global tokens are available
+import "../setup"; // Import test setup
 
 import type { MenuItem } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-
-import type { MenuItemInput } from "@/types/types";
-
-import { getBaseUrl } from "../test-server";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 // Use real Prisma client for E2E tests
 const prisma = new PrismaClient();
-const baseUrl = getBaseUrl();
 
 describe("/api/restaurants E2E", () => {
   let restaurantId: string;
 
-  beforeAll(async () => {
-    // Get test restaurant ID
-    const restaurant = await prisma.restaurant.findFirst();
-    restaurantId = restaurant?.id || "testrestaurant";
+  beforeEach(() => {
+    // Ensure test data exists
+    if (!global.testData || !global.testData.restaurant) {
+      console.log("Waiting for test data to be available...");
+      return new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (global.testData && global.testData.restaurant) {
+            restaurantId = global.testData.restaurant.id;
+            clearInterval(interval);
+            resolve();
+          }
+        }, 100);
+      });
+    }
+
+    // Get restaurant ID from global test data
+    restaurantId = global.testData.restaurant.id;
   });
 
   afterAll(async () => {
@@ -30,7 +38,7 @@ describe("/api/restaurants E2E", () => {
 
   describe("GET /api/restaurants", () => {
     it("should return a list of restaurants", async () => {
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .get("/api/restaurants")
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
@@ -39,7 +47,7 @@ describe("/api/restaurants E2E", () => {
     });
 
     it("should return restaurants filtered by cuisine", async () => {
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .get("/api/restaurants?category=Italian")
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
@@ -50,16 +58,16 @@ describe("/api/restaurants E2E", () => {
 
   describe("GET /api/restaurants/:id", () => {
     it("should return a specific restaurant", async () => {
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .get(`/api/restaurants/${restaurantId}`)
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.id as string).toBe(restaurantId);
+      expect(response.body.id).toBe(restaurantId);
     });
 
     it("should return 404 for non-existent restaurant", async () => {
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .get("/api/restaurants/non-existent-id")
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
@@ -68,7 +76,7 @@ describe("/api/restaurants E2E", () => {
   });
 
   describe("POST /api/restaurants/menu", () => {
-    let newMenuItem: MenuItemInput;
+    let newMenuItem: Partial<MenuItem>;
 
     it("should create a new menu item as restaurant owner", async () => {
       // Create a new menu item for the restaurant
@@ -79,19 +87,19 @@ describe("/api/restaurants E2E", () => {
         category: "Appetizer",
         image: "/test-image.jpg",
         restaurantId,
+        isAvailable: true,
       };
 
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .post(`/api/restaurants/menu`)
         .set("Authorization", `Bearer ${global.restaurantAuthToken}`)
         .send(newMenuItem);
 
       expect(response.status).toBe(200);
-      const responseBody = response.body as MenuItem;
-      expect(responseBody.name).toBe(newMenuItem.name);
+      expect(response.body.name).toBe(newMenuItem.name);
 
       // Save the ID for cleanup
-      newMenuItem = { ...newMenuItem, id: responseBody.id };
+      newMenuItem.id = response.body.id;
     });
 
     // Clean up - remove the created menu item

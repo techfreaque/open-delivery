@@ -17,7 +17,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(response, { status: response.status });
     }
 
-    const cart = await prisma.cart.findUnique({
+    const cart = await prisma.cartItem.findUnique({
       where: { userId: user.id },
       include: {
         items: {

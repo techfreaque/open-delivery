@@ -6,6 +6,10 @@ export const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters long"),
 });
 
+export const logoutResponseSchema = z.object({
+  message: z.string(), // Fix: changed from z.string().email() to z.string()
+});
+
 export const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters long"),

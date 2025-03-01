@@ -1,66 +1,30 @@
 /* eslint-disable no-console */
-import { spawn } from "child_process";
 import type { Server } from "http";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
 import next from "next";
-import path from "path";
 import { parse } from "url";
 
 // Server state (singleton)
 let app: ReturnType<typeof next> | null = null;
 let server: Server | null = null;
 let baseUrl: string | null = null;
+let startPromise: Promise<string> | null = null;
 
 /**
- * Gets a free port by testing ports sequentially
- */
-async function getFreePort(startPort: number = 4000): Promise<number> {
-  let port = startPort;
-  let maxTries = 20; // Increase max tries
-
-  while (maxTries > 0) {
-    try {
-      const testServer = createServer();
-
-      await new Promise<void>((resolve, reject) => {
-        testServer.once("error", (err: Error & { code?: string }) => {
-          if (err.code === "EADDRINUSE") {
-            port++;
-            testServer.close();
-            resolve();
-          } else {
-            reject(err);
-          }
-        });
-
-        testServer.once("listening", () => {
-          testServer.close();
-          resolve();
-        });
-
-        testServer.listen(port);
-      });
-
-      return port; // Port is available
-    } catch (err) {
-      console.error(`Error trying port ${port}:`, err);
-      port++;
-      maxTries--;
-    }
-  }
-
-  throw new Error("Could not find a free port after multiple attempts");
-}
-
-/**
- * Starts the Next.js test server
+ * Starts the Next.js test server on a fixed port
  * This is designed to be called once from global-setup
  */
-export async function startServer(): Promise<string> {
-  if (server) {
+export async function startServer(port: number = 4000): Promise<string> {
+  // If we're already in the process of starting the server, return that promise
+  if (startPromise) {
+    return startPromise;
+  }
+
+  // If server is already running, just return the URL
+  if (server && baseUrl) {
     console.log("Test server already running at:", baseUrl);
-    return baseUrl as string;
+    return baseUrl;
   }
 
   // Check if we have a URL from a previously started server via env var
@@ -70,35 +34,58 @@ export async function startServer(): Promise<string> {
     return baseUrl;
   }
 
-  try {
-    const port = await getFreePort();
-    console.log(`Starting test server on port ${port}...`);
+  // Create a promise that will be returned to all callers
+  startPromise = new Promise<string>(async (resolve, reject) => {
+    try {
+      console.log("Starting test server on port", port, "...");
 
-    // Ensure we're using test environment variables
-    process.env.NODE_ENV = "test";
-    process.env.JWT_SECRET_KEY = "test-secret-key-for-e2e-tests";
+      // Ensure we're using test environment variables
+      process.env.NODE_ENV = "test";
 
-    app = next({
-      dev: true,
-      dir: process.cwd(),
-    });
+      // Set JWT secret key - This is the key part to ensure consistent JWT handling
+      process.env.JWT_SECRET_KEY = "test-secret-key-for-e2e-tests";
+      console.log(
+        "Set JWT_SECRET_KEY for test server:",
+        process.env.JWT_SECRET_KEY,
+      );
 
-    await app.prepare();
+      app = next({
+        dev: true,
+        dir: process.cwd(),
+        quiet: true, // Reduce console noise
+      });
 
-    const handle = app.getRequestHandler();
+      await app.prepare();
 
-    server = createServer((req, res) => {
-      const parsedUrl = parse(req.url || "", true);
-      void handle(req, res, parsedUrl);
-    });
+      const handle = app.getRequestHandler();
 
-    return new Promise<string>((resolve, reject) => {
-      if (!server) {
-        return reject(new Error("Server initialization failed"));
-      }
+      server = createServer((req, res) => {
+        const parsedUrl = parse(req.url || "", true);
+        void handle(req, res, parsedUrl);
+      });
 
       server.once("error", (err) => {
         console.error("Server startup error:", err);
+
+        // If the port is in use, check if it's our own server from another test file
+        if (err.code === "EADDRINUSE") {
+          console.warn(
+            `Port ${port} is already in use. Trying to use existing server.`,
+          );
+
+          // Assume the server might be started by another test file
+          baseUrl = `http://localhost:${port}`;
+          process.env.TEST_SERVER_URL = baseUrl;
+
+          // Reset promise so others know we're not starting anymore
+          startPromise = null;
+
+          // Resolve with the assumed URL
+          resolve(baseUrl);
+          return;
+        }
+
+        startPromise = null;
         reject(err);
       });
 
@@ -110,13 +97,19 @@ export async function startServer(): Promise<string> {
         // Store URL in env var so other processes can use it
         process.env.TEST_SERVER_URL = baseUrl;
 
+        // Reset the promise now that we're done
+        startPromise = null;
+
         resolve(baseUrl);
       });
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    throw error;
-  }
+    } catch (error) {
+      console.error("Failed to start server:", error);
+      startPromise = null;
+      reject(error);
+    }
+  });
+
+  return startPromise;
 }
 
 /**
@@ -124,19 +117,17 @@ export async function startServer(): Promise<string> {
  * This is designed to be called once from global-teardown
  */
 export async function stopServer(): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!server) {
-      const err = new Error("Server is not running.");
-      Object.defineProperty(err, "code", { value: "ERR_SERVER_NOT_RUNNING" });
-      reject(err);
+      console.log("Server is not running, nothing to stop");
+      resolve();
       return;
     }
 
     server.close((err) => {
       if (err) {
         console.error("Error closing server:", err);
-        reject(err);
-        return;
+        // Resolve anyway since we're shutting down
       }
 
       console.log("> E2E test server closed");
@@ -170,39 +161,4 @@ export function getBaseUrl(): string {
   throw new Error(
     "Server not started. Call startServer() first or ensure global setup has run.",
   );
-}
-
-/**
- * Starts a test server in a separate process
- */
-export function startTestServer(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const testAppPath = path.join(process.cwd(), "src", "tests", "test-app.ts");
-
-    const serverProcess = spawn("tsx", [testAppPath], {
-      env: {
-        ...process.env,
-        NODE_ENV: "test",
-      },
-      stdio: ["pipe", "pipe", "pipe", "ipc"],
-    });
-
-    serverProcess.on("message", (message: { port: number }) => {
-      baseUrl = `http://localhost:${message.port}`;
-      resolve(baseUrl);
-    });
-    if (!serverProcess.stderr) {
-      return reject(new Error("Failed to start test server: no stderr"));
-    }
-    serverProcess.stderr.on("data", (data) => {
-      const errorMessage = data.toString();
-      console.error(`Test server error: ${errorMessage}`);
-      reject(new Error(`Failed to start test server: ${errorMessage}`));
-    });
-
-    // Set timeout in case server doesn't start
-    setTimeout(() => {
-      reject(new Error("Timeout waiting for test server to start"));
-    }, 10000);
-  });
 }

@@ -2,6 +2,9 @@ import "server-only";
 
 import { PrismaClient } from "@prisma/client";
 
+import { validateEnv } from "../env";
+
+validateEnv();
 declare global {
   var prisma: PrismaClient | undefined;
 }

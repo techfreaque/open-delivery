@@ -1,51 +1,40 @@
 /* eslint-disable no-console */
 
-import "../setup"; // Import to ensure global tokens are available
+import "../setup"; // Import test setup
 
-import type { Order } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
-import { startServer, stopServer } from "../test-server";
-
-// Use real Prisma client
+// Use real Prisma client for E2E tests
 const prisma = new PrismaClient();
 
 describe("/api/orders E2E", () => {
-  let baseUrl: string;
   let restaurantId: string;
   let menuItemId: string;
   let createdOrderId: string;
 
-  beforeAll(async () => {
-    // Start the real test server
-    baseUrl = await startServer();
-    console.log(`E2E tests running against: ${baseUrl}`);
-
-    // Use the restaurant and menu items from our test seed
-    restaurantId = "testrestaurant";
-
-    // Get the first menu item
-    const menuItem = await prisma.menuItem.findFirst({
-      where: { restaurantId },
-    });
-    menuItemId = menuItem?.id || "testmenuitem";
+  beforeEach(() => {
+    // Get test data from global setup
+    restaurantId = global.testData.restaurant.id;
+    menuItemId = global.testData.menuItem.id;
   });
 
   afterAll(async () => {
-    // Clean up any created orders
+    // Clean up created order if any
     if (createdOrderId) {
       try {
+        await prisma.orderItem.deleteMany({
+          where: { orderId: createdOrderId },
+        });
         await prisma.order.delete({
           where: { id: createdOrderId },
         });
       } catch (error) {
-        console.log("Order might have been already deleted", error);
+        console.error("Error cleaning up test order:", error);
       }
     }
 
-    await stopServer();
     await prisma.$disconnect();
   });
 
@@ -59,24 +48,23 @@ describe("/api/orders E2E", () => {
         paymentMethod: "CASH",
       };
 
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .post("/api/orders")
         .set("Authorization", `Bearer ${global.customerAuthToken}`)
         .send(newOrder);
 
       expect(response.status).toBe(200);
-      const responseOrder = response.body as Order;
-      expect(responseOrder.id).toBeDefined();
-      expect(responseOrder.restaurantId).toBe(restaurantId);
+      expect(response.body.id).toBeDefined();
+      expect(response.body.restaurantId).toBe(restaurantId);
 
       // Save order ID for cleanup
-      createdOrderId = responseOrder.id;
+      createdOrderId = response.body.id;
     });
   });
 
   describe("GET /api/orders", () => {
     it("should return customer orders when authenticated as customer", async () => {
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .get("/api/orders")
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
@@ -85,7 +73,7 @@ describe("/api/orders E2E", () => {
     });
 
     it("should return restaurant orders when authenticated as restaurant admin", async () => {
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .get("/api/orders")
         .set("Authorization", `Bearer ${global.restaurantAuthToken}`);
 
@@ -102,13 +90,12 @@ describe("/api/orders E2E", () => {
         return;
       }
 
-      const response = await request(baseUrl)
+      const response = await request(global.testBaseUrl)
         .get(`/api/orders/${createdOrderId}`)
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
       expect(response.status).toBe(200);
-      const responseOrder = response.body as Order;
-      expect(responseOrder.id).toBe(createdOrderId);
+      expect(response.body.id).toBe(createdOrderId);
     });
   });
 });

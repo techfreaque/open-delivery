@@ -5,6 +5,7 @@ import {
   createSuccessResponse,
 } from "@/lib/api/apiResponse";
 import { getVerifiedUser } from "@/lib/auth/authService";
+import { userResponseSchema } from "@/schemas";
 import type { UserResponse } from "@/types/types";
 
 export async function GET(): Promise<NextResponse> {
@@ -13,7 +14,7 @@ export async function GET(): Promise<NextResponse> {
     if (!user) {
       return createErrorResponse("Unauthorized", 401);
     }
-    return createSuccessResponse<UserResponse>(user);
+    return createSuccessResponse<UserResponse>(user, userResponseSchema);
   } catch (err) {
     const error = err as Error;
     return createErrorResponse(
