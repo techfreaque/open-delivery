@@ -1,107 +1,89 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, TextInput, Modal, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Minus, Plus, Trash2, CreditCard, Banknote, MapPin, ChevronRight, X } from 'lucide-react-native';
+import { ChevronRight, MapPin, Minus, Plus, Trash2, X, Banknote, CreditCard } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-// Mock cart data
-const initialCartItems = [
-  {
-    id: '1',
-    name: 'Double Cheeseburger',
-    price: 8.99,
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-    restaurant: 'Burger Palace',
-  },
-  {
-    id: '2',
-    name: 'Pepperoni Pizza',
-    price: 12.99,
-    quantity: 2,
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-    restaurant: 'Pizza Heaven',
-  },
-  {
-    id: '3',
-    name: 'Fries',
-    price: 3.99,
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1576107232684-1279f390859f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-    restaurant: 'Burger Palace',
-  },
-];
-
-// Saved addresses
-const savedAddresses = [
-  { id: '1', address: '123 Main St, Anytown', default: true },
-  { id: '2', address: '456 Oak St, Anytown', default: false },
-  { id: '3', address: '789 Pine St, Anytown', default: false },
-];
-
-// Payment methods
-const savedPaymentMethods = [
-  { id: '1', type: 'Visa', last4: '4242', default: true },
-  { id: '2', type: 'Mastercard', last4: '5555', default: false },
-];
+import { useCart } from '../../lib/hooks/useCart';
+import { useAddresses } from '../../lib/hooks/useAddresses';
+import { usePaymentMethods } from '../../lib/hooks/usePaymentMethods';
+import { useOrders } from '../../lib/hooks/useOrders';
+import { formatCurrency, generateId } from '../../lib/utils';
+import AddressSelector from '../../components/AddressSelector';
+import DesktopHeader from '../../components/DesktopHeader';
 
 export default function CartScreen() {
-  const [cartItems, setCartItems] = useState(initialCartItems);
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' or 'card'
-  const [selectedCardId, setSelectedCardId] = useState('1');
-  const [deliveryAddress, setDeliveryAddress] = useState(savedAddresses.find(addr => addr.default).address);
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState('1');
-  const [newAddress, setNewAddress] = useState('');
-  const [customAddressMode, setCustomAddressMode] = useState(false);
+  const router = useRouter();
+  const { cartItems, isLoading, error, getCartTotals, updateQuantity, refetch } = useCart();
+  const { addresses, addAddress, setDefaultAddress, deleteAddress } = useAddresses();
+  const { paymentMethods, setDefaultPaymentMethod, deletePaymentMethod } = usePaymentMethods();
+  const { placeOrder } = useOrders();
+  
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [orderPlacedModalVisible, setOrderPlacedModalVisible] = useState(false);
-  const router = useRouter();
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [selectedCardId, setSelectedCardId] = useState('');
+  
+  const dimensions = useWindowDimensions();
+  const isLargeScreen = dimensions.width >= 768;
+  const isExtraLargeScreen = dimensions.width >= 1200;
 
-  const updateQuantity = (id, change) => {
-    setCartItems(
-      cartItems.map((item) => {
-        if (item.id === id) {
-          const newQuantity = item.quantity + change;
-          return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
+  // Set initial values when data is loaded
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const defaultAddr = addresses.find(addr => addr.is_default);
+      if (defaultAddr) {
+        setDeliveryAddress(defaultAddr.address);
+      } else {
+        setDeliveryAddress(addresses[0].address);
+      }
+    }
+    
+    if (paymentMethods.length > 0) {
+      const defaultMethod = paymentMethods.find(method => method.is_default);
+      if (defaultMethod) {
+        setSelectedCardId(defaultMethod.id);
+      }
+    }
+  }, [addresses, paymentMethods]);
+
+  // Refresh cart when screen is focused
+  useEffect(() => {
+    refetch();
+  }, []);
+
+  const updateItemQuantity = (id: string, change: number) => {
+    const item = cartItems.find(item => item.id === id);
+    if (item) {
+      const newQuantity = item.quantity + change;
+      updateQuantity(id, newQuantity);
+    }
+  };
+
+  const removeItem = (id: string) => {
+    Alert.alert(
+      "Remove Item",
+      "Are you sure you want to remove this item from your cart?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        { 
+          text: "Remove", 
+          onPress: () => updateQuantity(id, 0)
         }
-        return item;
-      })
+      ]
     );
   };
 
-  const removeItem = (id) => {
-    setCartItems(cartItems.filter((item) => item.id !== id));
+  const { subtotal, deliveryFee, serviceFee, total } = getCartTotals(paymentMethod);
+
+  const handleAddressChange = (address: string) => {
+    setDeliveryAddress(address);
   };
 
-  const calculateSubtotal = () => {
-    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  };
-
-  const subtotal = calculateSubtotal();
-  const deliveryFee = paymentMethod === 'cash' ? 0 : 2.99;
-  const serviceFee = paymentMethod === 'cash' ? 0 : 1.99;
-  const total = subtotal + deliveryFee + serviceFee;
-
-  const handleAddressSelect = (id, addressText) => {
-    setSelectedAddress(id);
-    setDeliveryAddress(addressText);
-    setLocationModalVisible(false);
-  };
-
-  const handleAddNewAddress = () => {
-    if (newAddress.trim() === '') {
-      Alert.alert('Error', 'Please enter a valid address');
-      return;
-    }
-    
-    // In a real app, this would validate and save the address to the user's profile
-    setDeliveryAddress(newAddress);
-    setLocationModalVisible(false);
-    Alert.alert('Success', 'New delivery address added');
-  };
-
-  const handleSelectPaymentMethod = (method, cardId = null) => {
+  const handleSelectPaymentMethod = (method: string, cardId: string | null = null) => {
     setPaymentMethod(method);
     if (method === 'card' && cardId) {
       setSelectedCardId(cardId);
@@ -110,6 +92,18 @@ export default function CartScreen() {
   };
 
   const handleCheckout = () => {
+    // Validate that we have a delivery address
+    if (!deliveryAddress) {
+      Alert.alert("Missing Information", "Please select a delivery address");
+      return;
+    }
+    
+    // Validate payment method
+    if (paymentMethod === 'card' && !selectedCardId) {
+      Alert.alert("Missing Information", "Please select a payment card");
+      return;
+    }
+    
     Alert.alert(
       "Confirm Order",
       `Your order will be placed with ${paymentMethod === 'cash' ? 'cash' : 'card'} payment.`,
@@ -120,9 +114,37 @@ export default function CartScreen() {
         },
         { 
           text: "Place Order", 
-          onPress: () => {
-            // Show order placed modal
-            setOrderPlacedModalVisible(true);
+          onPress: async () => {
+            // Get restaurant info from first cart item (assuming all items are from same restaurant)
+            if (cartItems.length === 0) return;
+            
+            const restaurantId = cartItems[0].restaurant_id;
+            const restaurantName = cartItems[0].restaurant_name;
+            
+            // Create order object
+            const orderData = {
+              restaurant_id: restaurantId,
+              restaurant_name: restaurantName,
+              total: total,
+              delivery_address: deliveryAddress,
+              payment_method: paymentMethod === 'card' ? 'card' : 'cash',
+              items: cartItems.map(item => ({
+                menu_item_id: item.menu_item_id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity
+              }))
+            };
+            
+            // Place order
+            const orderId = await placeOrder(orderData);
+            
+            if (orderId) {
+              // Show order placed modal
+              setOrderPlacedModalVisible(true);
+            } else {
+              Alert.alert("Error", "There was a problem placing your order. Please try again.");
+            }
           }
         }
       ]
@@ -131,163 +153,210 @@ export default function CartScreen() {
 
   const handleOrderComplete = () => {
     setOrderPlacedModalVisible(false);
-    setCartItems([]);
     router.push('/orders');
   };
 
-  const handleRestaurantPress = (restaurantName) => {
-    // In a real app, we would find the restaurant ID based on the name
-    // For now, we'll just show an alert
-    Alert.alert("View Restaurant", `You want to view ${restaurantName}`);
+  const handleRestaurantPress = (restaurantId: string) => {
+    router.push(`/restaurant/${restaurantId}`);
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isLargeScreen && (
+          <DesktopHeader 
+            currentAddress={deliveryAddress} 
+            onAddressChange={handleAddressChange}
+            cartItemCount={cartItems?.length || 0}
+          />
+        )}
+        <View style={styles.loadingContainer}>
+          <Text>Loading cart...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        {isLargeScreen && (
+          <DesktopHeader 
+            currentAddress={deliveryAddress} 
+            onAddressChange={handleAddressChange}
+            cartItemCount={cartItems?.length || 0}
+          />
+        )}
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => router.push('/')}
+          >
+            <Text style={styles.retryButtonText}>Go to Home</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
+       {isLargeScreen && (
+          <DesktopHeader 
+            currentAddress={deliveryAddress} 
+            onAddressChange={handleAddressChange}
+            cartItemCount={cartItems?.length || 0}
+          />
+        )}
       {cartItems.length > 0 ? (
         <>
-          <ScrollView style={styles.scrollView}>
-            {/* Cart Items */}
-            <View style={styles.cartItemsContainer}>
-              {cartItems.map((item) => (
-                <View key={item.id} style={styles.cartItem}>
-                  <Image source={{ uri: item.image }} style={styles.itemImage} />
-                  <View style={styles.itemDetails}>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                    <TouchableOpacity onPress={() => handleRestaurantPress(item.restaurant)}>
-                      <Text style={styles.restaurantName}>{item.restaurant}</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+          <ScrollView style={[styles.scrollView, isLargeScreen && styles.largeScreenScrollView]}>
+            <View style={[styles.cartContentContainer, isLargeScreen && styles.largeScreenCartContentContainer]}>
+              {/* Cart Items */}
+              <View style={styles.cartItemsContainer}>
+                <Text style={[styles.sectionTitle, isLargeScreen && styles.largeScreenSectionTitle]}>Your Cart</Text>
+                {cartItems.map((item) => (
+                  <View key={item.id} style={[styles.cartItem, isLargeScreen && styles.largeScreenCartItem]}>
+                    <Image source={{ uri: item.image }} style={styles.itemImage} />
+                    <View style={styles.itemDetails}>
+                      <Text style={[styles.itemName, isLargeScreen && styles.largeScreenItemName]}>{item.name}</Text>
+                      <TouchableOpacity onPress={() => handleRestaurantPress(item.restaurant_id)}>
+                        <Text style={styles.restaurantName}>{item.restaurant_name}</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
+                    </View>
+                    <View style={styles.quantityContainer}>
+                      <TouchableOpacity 
+                        style={styles.quantityButton}
+                        onPress={() => updateItemQuantity(item.id, -1)}
+                        disabled={item.quantity <= 1}
+                      >
+                        <Minus size={16} color={item.quantity <= 1 ? '#D1D5DB' : '#1F2937'} />
+                      </TouchableOpacity>
+                      <Text style={styles.quantityText}>{item.quantity}</Text>
+                      <TouchableOpacity 
+                        style={styles.quantityButton}
+                        onPress={() => updateItemQuantity(item.id, 1)}
+                      >
+                        <Plus size={16} color="#1F2937" />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.removeButton}
+                        onPress={() => removeItem(item.id)}
+                      >
+                        <Trash2 size={16} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                  <View style={styles.quantityContainer}>
-                    <TouchableOpacity 
-                      style={styles.quantityButton}
-                      onPress={() => updateQuantity(item.id, -1)}
-                      disabled={item.quantity <= 1}
-                    >
-                      <Minus size={16} color={item.quantity <= 1 ? '#D1D5DB' : '#1F2937'} />
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{item.quantity}</Text>
-                    <TouchableOpacity 
-                      style={styles.quantityButton}
-                      onPress={() => updateQuantity(item.id, 1)}
-                    >
-                      <Plus size={16} color="#1F2937" />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.removeButton}
-                      onPress={() => removeItem(item.id)}
-                    >
-                      <Trash2 size={16} color="#EF4444" />
-                    </TouchableOpacity>
-                  </View>
+                ))}
+              </View>
+
+              {/* Delivery Address */}
+              <View style={styles.deliveryAddressContainer}>
+                <View style={styles.deliveryAddressHeader}>
+                  <Text style={styles.sectionTitle}>Delivery Address</Text>
                 </View>
-              ))}
-            </View>
+                <AddressSelector 
+                  onSelectAddress={handleAddressChange}
+                  currentAddress={deliveryAddress}
+                  showLabel={false}
+                  compact={true}
+                />
+              </View>
 
-            {/* Delivery Address */}
-            <TouchableOpacity 
-              style={styles.deliveryAddressContainer}
-              onPress={() => setLocationModalVisible(true)}
-            >
-              <View style={styles.deliveryAddressHeader}>
-                <Text style={styles.sectionTitle}>Delivery Address</Text>
-                <ChevronRight size={16} color="#6B7280" />
-              </View>
-              <View style={styles.deliveryAddressContent}>
-                <MapPin size={20} color="#FF5A5F" />
-                <Text style={styles.deliveryAddressText}>{deliveryAddress}</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Payment Method */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Payment Method</Text>
-              <View style={styles.paymentOptions}>
-                <TouchableOpacity 
-                  style={[
-                    styles.paymentOption, 
-                    paymentMethod === 'cash' && styles.selectedPaymentOption
-                  ]}
-                  onPress={() => setPaymentMethod('cash')}
-                >
-                  <Banknote 
-                    size={24} 
-                    color={paymentMethod === 'cash' ? '#FFFFFF' : '#1F2937'} 
-                  />
-                  <Text 
+              {/* Payment Method */}
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Payment Method</Text>
+                <View style={styles.paymentOptions}>
+                  <TouchableOpacity 
                     style={[
-                      styles.paymentOptionText,
-                      paymentMethod === 'cash' && styles.selectedPaymentOptionText
+                      styles.paymentOption, 
+                      paymentMethod === 'cash' && styles.selectedPaymentOption
                     ]}
+                    onPress={() => setPaymentMethod('cash')}
                   >
-                    Cash (Free)
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[
-                    styles.paymentOption, 
-                    paymentMethod === 'card' && styles.selectedPaymentOption
-                  ]}
-                  onPress={() => setPaymentModalVisible(true)}
-                >
-                  <CreditCard 
-                    size={24} 
-                    color={paymentMethod === 'card' ? '#FFFFFF' : '#1F2937'} 
-                  />
-                  <Text 
-                    style={[
-                      styles.paymentOptionText,
-                      paymentMethod === 'card' && styles.selectedPaymentOptionText
-                    ]}
-                  >
-                    Card
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {paymentMethod === 'card' && (
-                <TouchableOpacity 
-                  style={styles.selectedCardContainer}
-                  onPress={() => setPaymentModalVisible(true)}
-                >
-                  <View style={styles.selectedCardInfo}>
-                    <CreditCard size={16} color="#6B7280" />
-                    <Text style={styles.selectedCardText}>
-                      {savedPaymentMethods.find(card => card.id === selectedCardId)?.type} ending in {savedPaymentMethods.find(card => card.id === selectedCardId)?.last4}
+                    <Banknote 
+                      size={24} 
+                      color={paymentMethod === 'cash' ? '#FFFFFF' : '#1F2937'} 
+                    />
+                    <Text 
+                      style={[
+                        styles.paymentOptionText,
+                        paymentMethod === 'cash' && styles.selectedPaymentOptionText
+                      ]}
+                    >
+                      Cash (Free)
                     </Text>
-                  </View>
-                  <ChevronRight size={16} color="#6B7280" />
-                </TouchableOpacity>
-              )}
-            </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[
+                      styles.paymentOption, 
+                      paymentMethod === 'card' && styles.selectedPaymentOption
+                    ]}
+                    onPress={() => setPaymentModalVisible(true)}
+                  >
+                    <CreditCard 
+                      size={24} 
+                      color={paymentMethod === 'card' ? '#FFFFFF' : '#1F2937'} 
+                    />
+                    <Text 
+                      style={[
+                        styles.paymentOptionText,
+                        paymentMethod === 'card' && styles.selectedPaymentOptionText
+                      ]}
+                    >
+                      Card
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                {paymentMethod === 'card' && (
+                  <TouchableOpacity 
+                    style={styles.selectedCardContainer}
+                    onPress={() => setPaymentModalVisible(true)}
+                  >
+                    <View style={styles.selectedCardInfo}>
+                      <CreditCard size={16} color="#6B7280" />
+                      <Text style={styles.selectedCardText}>
+                        {paymentMethods.find(card => card.id === selectedCardId)?.type || 'Select a card'} 
+                        {paymentMethods.find(card => card.id === selectedCardId)?.last4 ? 
+                          ` ending in ${paymentMethods.find(card => card.id === selectedCardId)?.last4}` : ''}
+                      </Text>
+                    </View>
+                    <ChevronRight size={16} color="#6B7280" />
+                  </TouchableOpacity>
+                )}
+              </View>
 
-            {/* Order Summary */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Order Summary</Text>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Delivery Fee</Text>
-                <Text style={styles.summaryValue}>
-                  {paymentMethod === 'cash' ? 'FREE' : `$${deliveryFee.toFixed(2)}`}
-                </Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryLabel}>Service Fee</Text>
-                <Text style={styles.summaryValue}>
-                  {paymentMethod === 'cash' ? 'FREE' : `$${serviceFee.toFixed(2)}`}
-                </Text>
-              </View>
-              <View style={[styles.summaryItem, styles.totalItem]}>
-                <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+              {/* Order Summary */}
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>Order Summary</Text>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryLabel}>Subtotal</Text>
+                  <Text style={styles.summaryValue}>{formatCurrency(subtotal)}</Text>
+                </View>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryLabel}>Delivery Fee</Text>
+                  <Text style={styles.summaryValue}>
+                    {paymentMethod === 'cash' ? 'FREE' : formatCurrency(deliveryFee)}
+                  </Text>
+                </View>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryLabel}>Service Fee</Text>
+                  <Text style={styles.summaryValue}>
+                    {paymentMethod === 'cash' ? 'FREE' : formatCurrency(serviceFee)}
+                  </Text>
+                </View>
+                <View style={[styles.summaryItem, styles.totalItem]}>
+                  <Text style={styles.totalLabel}>Total</Text>
+                  <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
+                </View>
               </View>
             </View>
           </ScrollView>
 
           {/* Checkout Button */}
-          <View style={styles.checkoutContainer}>
+          <View style={[styles.checkoutContainer, isLargeScreen && styles.largeScreenCheckoutContainer]}>
             <TouchableOpacity 
               style={styles.checkoutButton}
               onPress={handleCheckout}
@@ -313,93 +382,6 @@ export default function CartScreen() {
         </View>
       )}
 
-      {/* Location Selection Modal */}
-      <Modal
-        visible={locationModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setLocationModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Delivery Address</Text>
-              <TouchableOpacity onPress={() => setLocationModalVisible(false)}>
-                <X size={24} color="#1F2937" />
-              </TouchableOpacity>
-            </View>
-
-            {!customAddressMode ? (
-              <>
-                <Text style={styles.modalSubtitle}>Saved Addresses</Text>
-                {savedAddresses.map((item) => (
-                  <TouchableOpacity 
-                    key={item.id} 
-                    style={[
-                      styles.addressItem,
-                      selectedAddress === item.id && styles.selectedAddressItem
-                    ]}
-                    onPress={() => handleAddressSelect(item.id, item.address)}
-                  >
-                    <View style={styles.addressItemContent}>
-                      <MapPin size={20} color={selectedAddress === item.id ? "#FFFFFF" : "#FF5A5F"} />
-                      <View style={styles.addressItemText}>
-                        <Text style={[
-                          styles.addressText,
-                          selectedAddress === item.id && styles.selectedAddressText
-                        ]}>
-                          {item.address}
-                        </Text>
-                        {item.default && (
-                          <Text style={[
-                            styles.defaultText,
-                            selectedAddress === item.id && styles.selectedDefaultText
-                          ]}>
-                            Default
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity 
-                  style={styles.addAddressButton}
-                  onPress={() => setCustomAddressMode(true)}
-                >
-                  <Text style={styles.addAddressButtonText}>Add New Address</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <Text style={styles.modalSubtitle}>Enter New Address</Text>
-                <TextInput
-                  style={styles.addressInput}
-                  placeholder="Enter your full address"
-                  value={newAddress}
-                  onChangeText={setNewAddress}
-                  multiline
-                />
-                <View style={styles.addressButtonsRow}>
-                  <TouchableOpacity 
-                    style={[styles.addressActionButton, styles.cancelButton]}
-                    onPress={() => setCustomAddressMode(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.addressActionButton, styles.saveButton]}
-                    onPress={handleAddNewAddress}
-                  >
-                    <Text style={styles.saveButtonText}>Save</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
-
       {/* Payment Method Modal */}
       <Modal
         visible={paymentModalVisible}
@@ -408,7 +390,7 @@ export default function CartScreen() {
         onRequestClose={() => setPaymentModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isLargeScreen && styles.largeScreenModalContent]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Payment Method</Text>
               <TouchableOpacity onPress={() => setPaymentModalVisible(false)}>
@@ -443,36 +425,56 @@ export default function CartScreen() {
             </TouchableOpacity>
 
             <Text style={styles.modalSubtitle}>Saved Cards</Text>
-            {savedPaymentMethods.map((card) => (
-              <TouchableOpacity 
-                key={card.id} 
-                style={[
-                  styles.paymentMethodItem,
-                  paymentMethod === 'card' && selectedCardId === card.id && styles.selectedPaymentMethodItem
-                ]}
-                onPress={() => handleSelectPaymentMethod('card', card.id)}
-              >
-                <View style={styles.paymentMethodContent}>
-                  <CreditCard size={24} color={paymentMethod === 'card' && selectedCardId === card.id ? "#FFFFFF" : "#1F2937"} />
-                  <View style={styles.paymentMethodInfo}>
-                    <Text style={[
-                      styles.paymentMethodName,
-                      paymentMethod === 'card' && selectedCardId === card.id && styles.selectedPaymentMethodText
-                    ]}>
-                      {card.type} ending in {card.last4}
-                    </Text>
-                    {card.default && (
+            {paymentMethods.length > 0 ? (
+              paymentMethods.map((card) => (
+                <TouchableOpacity 
+                  key={card.id} 
+                  style={[
+                    styles.paymentMethodItem,
+                    paymentMethod === 'card' && selectedCardId === card.id && styles.selectedPaymentMethodItem
+                  ]}
+                  onPress={() => handleSelectPaymentMethod('card', card.id)}
+                >
+                  <View style={styles.paymentMethodContent}>
+                    <CreditCard size={24} color={paymentMethod === 'card' && selectedCardId === card.id ? "#FFFFFF" : "#1F2937"} />
+                    <View style={styles.paymentMethodInfo}>
                       <Text style={[
-                        styles.defaultText,
+                        styles.paymentMethodName,
                         paymentMethod === 'card' && selectedCardId === card.id && styles.selectedPaymentMethodText
                       ]}>
-                        Default
+                        {card.type} ending in {card.last4}
                       </Text>
-                    )}
+                      {card.is_default && (
+                        <Text style={[
+                          styles.defaultText,
+                          paymentMethod === 'card' && selectedCardId === card.id && styles.selectedPaymentMethodText
+                        ]}>
+                          Default
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                  {!card.is_default && (
+                    <View style={styles.paymentActions}>
+                      <TouchableOpacity 
+                        style={styles.paymentActionButton}
+                        onPress={() => setDefaultPaymentMethod(card.id)}
+                      >
+                        <Text style={styles.paymentActionText}>Set Default</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.paymentActionButton, styles.deleteButton]}
+                        onPress={() => deletePaymentMethod(card.id)}
+                      >
+                        <Text style={styles.deleteButtonText}>Delete</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={styles.noCardsText}>No saved cards. Add a new card below.</Text>
+            )}
 
             <TouchableOpacity 
               style={styles.addCardButton}
@@ -495,26 +497,28 @@ export default function CartScreen() {
         transparent={true}
         onRequestClose={() => setOrderPlacedModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.orderSuccessContainer}>
-              <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1576867757603-05b134ebc379?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60' }} 
-                style={styles.orderSuccessImage} 
-              />
-              <Text style={styles.orderSuccessTitle}>Order Placed!</Text>
-              <Text style={styles.orderSuccessText}>
-                Your order has been successfully placed and will be delivered to you soon.
-              </Text>
-              <TouchableOpacity 
-                style={styles.orderSuccessButton}
-                onPress={handleOrderComplete}
-              >
-                <Text style={styles.orderSuccessButtonText}>Track Your Order</Text>
-              </TouchableOpacity>
+        {orderPlacedModalVisible && (
+          <View style={styles.modalContainer}>
+            <View style={[styles.modalContent, isLargeScreen && styles.largeScreenModalContent]}>
+              <View style={styles.orderSuccessContainer}>
+                <Image 
+                  source={{ uri: 'https://images.unsplash.com/photo-1576867757603-05b134ebc379?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60' }} 
+                  style={styles.orderSuccessImage} 
+                />
+                <Text style={styles.orderSuccessTitle}>Order Placed!</Text>
+                <Text style={styles.orderSuccessText}>
+                  Your order has been successfully placed and will be delivered to you soon.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.orderSuccessButton}
+                  onPress={handleOrderComplete}
+                >
+                  <Text style={styles.orderSuccessButtonText}>Track Your Order</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        )}
       </Modal>
     </SafeAreaView>
   );
@@ -525,25 +529,67 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#EF4444',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#FF5A5F',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
   scrollView: {
     flex: 1,
+  },
+  largeScreenScrollView: {
+    paddingTop: 24,
+  },
+  cartContentContainer: {
+    padding: 16,
+  },
+  largeScreenCartContentContainer: {
+    maxWidth: 1200,
+    alignSelf: 'center',
+    width: '100%',
+    paddingHorizontal: 24,
   },
   cartItemsContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    margin: 16,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    marginBottom: 16,
   },
   cartItem: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
     paddingVertical: 16,
+  },
+  largeScreenCartItem: {
+    paddingVertical: 20,
   },
   itemImage: {
     width: 70,
@@ -560,6 +606,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     marginBottom: 4,
+  },
+  largeScreenItemName: {
+    fontSize: 18,
   },
   restaurantName: {
     fontSize: 14,
@@ -605,9 +654,8 @@ const styles = StyleSheet.create({
   deliveryAddressContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    margin: 16,
-    marginTop: 0,
-    padding: 16,
+    marginBottom: 16,
+    paddingBottom: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -615,27 +663,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   deliveryAddressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  deliveryAddressContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  deliveryAddressText: {
-    fontSize: 14,
-    color: '#4B5563',
-    marginLeft: 8,
-    flex: 1,
+    padding: 16,
+    paddingBottom: 8,
   },
   sectionContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    margin: 16,
-    marginTop: 0,
     padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -647,6 +682,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
     marginBottom: 16,
+  },
+  largeScreenSectionTitle: {
+    fontSize: 20,
   },
   paymentOptions: {
     flexDirection: 'row',
@@ -728,6 +766,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
   },
+  largeScreenCheckoutContainer: {
+    maxWidth: 1200,
+    alignSelf: 'center',
+    width: '100%',
+  },
   checkoutButton: {
     backgroundColor: '#FF5A5F',
     borderRadius: 8,
@@ -786,6 +829,19 @@ const styles = StyleSheet.create({
     padding: 20,
     maxHeight: '80%',
   },
+  largeScreenModalContent: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    marginTop: 100,
+    marginBottom: 100,
+    borderRadius: 20,
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -803,88 +859,6 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     marginBottom: 12,
     marginTop: 16,
-  },
-  addressItem: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  selectedAddressItem: {
-    backgroundColor: '#FF5A5F',
-  },
-  addressItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  addressItemText: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  addressText: {
-    fontSize: 16,
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  selectedAddressText: {
-    color: '#FFFFFF',
-  },
-  defaultText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  selectedDefaultText: {
-    color: '#FFFFFF',
-  },
-  addAddressButton: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  addAddressButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FF5A5F',
-  },
-  addressInput: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1F2937',
-    minHeight: 100,
-    textAlignVertical: 'top',
-    marginBottom: 16,
-  },
-  addressButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  addressActionButton: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#F3F4F6',
-    marginRight: 8,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  saveButton: {
-    backgroundColor: '#FF5A5F',
-    marginLeft: 8,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
   paymentMethodItem: {
     backgroundColor: '#F3F4F6',
@@ -914,6 +888,41 @@ const styles = StyleSheet.create({
   },
   selectedPaymentMethodText: {
     color: '#FFFFFF',
+  },
+  defaultText: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  paymentActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 8,
+  },
+  paymentActionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 8,
+  },
+  paymentActionText: {
+    fontSize: 12,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  deleteButton: {
+    backgroundColor: '#FEE2E2',
+  },
+  deleteButtonText: {
+    fontSize: 12,
+    color: '#EF4444',
+    fontWeight: '500',
+  },
+  noCardsText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 16,
   },
   addCardButton: {
     backgroundColor: '#F3F4F6',

@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, FlatList, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, FlatList, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronRight, Star, Clock, MapPin, X } from 'lucide-react-native';
+import { ChevronRight, Star, Clock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import AddressSelector from '../../components/AddressSelector';
+import DesktopHeader from '../../components/DesktopHeader';
+import { useCart } from '../../lib/hooks/useCart';
 
 // Mock data for featured restaurants
 const featuredRestaurants = [
@@ -69,20 +72,13 @@ const popularRestaurants = [
   },
 ];
 
-// Saved addresses
-const savedAddresses = [
-  { id: '1', address: '123 Main St, Anytown', default: true },
-  { id: '2', address: '456 Oak St, Anytown', default: false },
-  { id: '3', address: '789 Pine St, Anytown', default: false },
-];
-
 export default function HomeScreen() {
   const [address, setAddress] = useState('123 Main St, Anytown');
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState('1');
-  const [newAddress, setNewAddress] = useState('');
-  const [customAddressMode, setCustomAddressMode] = useState(false);
   const router = useRouter();
+  const dimensions = useWindowDimensions();
+  const isLargeScreen = dimensions.width >= 768;
+  const isExtraLargeScreen = dimensions.width >= 1200;
+  const { cartItems } = useCart();
 
   const handleRestaurantPress = (id) => {
     router.push(`/restaurant/${id}`);
@@ -102,217 +98,195 @@ export default function HomeScreen() {
     });
   };
 
-  const handleAddressSelect = (id, addressText) => {
-    setSelectedAddress(id);
-    setAddress(addressText);
-    setLocationModalVisible(false);
+  const handleAddressChange = (newAddress) => {
+    setAddress(newAddress);
   };
 
-  const handleAddNewAddress = () => {
-    if (newAddress.trim() === '') {
-      Alert.alert('Error', 'Please enter a valid address');
-      return;
-    }
-    
-    // In a real app, this would validate and save the address to the user's profile
-    setAddress(newAddress);
-    setLocationModalVisible(false);
-    Alert.alert('Success', 'New delivery address added');
+  const getCardWidth = () => {
+    if (isExtraLargeScreen) return 320;
+    if (isLargeScreen) return 280;
+    return 240;
+  };
+
+  const getGridColumns = () => {
+    if (isExtraLargeScreen) return 3;
+    if (isLargeScreen) return 2;
+    return 1;
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Desktop Header for large screens */}
+      {isLargeScreen && (
+        <DesktopHeader 
+          currentAddress={address} 
+          onAddressChange={handleAddressChange}
+          cartItemCount={cartItems?.length || 0}
+        />
+      )}
+
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Location Header */}
-        <TouchableOpacity 
-          style={styles.locationHeader}
-          onPress={() => setLocationModalVisible(true)}
-        >
-          <Text style={styles.locationLabel}>Delivering to</Text>
-          <View style={styles.locationRow}>
-            <MapPin size={16} color="#FF5A5F" style={styles.locationIcon} />
-            <Text style={styles.locationText}>{address}</Text>
-            <ChevronRight size={16} color="#6B7280" />
-          </View>
-        </TouchableOpacity>
-
-        {/* Featured Restaurants */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Featured Restaurants</Text>
-            <TouchableOpacity onPress={() => handleSeeAllPress('Featured Restaurants')}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
-            {featuredRestaurants.map((restaurant) => (
-              <TouchableOpacity 
-                key={restaurant.id} 
-                style={styles.restaurantCard}
-                onPress={() => handleRestaurantPress(restaurant.id)}
-              >
-                <Image source={{ uri: restaurant.image }} style={styles.restaurantImage} />
-                <View style={styles.restaurantInfo}>
-                  <Text style={styles.restaurantName}>{restaurant.name}</Text>
-                  <Text style={styles.restaurantCategory}>{restaurant.category}</Text>
-                  <View style={styles.restaurantMeta}>
-                    <View style={styles.ratingContainer}>
-                      <Star size={14} color="#FFD700" fill="#FFD700" />
-                      <Text style={styles.ratingText}>{restaurant.rating}</Text>
-                    </View>
-                    <View style={styles.timeContainer}>
-                      <Clock size={14} color="#6B7280" />
-                      <Text style={styles.timeText}>{restaurant.deliveryTime}</Text>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Categories */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Categories</Text>
-          </View>
-          <FlatList
-            data={categories}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={styles.categoryItem}
-                onPress={() => handleCategoryPress(item.name)}
-              >
-                <Image source={{ uri: item.icon }} style={styles.categoryIcon} />
-                <Text style={styles.categoryName}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
+        {/* Location Header - Only show on mobile */}
+        {!isLargeScreen && (
+          <AddressSelector 
+            onSelectAddress={handleAddressChange}
+            currentAddress={address}
           />
-        </View>
+        )}
 
-        {/* Popular Restaurants */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Popular Near You</Text>
-            <TouchableOpacity onPress={() => handleSeeAllPress('Popular Restaurants')}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          {popularRestaurants.map((restaurant) => (
-            <TouchableOpacity 
-              key={restaurant.id} 
-              style={styles.popularRestaurantCard}
-              onPress={() => handleRestaurantPress(restaurant.id)}
-            >
-              <Image source={{ uri: restaurant.image }} style={styles.popularRestaurantImage} />
-              <View style={styles.popularRestaurantInfo}>
-                <Text style={styles.restaurantName}>{restaurant.name}</Text>
-                <Text style={styles.restaurantCategory}>{restaurant.category}</Text>
-                <View style={styles.restaurantMeta}>
-                  <View style={styles.ratingContainer}>
-                    <Star size={14} color="#FFD700" fill="#FFD700" />
-                    <Text style={styles.ratingText}>{restaurant.rating}</Text>
-                  </View>
-                  <View style={styles.timeContainer}>
-                    <Clock size={14} color="#6B7280" />
-                    <Text style={styles.timeText}>{restaurant.deliveryTime}</Text>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* Location Selection Modal */}
-      <Modal
-        visible={locationModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setLocationModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Delivery Address</Text>
-              <TouchableOpacity onPress={() => setLocationModalVisible(false)}>
-                <X size={24} color="#1F2937" />
+        <View style={[styles.contentContainer, isLargeScreen && styles.largeScreenContentContainer]}>
+          {/* Featured Restaurants */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, isLargeScreen && styles.largeScreenSectionTitle]}>Featured Restaurants</Text>
+              <TouchableOpacity onPress={() => handleSeeAllPress('Featured Restaurants')}>
+                <Text style={styles.seeAllText}>See All</Text>
               </TouchableOpacity>
             </View>
-
-            {!customAddressMode ? (
-              <>
-                <Text style={styles.modalSubtitle}>Saved Addresses</Text>
-                {savedAddresses.map((item) => (
-                  <TouchableOpacity 
-                    key={item.id} 
-                    style={[
-                      styles.addressItem,
-                      selectedAddress === item.id && styles.selectedAddressItem
-                    ]}
-                    onPress={() => handleAddressSelect(item.id, item.address)}
-                  >
-                    <View style={styles.addressItemContent}>
-                      <MapPin size={20} color={selectedAddress === item.id ? "#FFFFFF" : "#FF5A5F"} />
-                      <View style={styles.addressItemText}>
-                        <Text style={[
-                          styles.addressText,
-                          selectedAddress === item.id && styles.selectedAddressText
-                        ]}>
-                          {item.address}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScrollView}>
+              {featuredRestaurants.map((restaurant) => (
+                <TouchableOpacity 
+                  key={restaurant.id} 
+                  style={[styles.restaurantCard, { width: getCardWidth() }]}
+                  onPress={() => handleRestaurantPress(restaurant.id)}
+                >
+                  <Image source={{ uri: restaurant.image }} style={styles.restaurantImage} />
+                  <View style={styles.restaurantInfo}>
+                    <Text style={[styles.restaurantName, isLargeScreen && styles.largeScreenText]}>
+                      {restaurant.name}
+                    </Text>
+                    <Text style={[styles.restaurantCategory, isLargeScreen && styles.largeScreenSubText]}>
+                      {restaurant.category}
+                    </Text>
+                    <View style={styles.restaurantMeta}>
+                      <View style={styles.ratingContainer}>
+                        <Star size={isLargeScreen ? 16 : 14} color="#FFD700" fill="#FFD700" />
+                        <Text style={[styles.ratingText, isLargeScreen && styles.largeScreenSubText]}>
+                          {restaurant.rating}
                         </Text>
-                        {item.default && (
-                          <Text style={[
-                            styles.defaultText,
-                            selectedAddress === item.id && styles.selectedDefaultText
-                          ]}>
-                            Default
+                      </View>
+                      <View style={styles.timeContainer}>
+                        <Clock size={isLargeScreen ? 16 : 14} color="#6B7280" />
+                        <Text style={[styles.timeText, isLargeScreen && styles.largeScreenSubText]}>
+                          {restaurant.deliveryTime}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Categories */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, isLargeScreen && styles.largeScreenSectionTitle]}>Categories</Text>
+            </View>
+            <FlatList
+              data={categories}
+              horizontal={!isLargeScreen}
+              numColumns={isLargeScreen ? 5 : 1}
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={[
+                    styles.categoryItem, 
+                    isLargeScreen && styles.largeScreenCategoryItem
+                  ]}
+                  onPress={() => handleCategoryPress(item.name)}
+                >
+                  <Image 
+                    source={{ uri: item.icon }} 
+                    style={[
+                      styles.categoryIcon,
+                      isLargeScreen && styles.largeScreenCategoryIcon
+                    ]} 
+                  />
+                  <Text style={[
+                    styles.categoryName,
+                    isLargeScreen && styles.largeScreenCategoryName
+                  ]}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={isLargeScreen && styles.categoriesGrid}
+            />
+          </View>
+
+          {/* Popular Restaurants */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, isLargeScreen && styles.largeScreenSectionTitle]}>Popular Near You</Text>
+              <TouchableOpacity onPress={() => handleSeeAllPress('Popular Restaurants')}>
+                <Text style={styles.seeAllText}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {isLargeScreen ? (
+              <View style={styles.popularGrid}>
+                {popularRestaurants.map((restaurant) => (
+                  <TouchableOpacity 
+                    key={restaurant.id} 
+                    style={[styles.popularRestaurantCard, styles.gridCard]}
+                    onPress={() => handleRestaurantPress(restaurant.id)}
+                  >
+                    <Image source={{ uri: restaurant.image }} style={styles.gridCardImage} />
+                    <View style={styles.popularRestaurantInfo}>
+                      <Text style={[styles.restaurantName, isLargeScreen && styles.largeScreenText]}>
+                        {restaurant.name}
+                      </Text>
+                      <Text style={[styles.restaurantCategory, isLargeScreen && styles.largeScreenSubText]}>
+                        {restaurant.category}
+                      </Text>
+                      <View style={styles.restaurantMeta}>
+                        <View style={styles.ratingContainer}>
+                          <Star size={isLargeScreen ? 16 : 14} color="#FFD700" fill="#FFD700" />
+                          <Text style={[styles.ratingText, isLargeScreen && styles.largeScreenSubText]}>
+                            {restaurant.rating}
                           </Text>
-                        )}
+                        </View>
+                        <View style={styles.timeContainer}>
+                          <Clock size={isLargeScreen ? 16 : 14} color="#6B7280" />
+                          <Text style={[styles.timeText, isLargeScreen && styles.largeScreenSubText]}>
+                            {restaurant.deliveryTime}
+                          </Text>
+                        </View>
                       </View>
                     </View>
                   </TouchableOpacity>
                 ))}
-
-                <TouchableOpacity 
-                  style={styles.addAddressButton}
-                  onPress={() => setCustomAddressMode(true)}
-                >
-                  <Text style={styles.addAddressButtonText}>Add New Address</Text>
-                </TouchableOpacity>
-              </>
+              </View>
             ) : (
-              <>
-                <Text style={styles.modalSubtitle}>Enter New Address</Text>
-                <TextInput
-                  style={styles.addressInput}
-                  placeholder="Enter your full address"
-                  value={newAddress}
-                  onChangeText={setNewAddress}
-                  multiline
-                />
-                <View style={styles.addressButtonsRow}>
-                  <TouchableOpacity 
-                    style={[styles.addressActionButton, styles.cancelButton]}
-                    onPress={() => setCustomAddressMode(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.addressActionButton, styles.saveButton]}
-                    onPress={handleAddNewAddress}
-                  >
-                    <Text style={styles.saveButtonText}>Save</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
+              popularRestaurants.map((restaurant) => (
+                <TouchableOpacity 
+                  key={restaurant.id} 
+                  style={styles.popularRestaurantCard}
+                  onPress={() => handleRestaurantPress(restaurant.id)}
+                >
+                  <Image source={{ uri: restaurant.image }} style={styles.popularRestaurantImage} />
+                  <View style={styles.popularRestaurantInfo}>
+                    <Text style={styles.restaurantName}>{restaurant.name}</Text>
+                    <Text style={styles.restaurantCategory}>{restaurant.category}</Text>
+                    <View style={styles.restaurantMeta}>
+                      <View style={styles.ratingContainer}>
+                        <Star size={14} color="#FFD700" fill="#FFD700" />
+                        <Text style={styles.ratingText}>{restaurant.rating}</Text>
+                      </View>
+                      <View style={styles.timeContainer}>
+                        <Clock size={14} color="#6B7280" />
+                        <Text style={styles.timeText}>{restaurant.deliveryTime}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
             )}
           </View>
         </View>
-      </Modal>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -322,45 +296,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
-  locationHeader: {
+  contentContainer: {
     padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
-  locationLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  locationIcon: {
-    marginRight: 4,
-  },
-  locationText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginRight: 4,
-    flex: 1,
+  largeScreenContentContainer: {
+    maxWidth: 1200,
+    alignSelf: 'center',
+    width: '100%',
+    paddingHorizontal: 24,
+    paddingTop: 24,
   },
   sectionContainer: {
-    marginTop: 16,
-    paddingHorizontal: 16,
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1F2937',
+  },
+  largeScreenSectionTitle: {
+    fontSize: 24,
   },
   seeAllText: {
     fontSize: 14,
@@ -429,16 +390,36 @@ const styles = StyleSheet.create({
     marginRight: 24,
     width: 70,
   },
+  largeScreenCategoryItem: {
+    width: '20%',
+    marginRight: 0,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+  },
   categoryIcon: {
     width: 60,
     height: 60,
     borderRadius: 30,
     marginBottom: 8,
   },
+  largeScreenCategoryIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
   categoryName: {
     fontSize: 14,
     color: '#1F2937',
     textAlign: 'center',
+  },
+  largeScreenCategoryName: {
+    fontSize: 16,
+    marginTop: 8,
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
   },
   popularRestaurantCard: {
     flexDirection: 'row',
@@ -462,115 +443,25 @@ const styles = StyleSheet.create({
     padding: 12,
     justifyContent: 'center',
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  modalHeader: {
+  popularGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  modalSubtitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4B5563',
-    marginBottom: 12,
-  },
-  addressItem: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  selectedAddressItem: {
-    backgroundColor: '#FF5A5F',
-  },
-  addressItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  addressItemText: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  addressText: {
-    fontSize: 16,
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  selectedAddressText: {
-    color: '#FFFFFF',
-  },
-  defaultText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  selectedDefaultText: {
-    color: '#FFFFFF',
-  },
-  addAddressButton: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  addAddressButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FF5A5F',
-  },
-  addressInput: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1F2937',
-    minHeight: 100,
-    textAlignVertical: 'top',
+  gridCard: {
+    flexDirection: 'column',
+    width: '48%',
     marginBottom: 16,
   },
-  addressButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  gridCardImage: {
+    width: '100%',
+    height: 160,
+    resizeMode: 'cover',
   },
-  addressActionButton: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
+  largeScreenText: {
+    fontSize: 18,
   },
-  cancelButton: {
-    backgroundColor: '#F3F4F6',
-    marginRight: 8,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  saveButton: {
-    backgroundColor: '#FF5A5F',
-    marginLeft: 8,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+  largeScreenSubText: {
+    fontSize: 15,
   },
 });

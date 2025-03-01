@@ -4,6 +4,22 @@ Door Dash clone, but open source and with "0" fees.
 
 Instead of being a man in the middle everything works peer to peer, which simplifies a lot of things.
 
+## Preview / Demo Server
+
+### Backend Server
+https://eats-backend.a42.ch
+
+### Frontend Server
+https://eats.a42.ch
+
+### Credentials
+
+- Admin: admin@example.com / password
+- Customer: customer@example.com / password
+- Restaurant: restaurant@example.com / password
+- Driver: driver@example.com / password
+
+
 
 ## Project Structure
 
