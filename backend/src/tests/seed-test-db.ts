@@ -1,216 +1,283 @@
 /* eslint-disable no-console */
 
-import { PrismaClient, type UserRoleValue } from "@prisma/client";
+import type {
+  DeliveryStatus,
+  OrderStatus,
+  UserRoleValue,
+} from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
 
+import {
+  testAddresses,
+  testDeliveries,
+  testMenuItems,
+  testOrderItems,
+  testOrders,
+  testRestaurants,
+  testUsers,
+} from "@/lib/examples/data";
+
+// Create a new PrismaClient instance for seeding
 const prisma = new PrismaClient();
 
 /**
  * Seeds the test database with standard test data
  */
-async function seedTestDatabase(): Promise<Record<string, unknown>> {
-  console.log("Seeding test database...");
+export async function seedTestDatabase(): Promise<void> {
+  console.log("🌱 Seeding test database...");
 
   try {
-    console.log("Clearing existing test data...");
+    // Clear existing data
+    await prisma.$transaction([
+      prisma.orderItem.deleteMany(),
+      prisma.order.deleteMany(),
+      prisma.cartItem.deleteMany(),
+      prisma.menuItem.deleteMany(),
+      prisma.delivery.deleteMany(),
+      prisma.restaurant.deleteMany(),
+      prisma.userRole.deleteMany(),
+      prisma.address.deleteMany(),
+      prisma.user.deleteMany(),
+    ]);
 
-    // Fix: Use sequential deletes rather than transaction
-    // This is safer when we don't know all constraints
-    try {
-      // Delete tables in reverse order of dependency
-      await prisma.orderItem.deleteMany();
-      console.log("Cleared orderItems");
+    // Create users (no roles)
+    const createdUsers = {};
+    if (testUsers && Array.isArray(testUsers)) {
+      for (const user of testUsers) {
+        const hashedPassword = await hash(user.password, 10);
 
-      await prisma.order.deleteMany();
-      console.log("Cleared orders");
+        try {
+          const createdUser = await prisma.user.create({
+            data: {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              password: hashedPassword,
+            },
+          });
 
-      await prisma.cartItem.deleteMany();
-      console.log("Cleared cartItems");
+          createdUsers[user.id] = createdUser;
+          console.log(`👤 Created user: ${user.name} (${user.email})`);
 
-      await prisma.menuItem.deleteMany();
-      console.log("Cleared menuItems");
-
-      // Check if the earning table exists before trying to clear it
-      // This will help diagnose schema issues
-      try {
-        await prisma.earning.deleteMany();
-        console.log("Cleared earnings");
-      } catch (err) {
-        console.log("Error clearing earnings table:", err);
-        // Continue anyway - this table might be misconfigured
+          // Add user roles
+          if (user.roleValue) {
+            await prisma.userRole.create({
+              data: {
+                userId: createdUser.id,
+                role: user.roleValue as UserRoleValue,
+              },
+            });
+            console.log(`👑 Added role ${user.roleValue} to ${user.email}`);
+          }
+        } catch (userError) {
+          console.error(`Failed to create user ${user.email}:`, userError);
+          throw userError;
+        }
       }
-
-      await prisma.delivery.deleteMany();
-      console.log("Cleared deliveries");
-
-      await prisma.restaurant.deleteMany();
-      console.log("Cleared restaurants");
-
-      await prisma.driver.deleteMany();
-      console.log("Cleared drivers");
-
-      await prisma.userRole.deleteMany();
-      console.log("Cleared userRoles");
-
-      await prisma.session.deleteMany();
-      console.log("Cleared sessions");
-
-      await prisma.address.deleteMany();
-      console.log("Cleared addresses");
-
-      await prisma.user.deleteMany();
-      console.log("Cleared users");
-    } catch (clearError) {
-      console.error("Error during database clearing:", clearError);
-      // Continue with seeding - in test environment we can proceed
+      console.log(`✅ Created ${testUsers.length} test users`);
+    } else {
+      console.log("⚠️ No test users found in test data");
     }
 
-    // Generate unique IDs for this test run to avoid conflicts
-    const testIdPrefix = uuidv4().substring(0, 8);
+    // Create test addresses
+    if (testAddresses && Array.isArray(testAddresses)) {
+      const addresses = [];
+      for (const address of testAddresses) {
+        try {
+          // Create combined address string from individual components
+          const fullAddress = `${address.street}, ${address.city}, ${address.state} ${address.zipCode}, ${address.country}`;
 
-    console.log("Creating test users...");
-    // Create test password
-    const testPassword = await hash("password123", 10);
+          const createdAddress = await prisma.address.create({
+            data: {
+              id: address.id,
+              label: address.label,
+              address: address.address || fullAddress, // Use provided address or generate it
+              userId: address.userId,
+            },
+          });
 
-    // Use upsert instead of create to handle multiple test workers
-    const testCustomer = await prisma.user.upsert({
-      where: { email: "customer@example.com" },
-      update: {
-        // Only update if needed
-        name: "Test Customer",
-        // Don't re-hash password on update
-      },
-      create: {
-        id: `customer-${testIdPrefix}`,
-        name: "Test Customer",
-        email: "customer@example.com",
-        password: testPassword,
-      },
-    });
+          addresses.push(createdAddress);
+          console.log(`📍 Created address: ${fullAddress}`);
+        } catch (error) {
+          console.error(`Failed to create address:`, error);
+        }
+      }
+      console.log(`✅ Created ${addresses.length} test addresses`);
+    }
 
-    const testRestaurant = await prisma.user.upsert({
-      where: { email: "restaurant@example.com" },
-      update: { name: "Test Restaurant User" },
-      create: {
-        id: `restaurant-${testIdPrefix}`,
-        name: "Test Restaurant User",
-        email: "restaurant@example.com",
-        password: testPassword,
-      },
-    });
+    // Create test restaurants
+    if (testRestaurants && Array.isArray(testRestaurants)) {
+      const restaurants = [];
 
-    const testDriver = await prisma.user.upsert({
-      where: { email: "driver@example.com" },
-      update: { name: "Test Driver" },
-      create: {
-        id: `driver-${testIdPrefix}`,
-        name: "Test Driver",
-        email: "driver@example.com",
-        password: testPassword,
-      },
-    });
+      for (const restaurant of testRestaurants) {
+        try {
+          const createdRestaurant = await prisma.restaurant.create({
+            data: {
+              id: restaurant.id,
+              name: restaurant.name,
+              description: restaurant.description,
+              image: restaurant.image,
+              address: restaurant.address,
+              phone: restaurant.phone,
+              email: restaurant.email,
+              cuisine: restaurant.cuisine,
+              rating: restaurant.rating,
+              isOpen: restaurant.isOpen,
+              userId: restaurant.ownerId, // Connect to owner
+            },
+          });
 
-    const testAdmin = await prisma.user.upsert({
-      where: { email: "admin@example.com" },
-      update: { name: "Test Admin" },
-      create: {
-        id: `admin-${testIdPrefix}`,
-        name: "Test Admin",
-        email: "admin@example.com",
-        password: testPassword,
-      },
-    });
+          restaurants.push(createdRestaurant);
+          console.log(`🍽️ Created restaurant: ${restaurant.name}`);
+        } catch (error) {
+          console.error(
+            `Failed to create restaurant ${restaurant.name}:`,
+            error,
+          );
+        }
+      }
 
-    console.log("Creating user roles...");
-    // First delete existing roles to avoid duplicates
-    await prisma.userRole.deleteMany({
-      where: {
-        userId: {
-          in: [testCustomer.id, testRestaurant.id, testDriver.id, testAdmin.id],
-        },
-      },
-    });
+      console.log(`✅ Created ${restaurants.length} test restaurants`);
+    }
 
-    // Create user roles
-    await prisma.userRole.create({
-      data: {
-        userId: testCustomer.id,
-        role: "CUSTOMER" as UserRoleValue,
-      },
-    });
-
-    await prisma.userRole.create({
-      data: {
-        userId: testRestaurant.id,
-        role: "RESTAURANT_ADMIN" as UserRoleValue,
-      },
-    });
-
-    await prisma.userRole.create({
-      data: {
-        userId: testDriver.id,
-        role: "DRIVER" as UserRoleValue,
-      },
-    });
-
-    await prisma.userRole.create({
-      data: {
-        userId: testAdmin.id,
-        role: "ADMIN" as UserRoleValue,
-      },
-    });
-
-    console.log("Creating test restaurant...");
-    // Create test restaurant
-    const restaurant = await prisma.restaurant.create({
-      data: {
-        id: `restaurant-${testIdPrefix}`,
-        name: "Test Restaurant",
-        description: "Restaurant for testing",
-        address: "123 Test Street",
-        userId: testRestaurant.id,
-        image: "/test-image.jpg",
-        rating: 4.5,
-        phone: "555-123-4567",
-        email: "restaurant@example.com",
-        cuisine: "Italian",
-      },
-    });
-
-    console.log("Creating test menu items...");
     // Create test menu items
-    const menuItem = await prisma.menuItem.create({
-      data: {
-        id: `menuitem-${testIdPrefix}`,
-        name: "Test Pizza",
-        description: "A delicious test pizza",
-        price: 12.99,
-        category: "Main",
-        image: "/test-food.jpg",
-        restaurantId: restaurant.id,
-      },
-    });
+    if (testMenuItems && Array.isArray(testMenuItems)) {
+      const menuItems = [];
+      for (const menuItem of testMenuItems) {
+        try {
+          const createdMenuItem = await prisma.menuItem.create({
+            data: {
+              id: menuItem.id,
+              name: menuItem.name,
+              description: menuItem.description,
+              price: menuItem.price,
+              image: menuItem.image,
+              category: menuItem.category,
+              restaurantId: menuItem.restaurantId,
+              isAvailable: menuItem.isAvailable,
+            },
+          });
 
-    console.log("Test database seeded successfully!");
+          menuItems.push(createdMenuItem);
+          console.log(`🍕 Created menu item: ${menuItem.name}`);
+        } catch (error) {
+          console.error(`Failed to create menu item ${menuItem.name}:`, error);
+        }
+      }
 
-    // Return data that tests might need
-    const testData = {
-      users: {
-        customer: testCustomer,
-        restaurant: testRestaurant,
-        driver: testDriver,
-        admin: testAdmin,
-      },
-      restaurant,
-      menuItem,
-    };
+      console.log(`✅ Created ${menuItems.length} test menu items`);
+    }
 
-    return testData;
+    // Create test orders
+    if (testOrders && Array.isArray(testOrders)) {
+      const orders = [];
+
+      for (const order of testOrders) {
+        try {
+          // For each order, find the address to use as text
+          const deliveryAddress = testAddresses.find(
+            (addr) => addr.id === order.deliveryAddressId,
+          );
+          const addressText = deliveryAddress
+            ? deliveryAddress.address
+            : "Default Address";
+
+          const createdOrder = await prisma.order.create({
+            data: {
+              id: order.id,
+              total: order.total,
+              tax: order.tax,
+              deliveryFee: order.deliveryFee,
+              status: order.status as OrderStatus,
+              customerId: order.customerId,
+              restaurantId: order.restaurantId,
+              createdAt: order.createdAt
+                ? new Date(order.createdAt)
+                : undefined,
+              deliveredAt: order.deliveredAt
+                ? new Date(order.deliveredAt)
+                : null,
+              address: addressText,
+            },
+          });
+
+          orders.push(createdOrder);
+          console.log(`🛒 Created order: ${order.id}`);
+        } catch (error) {
+          console.error(`Failed to create order ${order.id}:`, error);
+        }
+      }
+
+      console.log(`✅ Created ${orders.length} test orders`);
+    }
+
+    // Create test order items - only after orders exist
+    if (testOrderItems && Array.isArray(testOrderItems)) {
+      const orderItems = [];
+
+      for (const item of testOrderItems) {
+        try {
+          const createdItem = await prisma.orderItem.create({
+            data: {
+              id: item.id,
+              quantity: item.quantity,
+              price: item.price,
+              menuItemId: item.menuItemId,
+              orderId: item.orderId,
+            },
+          });
+
+          orderItems.push(createdItem);
+          console.log(`🍔 Created order item: ${item.id}`);
+        } catch (error) {
+          console.error(`Failed to create order item ${item.id}:`, error);
+        }
+      }
+
+      console.log(`✅ Created ${orderItems.length} test order items`);
+    }
+
+    // Create test deliveries
+    if (testDeliveries && Array.isArray(testDeliveries)) {
+      const deliveries = [];
+
+      for (const delivery of testDeliveries) {
+        try {
+          const createdDelivery = await prisma.delivery.create({
+            data: {
+              id: delivery.id,
+              orderId: delivery.orderId,
+              status: delivery.status as DeliveryStatus,
+              estimatedDelivery: delivery.estimatedDelivery
+                ? new Date(delivery.estimatedDelivery)
+                : null,
+              estimatedTime: delivery.estimatedTime,
+              distance: delivery.distance,
+              tip: delivery.tip,
+              pickupLat: delivery.pickupLat,
+              pickupLng: delivery.pickupLng,
+              dropoffLat: delivery.dropoffLat,
+              dropoffLng: delivery.dropoffLng,
+            },
+          });
+
+          deliveries.push(createdDelivery);
+          console.log(`🚚 Created delivery: ${delivery.id}`);
+        } catch (error) {
+          console.error(`Failed to create delivery ${delivery.id}:`, error);
+        }
+      }
+
+      console.log(`✅ Created ${deliveries.length} test deliveries`);
+    }
+
+    console.log("✅ Test database seeded successfully!");
   } catch (error) {
     console.error("Error seeding test database:", error);
     throw error;
   } finally {
+    // Disconnect prisma client to avoid hanging connections
     await prisma.$disconnect();
   }
 }

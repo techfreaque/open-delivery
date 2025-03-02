@@ -5,8 +5,6 @@ import { afterAll, beforeAll } from "vitest";
 import { signJwt } from "@/lib/auth/jwt";
 import { env } from "@/lib/env";
 
-import { getBaseUrl } from "./test-server";
-
 // Add at the beginning:
 const DEBUG = env.DEBUG_TESTS === "true";
 
@@ -32,9 +30,6 @@ const prisma = new PrismaClient();
 // Setup global test database
 beforeAll(async () => {
   try {
-    // Get URL from environment (set by global-setup.ts)
-    const testBaseUrl = getBaseUrl();
-
     // Get database entries needed for tests
     const users = await prisma.user.findMany();
     const customer = users.find(
@@ -44,8 +39,10 @@ beforeAll(async () => {
     const restaurantOwner = users.find(
       (user) => user.email === "restaurant@example.com",
     );
+    const driver = users.find((user) => user.email === "driver@example.com");
+    const admin = users.find((user) => user.email === "admin@example.com");
 
-    if (!customer || !restaurant || !restaurantOwner) {
+    if (!customer || !restaurant || !restaurantOwner || !driver || !admin) {
       throw new Error(
         "Test data not found. Make sure database was seeded correctly.",
       );
@@ -75,15 +72,44 @@ beforeAll(async () => {
       restaurantId: restaurant.id,
     });
 
+    // Create driver token
+    const driverToken = await signJwt({
+      id: driver.id,
+      email: driver.email,
+      name: driver.name,
+      roles: [UserRoleValue.DRIVER],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // Create admin token
+    const adminToken = await signJwt({
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      roles: [UserRoleValue.ADMIN],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
     debugLog(
       `Generated customer token (first 30 chars): ${customerToken.substring(0, 30)}`,
     );
 
     // Expose test data and tokens to global scope
-    global.testBaseUrl = testBaseUrl;
-    global.testData = { customer, restaurant, restaurantOwner };
+    global.testData = { customer, restaurant, restaurantOwner, driver, admin };
     global.customerAuthToken = customerToken;
     global.restaurantAuthToken = restaurantToken;
+    global.driverAuthToken = driverToken;
+    global.adminAuthToken = adminToken;
+
+    // Set all tokens in one object for convenience
+    global.testTokens = {
+      customerAuthToken: customerToken,
+      restaurantAuthToken: restaurantToken,
+      driverAuthToken: driverToken,
+      adminAuthToken: adminToken,
+    };
   } catch (error) {
     console.error("Test setup failed:", error);
     throw error;

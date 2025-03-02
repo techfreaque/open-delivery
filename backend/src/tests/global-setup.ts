@@ -8,49 +8,58 @@ import { PrismaClient } from "@prisma/client";
 import seedTestDatabase from "./seed-test-db";
 import { startServer } from "./test-server";
 
+// Create a single PrismaClient instance
 const prisma = new PrismaClient();
 
-export async function setup(): Promise<{
-  baseUrl: string;
-}> {
-  // First clean up database
-  await cleanDatabase();
+export default async function setup() {
+  try {
+    // First clean up database
+    await cleanDatabase();
 
-  // Start the test server
-  const baseUrl = await startServer(4000);
-  console.log(`Test server started at ${baseUrl}`);
+    // Start the test server
+    await startServer();
 
-  // Seed the database (only once)
-  await seedTestDatabase();
+    // Seed the database (only once)
+    await seedTestDatabase();
 
-  // Set global URL for all tests to use
-  process.env.TEST_SERVER_URL = baseUrl;
+    // Set global URL for all tests to use
 
-  return {
-    baseUrl,
-  };
-}
-
-export async function teardown(): Promise<void> {
-  await prisma.$disconnect();
+    // Return a teardown function that will be run after all tests
+    return (): void => {
+      console.log("Global setup teardown function called");
+      // The actual teardown logic is in global-teardown.ts
+    };
+  } catch (error) {
+    console.error("Error during test setup:", error);
+    // Make sure to disconnect Prisma on error
+    await prisma.$disconnect().catch(console.error);
+    throw error;
+  }
 }
 
 async function cleanDatabase(): Promise<void> {
   // Clear all data to start fresh
   console.log("Cleaning database before tests...");
 
-  await prisma.orderItem.deleteMany({});
-  await prisma.order.deleteMany({});
-  await prisma.cartItem.deleteMany({});
-  await prisma.menuItem.deleteMany({});
-  await prisma.earning.deleteMany({});
-  await prisma.delivery.deleteMany({});
-  await prisma.restaurant.deleteMany({});
-  await prisma.driver.deleteMany({});
-  await prisma.userRole.deleteMany({});
-  await prisma.session.deleteMany({});
-  await prisma.address.deleteMany({});
-  await prisma.user.deleteMany({});
+  try {
+    await prisma.$transaction([
+      prisma.orderItem.deleteMany({}),
+      prisma.order.deleteMany({}),
+      prisma.cartItem.deleteMany({}),
+      prisma.menuItem.deleteMany({}),
+      prisma.earning.deleteMany({}),
+      prisma.delivery.deleteMany({}),
+      prisma.restaurant.deleteMany({}),
+      prisma.driver.deleteMany({}),
+      prisma.userRole.deleteMany({}),
+      prisma.session.deleteMany({}),
+      prisma.address.deleteMany({}),
+      prisma.user.deleteMany({}),
+    ]);
 
-  console.log("Database cleaned successfully");
+    console.log("Database cleaned successfully");
+  } catch (error) {
+    console.error("Error cleaning database:", error);
+    throw error;
+  }
 }

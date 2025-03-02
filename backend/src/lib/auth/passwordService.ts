@@ -9,7 +9,10 @@ import type {
  */
 export async function requestPasswordReset(
   data: ResetPasswordResetRequestData,
-) {
+): Promise<{
+  success: boolean;
+  token?: string; // Remove undefined from token since we actually return it
+}> {
   const { email } = data;
 
   // Check if user exists
@@ -80,7 +83,7 @@ export async function verifyAndResetPassword(
   return { success: true };
 }
 
-function generateResetToken() {
+function generateResetToken(): string {
   return (
     Math.random().toString(36).substring(2, 15) +
     Math.random().toString(36).substring(2, 15)

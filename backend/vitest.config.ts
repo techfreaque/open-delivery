@@ -34,5 +34,6 @@ export default defineConfig({
         singleThread: true,
       },
     },
+    mockReset: true,
   },
 });

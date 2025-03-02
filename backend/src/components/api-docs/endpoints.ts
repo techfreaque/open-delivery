@@ -1,3 +1,4 @@
+import { examples } from "@/lib/examples/data";
 import {
   addressCreateSchema,
   addressResponseSchema,
@@ -46,6 +47,10 @@ export const ENDPOINTS: ApiEndpoint[] = [
       403: "Forbidden - Insufficient permissions",
       500: "Internal Server Error",
     },
+    // Add examples from the examples object
+    examples: {
+      default: examples.restaurants,
+    },
   },
   {
     path: "/api/v1/restaurants/{id}",
@@ -58,6 +63,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       404: "Not Found - Restaurant does not exist",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: { id: "550e8400-e29b-41d4-a716-446655440000" },
     },
   },
   {
@@ -74,6 +82,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       403: "Forbidden - Insufficient permissions",
       500: "Internal Server Error",
     },
+    examples: {
+      default: examples.restaurants[0],
+    },
   },
   {
     path: "/api/v1/menu-items",
@@ -89,6 +100,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       404: "Not Found - Restaurant not found",
       500: "Internal Server Error",
     },
+    examples: {
+      default: { restaurantId: "550e8400-e29b-41d4-a716-446655440000" },
+    },
   },
   {
     path: "/api/v1/menu-items/{id}",
@@ -101,6 +115,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       404: "Not Found - Menu item does not exist",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: { id: "550e8400-e29b-41d4-a716-446655440001" },
     },
   },
   {
@@ -117,6 +134,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       403: "Forbidden - Not authorized to add menu items",
       500: "Internal Server Error",
     },
+    examples: {
+      default: examples.menuItems[0],
+    },
   },
   {
     path: "/api/v1/orders",
@@ -132,6 +152,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       404: "Not Found - Restaurant not found",
       500: "Internal Server Error",
     },
+    examples: {
+      default: examples.orders[0],
+    },
   },
   {
     path: "/api/v1/orders/{id}",
@@ -145,6 +168,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       403: "Forbidden - Not authorized to view this order",
       404: "Not Found - Order does not exist",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: { id: "550e8400-e29b-41d4-a716-446655440003" },
     },
   },
   {
@@ -161,6 +187,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       409: "Conflict - User is already registered as a driver",
       500: "Internal Server Error",
     },
+    examples: {
+      default: examples.drivers[0],
+    },
   },
   {
     path: "/api/v1/drivers/{id}",
@@ -173,6 +202,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       404: "Not Found - Driver not found",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: { id: "550e8400-e29b-41d4-a716-446655440004" },
     },
   },
   {
@@ -189,6 +221,12 @@ export const ENDPOINTS: ApiEndpoint[] = [
       404: "Not Found - Order not found",
       500: "Internal Server Error",
     },
+    examples: {
+      default: {
+        ...examples.deliveries[0],
+        orderId: "550e8400-e29b-41d4-a716-446655440003",
+      },
+    },
   },
   {
     path: "/api/v1/deliveries/{id}",
@@ -201,6 +239,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       404: "Not Found - Delivery not found",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: { id: "550e8400-e29b-41d4-a716-446655440005" },
     },
   },
   {
@@ -216,6 +257,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       500: "Internal Server Error",
     },
+    examples: {
+      default: examples.addresses[0],
+    },
   },
   {
     path: "/api/v1/addresses/{id}",
@@ -228,6 +272,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       404: "Not Found - Address not found",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: { id: "550e8400-e29b-41d4-a716-446655440006" },
     },
   },
   // Authentication endpoints
@@ -244,6 +291,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Invalid email or password",
       500: "Internal Server Error",
     },
+    examples: {
+      default: examples.auth.login,
+    },
   },
   {
     path: "/api/v1/auth/register",
@@ -257,6 +307,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       400: "Bad Request - Invalid registration data",
       409: "Conflict - Email already exists",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: examples.auth.register,
     },
   },
   {
@@ -272,6 +325,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       404: "Not Found - Email not found",
       500: "Internal Server Error",
     },
+    examples: {
+      default: examples.auth.resetRequest,
+    },
   },
   {
     path: "/api/v1/auth/password-reset/confirm",
@@ -285,6 +341,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       400: "Bad Request - Invalid or expired token",
       500: "Internal Server Error",
     },
+    examples: {
+      default: examples.auth.resetConfirm,
+    },
   },
   {
     path: "/api/v1/users/me",
@@ -296,6 +355,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       404: "Not Found - User not found",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: { id: "current-user" },
     },
   },
 
@@ -314,6 +376,12 @@ export const ENDPOINTS: ApiEndpoint[] = [
       404: "Not Found - Address not found",
       500: "Internal Server Error",
     },
+    examples: {
+      default: {
+        id: "550e8400-e29b-41d4-a716-446655440006",
+        ...examples.addresses[0],
+      },
+    },
   },
 
   // Cart endpoints
@@ -326,6 +394,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
     errorCodes: {
       401: "Unauthorized - Authentication required",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: { items: examples.cart },
     },
   },
   {
@@ -341,6 +412,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       404: "Not Found - Menu item not found",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: examples.cart[0],
     },
   },
   {
@@ -481,6 +555,9 @@ export const ENDPOINTS: ApiEndpoint[] = [
       400: "Bad Request - Invalid search parameters",
       500: "Internal Server Error",
     },
+    examples: {
+      default: { search: "pizza" },
+    },
   },
   {
     path: "/api/v1/statistics",
@@ -494,6 +571,12 @@ export const ENDPOINTS: ApiEndpoint[] = [
       401: "Unauthorized - Authentication required",
       403: "Forbidden - Insufficient permissions",
       500: "Internal Server Error",
+    },
+    examples: {
+      default: {
+        startDate: new Date().toISOString().split("T")[0],
+        endDate: new Date().toISOString().split("T")[0],
+      },
     },
   },
 ];

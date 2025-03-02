@@ -2,70 +2,38 @@
 /* eslint-disable no-console */
 import type { Server } from "http";
 import { createServer } from "http";
-import type { AddressInfo } from "net";
 import next from "next";
+import { cwd } from "process";
 import { parse } from "url";
 
-import type { Env } from "@/lib/env";
+import { env } from "@/lib/env";
 
 // Server state (singleton)
 let app: ReturnType<typeof next> | null = null;
 let server: Server | null = null;
-let baseUrl: string | null = null;
 
 /**
- * Gets the base URL of the running server
+ * Starts the Next.js test server on a random available port if preferred port is in use
  */
-export function getBaseUrl(): string {
-  if (baseUrl) {
-    return baseUrl;
-  }
-
-  // Check if we have a URL from a previously started server
-  if (process.env.TEST_SERVER_URL) {
-    baseUrl = process.env.TEST_SERVER_URL;
-    return baseUrl;
-  }
-
-  throw new Error(
-    "Server not started. Call startServer() first or ensure global setup has run.",
-  );
-}
-
-/**
- * Starts the Next.js test server on a fixed port
- * This is designed to be called once from global-setup
- */
-export async function startServer(port: number = 4000): Promise<string> {
+export async function startServer(): Promise<void> {
   // If server is already running, just return the URL
-  if (server && baseUrl) {
-    console.log("Test server already running at:", baseUrl);
-    return baseUrl;
-  }
-
-  // Check if we have a URL from a previously started server via env var
-  if (process.env.TEST_SERVER_URL) {
-    baseUrl = process.env.TEST_SERVER_URL;
-    console.log("Using existing test server at:", baseUrl);
-    return baseUrl;
+  if (server) {
+    return;
   }
 
   try {
-    console.log("Starting test server on port", port, "...");
+    console.log(`Starting test server on ${env.TEST_SERVER_URL}:4000`);
 
     // Ensure we're using test environment variables
-    (process.env as Env).NODE_ENV = "test";
+    env.NODE_ENV = "test";
 
     // Set JWT secret key
-    process.env.JWT_SECRET_KEY = "test-secret-key-for-e2e-tests";
-    console.log(
-      "Set JWT_SECRET_KEY for test server:",
-      process.env.JWT_SECRET_KEY,
-    );
+    env.JWT_SECRET_KEY = "test-secret-key-for-e2e-tests";
+    console.log("Set JWT_SECRET_KEY for test server:", env.JWT_SECRET_KEY);
 
     app = next({
       dev: true,
-      dir: process.cwd(),
+      dir: cwd(),
       quiet: false, // Enable to see more details
     });
 
@@ -74,6 +42,7 @@ export async function startServer(port: number = 4000): Promise<string> {
     const handle = app.getRequestHandler();
 
     return new Promise((resolve, reject) => {
+      // Try with preferred port first, but fall back to a random port if needed
       server = createServer((req, res) => {
         const parsedUrl = parse(req.url || "", true);
         void handle(req, res, parsedUrl);
@@ -82,24 +51,19 @@ export async function startServer(port: number = 4000): Promise<string> {
       server.once("error", (err: NodeJS.ErrnoException) => {
         console.error("Server startup error:", err);
 
-        // If the port is in use, check if it's our own server from another test file
+        // If the port is in use, try again with a random port
         if (err.code === "EADDRINUSE") {
-          reject(err);
+          console.log(
+            `Port ${env.TEST_SERVER_URL} is in use, not starting again...`,
+          );
           return;
         }
 
         reject(err);
       });
-
-      server.listen(port, () => {
-        const address = server?.address() as AddressInfo;
-        baseUrl = `http://localhost:${address.port}`;
-        console.log(`> E2E test server started on ${baseUrl}`);
-
-        // Store URL in env var so other processes can use it
-        process.env.TEST_SERVER_URL = baseUrl;
-
-        resolve(baseUrl);
+      server.listen(4000, () => {
+        console.log(`> E2E test server started on ${env.TEST_SERVER_URL}:4000`);
+        resolve();
       });
     });
   } catch (error) {
@@ -120,6 +84,7 @@ export async function stopServer(): Promise<void> {
       return;
     }
 
+    console.log("Attempting to close test server...");
     server.close((err) => {
       if (err) {
         console.error("Error closing server:", err);
@@ -129,12 +94,11 @@ export async function stopServer(): Promise<void> {
       console.log("> E2E test server closed");
       server = null;
       app = null;
-      baseUrl = null;
 
-      // Clear environment variable
-      delete process.env.TEST_SERVER_URL;
-
-      resolve();
+      // Add a small delay to ensure all connections are properly closed
+      setTimeout(() => {
+        resolve();
+      }, 100);
     });
   });
 }

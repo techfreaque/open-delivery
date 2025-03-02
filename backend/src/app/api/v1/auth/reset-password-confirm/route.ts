@@ -1,3 +1,4 @@
+import { hash } from "bcryptjs";
 import type { NextResponse } from "next/server";
 
 import {
@@ -5,9 +6,9 @@ import {
   createSuccessResponse,
   validateRequest,
 } from "@/lib/api/apiResponse";
+import { verifyPasswordResetToken } from "@/lib/auth/tokens";
 import { prisma } from "@/lib/db/prisma";
-import { sendPasswordResetToken } from "@/lib/email/senders";
-import { messageResponseSchema, resetPasswordRequestSchema } from "@/schemas";
+import { messageResponseSchema, resetPasswordConfirmSchema } from "@/schemas";
 import type { MessageResponse } from "@/types/types";
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -15,23 +16,35 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Validate request data
     const validatedData = await validateRequest(
       request,
-      resetPasswordRequestSchema,
+      resetPasswordConfirmSchema,
     );
 
-    // Check if user exists with this email
+    // Verify token and get user email
+    const email = await verifyPasswordResetToken(validatedData.token);
+    if (!email) {
+      return createErrorResponse("Invalid or expired token", 400);
+    }
+
+    // Find user by email
     const user = await prisma.user.findUnique({
-      where: { email: validatedData.email },
+      where: { email },
     });
 
     if (!user) {
-      return createErrorResponse("User not found with this email address", 404);
+      return createErrorResponse("User not found", 404);
     }
 
-    // Send password reset token
-    await sendPasswordResetToken(validatedData.email);
+    // Hash the new password
+    const hashedPassword = await hash(validatedData.confirmPassword, 10);
+
+    // Update user password
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
 
     return createSuccessResponse<MessageResponse>(
-      { message: "Password reset email sent" },
+      { message: "Password has been successfully reset" },
       messageResponseSchema,
     );
   } catch (err) {
@@ -40,7 +53,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return createErrorResponse(
-      `Failed to handle password reset: ${errorMessage}`,
+      `Failed to reset password: ${errorMessage}`,
       500,
     );
   }
