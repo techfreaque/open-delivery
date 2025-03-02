@@ -5,8 +5,8 @@ import {
   createSuccessResponse,
 } from "@/lib/api/apiResponse";
 import { getVerifiedUser, logoutUser } from "@/lib/auth/authService";
-import { logoutResponseSchema } from "@/schemas";
-import type { LogoutResponse } from "@/types/types";
+import { messageResponseSchema } from "@/schemas";
+import type { MessageResponse } from "@/types/types";
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -15,9 +15,9 @@ export async function GET(): Promise<NextResponse> {
       return createErrorResponse("Unauthorized", 401);
     }
     await logoutUser(user);
-    return createSuccessResponse<LogoutResponse>(
+    return createSuccessResponse<MessageResponse>(
       { message: "Logged out successfully" },
-      logoutResponseSchema,
+      messageResponseSchema,
     );
   } catch (err) {
     const error = err as Error;

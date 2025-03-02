@@ -41,3 +41,9 @@ export const menuItemSearchSchema = z.object({
   minPrice: z.number().optional(),
   maxPrice: z.number().optional(),
 });
+
+export const menuCategorySchema = z.object({
+  name: z.string().min(1, { message: "Category name is required" }),
+  description: z.string().optional(),
+  displayOrder: z.number().int().nonnegative().optional(),
+});

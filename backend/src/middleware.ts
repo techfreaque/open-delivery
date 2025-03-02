@@ -3,12 +3,16 @@ import { NextResponse } from "next/server";
 
 import { verifyJwt } from "@/lib/auth/jwt";
 
+import { env } from "./lib/env";
+
 export async function middleware(request: NextRequest): Promise<NextResponse> {
-  // Skip middleware for public routes and test environment
-  if (
-    request.nextUrl.pathname.startsWith("/api/auth") ||
-    process.env.NODE_ENV === "test"
-  ) {
+  // Skip middleware for public routes
+  if (request.nextUrl.pathname.startsWith("/api/auth")) {
+    return NextResponse.next();
+  }
+
+  // Skip middleware completely in test environment to allow tests to control auth
+  if (process.env.NODE_ENV === "test") {
     return NextResponse.next();
   }
 
@@ -28,7 +32,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   // Special case: accept test tokens in test mode
   if (
-    process.env.NODE_ENV === "test" &&
+    env.NODE_ENV === "test" &&
     tokenToVerify.endsWith(".test_signature_for_e2e_tests")
   ) {
     return NextResponse.next();

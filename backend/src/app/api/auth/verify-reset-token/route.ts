@@ -6,7 +6,8 @@ import {
   validateRequest,
 } from "@/lib/api/apiResponse";
 import { verifyTokenAndResetPassword } from "@/lib/auth/passwordService";
-import { resetPasswordConfirmSchema } from "@/schemas";
+import { messageResponseSchema, resetPasswordConfirmSchema } from "@/schemas";
+import type { MessageResponse } from "@/types/types";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -19,16 +20,19 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Verify token and update password
     await verifyTokenAndResetPassword(
       validatedData.token,
-      validatedData.newPassword,
+      validatedData.password,
     );
 
     // Return standardized success response
-    return createSuccessResponse({
-      message: "Password has been reset successfully",
-    });
-  } catch (error) {
+    return createSuccessResponse<MessageResponse>(
+      {
+        message: "Password has been reset successfully",
+      },
+      messageResponseSchema,
+    );
+  } catch (err) {
     const errorMessage =
-      error instanceof Error ? error.message : "Invalid or expired token";
+      err instanceof Error ? err.message : "Invalid or expired token";
     return createErrorResponse(errorMessage, 400);
   }
 }

@@ -27,3 +27,18 @@ export const restaurantResponseSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+
+export const restaurantProfileSchema = z.object({
+  name: z.string().min(1, { message: "Restaurant name is required" }),
+  description: z.string().optional(),
+  address: z.string().min(1, { message: "Address is required" }),
+  city: z.string().min(1, { message: "City is required" }),
+  state: z.string().min(1, { message: "State is required" }),
+  zipCode: z.string().min(1, { message: "ZIP code is required" }),
+  phone: z.string().min(10, { message: "Valid phone number is required" }),
+  email: z.string().email({ message: "Valid email address is required" }),
+  openingHours: z.string().optional(),
+  cuisineType: z.string().optional(),
+  deliveryRadius: z.number().optional(),
+  isActive: z.boolean().optional(),
+});

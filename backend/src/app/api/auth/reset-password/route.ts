@@ -5,26 +5,25 @@ import {
   createSuccessResponse,
   validateRequest,
 } from "@/lib/api/apiResponse";
-import { sendPasswordResetEmail } from "@/lib/auth/passwordService";
-import { resetPasswordRequestSchema } from "@/schemas";
+import { sendPasswordResetToken } from "@/lib/email/senders";
+import { messageResponseSchema, resetPasswordRequestSchema } from "@/schemas";
+import type { MessageResponse } from "@/types/types";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
-    // Validate request using schema
     const validatedData = await validateRequest(
       request,
       resetPasswordRequestSchema,
     );
-
-    // Send password reset email
-    await sendPasswordResetEmail(validatedData.email);
-
-    // Return standardized success response
-    return createSuccessResponse({ message: "Password reset email sent" });
+    await sendPasswordResetToken(validatedData.email);
+    return createSuccessResponse<MessageResponse>(
+      { message: "Password reset email sent" },
+      messageResponseSchema,
+    );
   } catch (err) {
-    const error = err as Error;
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return createErrorResponse(
-      `Failed to handle password reset: ${error.message}`,
+      `Failed to handle password reset: ${errorMessage}`,
       500,
     );
   }

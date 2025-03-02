@@ -1,8 +1,10 @@
 // vitest.config.ts
 import path from "path";
+import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  plugins: [tsconfigPaths()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
@@ -10,13 +12,15 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    setupFiles: ["./src/tests/setup.ts"],
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     globals: true,
-    coverage: {
-      reporter: ["text", "html"],
-      exclude: ["node_modules/", "src/tests/setup.ts"],
+    // globalSetup: "./src/tests/setup.ts",
+    setupFiles: ["./src/tests/setup.ts"],
+    include: ["src/**/*.test.ts"],
+    isolate: false,
+    sequence: {
+      hooks: "list", // Run hooks in sequence
+      setupFiles: "list", // Run setup files in sequence
     },
-    testTimeout: 30000, // 30 seconds for API tests
+    testTimeout: 30000,
   },
 });

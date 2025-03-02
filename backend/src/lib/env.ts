@@ -1,18 +1,14 @@
 import { z } from "zod";
 
-// Define environment schema with more flexible validation
 export const envSchema = z.object({
-  // Required in production, but provide a default for development
-  JWT_SECRET_KEY:
-    process.env.NODE_ENV === "production"
-      ? z.string()
-      : z
-          .string()
-          .optional()
-          .default("development-secret-key-not-for-production"),
-
-  DATABASE_URL: z.string().optional(),
-  // ... any other environment variables
+  JWT_SECRET_KEY: z.string(),
+  DATABASE_URL: z.string(),
+  NODE_ENV: z.string(),
+  EMAIL_FROM: z.string(),
+  EMAIL_HOST: z.string(),
+  EMAIL_PORT: z.string(),
+  EMAIL_USER: z.string(),
+  EMAIL_PASS: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;

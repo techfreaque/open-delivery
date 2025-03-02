@@ -8,10 +8,6 @@ export const loginSchema = z.object({
     .min(8, { message: "Password must be at least 8 characters" }),
 });
 
-export const logoutResponseSchema = z.object({
-  message: z.string(), // Fix: changed from z.string().email() to z.string()
-});
-
 export const registerSchema = z
   .object({
     name: z.string().min(1, { message: "Name is required" }),

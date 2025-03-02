@@ -20,6 +20,10 @@ export const dateRangeSchema = z.object({
 });
 
 // Common response schemas
+export const messageResponseSchema = z.object({
+  message: z.string(),
+});
+
 export const errorResponseSchema = z.object({
   success: z.literal(false),
   data: z.string(),

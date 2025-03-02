@@ -14,6 +14,15 @@ import { Controller, FormProvider, useFormContext } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
+// Add missing interfaces
+interface FormFieldContextValue {
+  name: string;
+}
+
+interface FormItemContextValue {
+  id: string;
+}
+
 const Form = FormProvider;
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
