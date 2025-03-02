@@ -9,7 +9,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "src"),
       // Create an alias for server-only for testing purposes
-      "server-only": path.resolve(__dirname, "./src/tests/mocks/server-only.ts"),
+      "server-only": path.resolve(
+        __dirname,
+        "./src/tests/mocks/server-only.ts",
+      ),
     },
   },
   test: {
@@ -28,8 +31,8 @@ export default defineConfig({
     // Run tests sequentially to avoid server port conflicts
     poolOptions: {
       threads: {
-        singleThread: true
-      }
+        singleThread: true,
+      },
     },
   },
 });
