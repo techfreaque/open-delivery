@@ -1,3 +1,4 @@
+/* global NodeJS */
 /* eslint-disable no-console */
 import type { Server } from "http";
 import { createServer } from "http";
@@ -5,22 +6,37 @@ import type { AddressInfo } from "net";
 import next from "next";
 import { parse } from "url";
 
+import type { Env } from "@/lib/env";
+
 // Server state (singleton)
 let app: ReturnType<typeof next> | null = null;
 let server: Server | null = null;
 let baseUrl: string | null = null;
-let startPromise: Promise<string> | null = null;
+
+/**
+ * Gets the base URL of the running server
+ */
+export function getBaseUrl(): string {
+  if (baseUrl) {
+    return baseUrl;
+  }
+
+  // Check if we have a URL from a previously started server
+  if (process.env.TEST_SERVER_URL) {
+    baseUrl = process.env.TEST_SERVER_URL;
+    return baseUrl;
+  }
+
+  throw new Error(
+    "Server not started. Call startServer() first or ensure global setup has run.",
+  );
+}
 
 /**
  * Starts the Next.js test server on a fixed port
  * This is designed to be called once from global-setup
  */
 export async function startServer(port: number = 4000): Promise<string> {
-  // If we're already in the process of starting the server, return that promise
-  if (startPromise) {
-    return startPromise;
-  }
-
   // If server is already running, just return the URL
   if (server && baseUrl) {
     console.log("Test server already running at:", baseUrl);
@@ -34,58 +50,44 @@ export async function startServer(port: number = 4000): Promise<string> {
     return baseUrl;
   }
 
-  // Create a promise that will be returned to all callers
-  startPromise = new Promise<string>(async (resolve, reject) => {
-    try {
-      console.log("Starting test server on port", port, "...");
+  try {
+    console.log("Starting test server on port", port, "...");
 
-      // Ensure we're using test environment variables
-      process.env.NODE_ENV = "test";
+    // Ensure we're using test environment variables
+    (process.env as Env).NODE_ENV = "test";
 
-      // Set JWT secret key - This is the key part to ensure consistent JWT handling
-      process.env.JWT_SECRET_KEY = "test-secret-key-for-e2e-tests";
-      console.log(
-        "Set JWT_SECRET_KEY for test server:",
-        process.env.JWT_SECRET_KEY,
-      );
+    // Set JWT secret key
+    process.env.JWT_SECRET_KEY = "test-secret-key-for-e2e-tests";
+    console.log(
+      "Set JWT_SECRET_KEY for test server:",
+      process.env.JWT_SECRET_KEY,
+    );
 
-      app = next({
-        dev: true,
-        dir: process.cwd(),
-        quiet: true, // Reduce console noise
-      });
+    app = next({
+      dev: true,
+      dir: process.cwd(),
+      quiet: false, // Enable to see more details
+    });
 
-      await app.prepare();
+    await app.prepare();
 
-      const handle = app.getRequestHandler();
+    const handle = app.getRequestHandler();
 
+    return new Promise((resolve, reject) => {
       server = createServer((req, res) => {
         const parsedUrl = parse(req.url || "", true);
         void handle(req, res, parsedUrl);
       });
 
-      server.once("error", (err) => {
+      server.once("error", (err: NodeJS.ErrnoException) => {
         console.error("Server startup error:", err);
 
         // If the port is in use, check if it's our own server from another test file
         if (err.code === "EADDRINUSE") {
-          console.warn(
-            `Port ${port} is already in use. Trying to use existing server.`,
-          );
-
-          // Assume the server might be started by another test file
-          baseUrl = `http://localhost:${port}`;
-          process.env.TEST_SERVER_URL = baseUrl;
-
-          // Reset promise so others know we're not starting anymore
-          startPromise = null;
-
-          // Resolve with the assumed URL
-          resolve(baseUrl);
+          reject(err);
           return;
         }
 
-        startPromise = null;
         reject(err);
       });
 
@@ -97,19 +99,13 @@ export async function startServer(port: number = 4000): Promise<string> {
         // Store URL in env var so other processes can use it
         process.env.TEST_SERVER_URL = baseUrl;
 
-        // Reset the promise now that we're done
-        startPromise = null;
-
         resolve(baseUrl);
       });
-    } catch (error) {
-      console.error("Failed to start server:", error);
-      startPromise = null;
-      reject(error);
-    }
-  });
-
-  return startPromise;
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    throw error;
+  }
 }
 
 /**
@@ -141,24 +137,4 @@ export async function stopServer(): Promise<void> {
       resolve();
     });
   });
-}
-
-/**
- * Gets the base URL of the running server
- * If the server hasn't been started yet, the URL is retrieved from environment variable
- */
-export function getBaseUrl(): string {
-  if (baseUrl) {
-    return baseUrl;
-  }
-
-  // Check if we have a URL from a previously started server
-  if (process.env.TEST_SERVER_URL) {
-    baseUrl = process.env.TEST_SERVER_URL;
-    return baseUrl;
-  }
-
-  throw new Error(
-    "Server not started. Call startServer() first or ensure global setup has run.",
-  );
 }

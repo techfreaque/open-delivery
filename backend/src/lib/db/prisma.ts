@@ -2,7 +2,7 @@ import "server-only";
 
 import { PrismaClient } from "@prisma/client";
 
-import { validateEnv } from "../env";
+import { env, validateEnv } from "../env";
 
 validateEnv();
 declare global {
@@ -16,6 +16,6 @@ export const prisma =
   });
 
 // Only cache the prisma instance in development
-if (process.env.NODE_ENV !== "production") {
+if (env.NODE_ENV !== "production") {
   global.prisma = prisma;
 }

@@ -1,15 +1,17 @@
+/* eslint-disable no-console */
+import { PrismaClient, UserRoleValue } from "@prisma/client";
 import { afterAll, beforeAll } from "vitest";
 
-import { generateTestTokens, type TestAuthTokens } from "./auth-helpers";
-import seedTestDatabase from "./seed-test-db";
-import { startServer, stopServer } from "./test-server";
+import { signJwt } from "@/lib/auth/jwt";
+import { env } from "@/lib/env";
+
+import { getBaseUrl } from "./test-server";
 
 // Add at the beginning:
-const DEBUG = process.env.DEBUG_TESTS === "true";
+const DEBUG = env.DEBUG_TESTS === "true";
 
 function debugLog(...args: unknown[]): void {
   if (DEBUG) {
-    // eslint-disable-next-line no-console
     console.log("[TEST DEBUG]", ...args);
   }
 }
@@ -25,75 +27,77 @@ declare global {
   var testBaseUrl: string;
 }
 
-// Use a mutex pattern to ensure one DB seeding at a time
-let setupComplete = false;
-let setupPromise: Promise<void> | null = null;
+const prisma = new PrismaClient();
 
 // Setup global test database
 beforeAll(async () => {
-  // If setup is already complete, just use the existing data
-  if (setupComplete) {
-    return;
-  }
+  try {
+    // Get URL from environment (set by global-setup.ts)
+    const testBaseUrl = getBaseUrl();
 
-  // If setup is in progress, wait for it
-  if (setupPromise) {
-    return setupPromise;
-  }
+    // Get database entries needed for tests
+    const users = await prisma.user.findMany();
+    const customer = users.find(
+      (user) => user.email === "customer@example.com",
+    );
+    const restaurant = await prisma.restaurant.findFirst();
+    const restaurantOwner = users.find(
+      (user) => user.email === "restaurant@example.com",
+    );
 
-  // Create setup promise
-  setupPromise = (async (): Promise<void> => {
-    try {
-      debugLog(
-        `Worker ${process.env.VITEST_WORKER_ID || "unknown"}: Starting setup...`,
+    if (!customer || !restaurant || !restaurantOwner) {
+      throw new Error(
+        "Test data not found. Make sure database was seeded correctly.",
       );
-
-      // Start test server (using singleton pattern)
-      const baseUrl = await startServer();
-      global.testBaseUrl = baseUrl;
-
-      try {
-        // Seed test data
-        const testData = await seedTestDatabase();
-        global.testData = testData;
-
-        // Generate test tokens after database is seeded
-        const tokens = await generateTestTokens();
-        global.testTokens = tokens;
-        global.customerAuthToken = tokens.customerAuthToken;
-        global.restaurantAuthToken = tokens.restaurantAuthToken;
-        global.driverAuthToken = tokens.driverAuthToken;
-        global.adminAuthToken = tokens.adminAuthToken;
-
-        debugLog(
-          `Worker ${process.env.VITEST_WORKER_ID || "unknown"}: Setup completed successfully`,
-        );
-        setupComplete = true;
-      } catch (dbError) {
-        // eslint-disable-next-line no-console
-        console.error("Database seeding failed:", dbError);
-        throw dbError;
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(
-        `Worker ${process.env.VITEST_WORKER_ID || "unknown"}: Setup failed:`,
-        error,
-      );
-      throw error;
-    } finally {
-      // Always set promise to null so we can retry if needed
-      setupPromise = null;
     }
-  })();
 
-  return setupPromise;
+    // Create JWT tokens for testing using the proper auth library function
+    debugLog(`Using JWT_SECRET_KEY: ${env.JWT_SECRET_KEY?.substring(0, 5)}...`);
+
+    // Create customer token using proper signJwt function
+    const customerToken = await signJwt({
+      id: customer.id,
+      email: customer.email,
+      name: customer.name,
+      roles: [UserRoleValue.CUSTOMER],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // Create restaurant token using proper signJwt function
+    const restaurantToken = await signJwt({
+      id: restaurantOwner.id,
+      email: restaurantOwner.email,
+      name: restaurantOwner.name,
+      roles: [UserRoleValue.RESTAURANT_ADMIN],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      restaurantId: restaurant.id,
+    });
+
+    debugLog(
+      `Generated customer token (first 30 chars): ${customerToken.substring(0, 30)}`,
+    );
+
+    // Expose test data and tokens to global scope
+    global.testBaseUrl = testBaseUrl;
+    global.testData = { customer, restaurant, restaurantOwner };
+    global.customerAuthToken = customerToken;
+    global.restaurantAuthToken = restaurantToken;
+  } catch (error) {
+    console.error("Test setup failed:", error);
+    throw error;
+  }
 });
 
 // Cleanup after tests
 afterAll(async () => {
-  // Only stop the server if this is the last test file
-  if (process.env.VITEST_WORKER_ID === "1") {
-    await stopServer();
-  }
+  await prisma.$disconnect();
 });
+
+interface TestAuthTokens {
+  customerAuthToken: string;
+  restaurantAuthToken: string;
+  driverAuthToken: string;
+  adminAuthToken: string;
+}

@@ -2,6 +2,7 @@
 
 import { PrismaClient, type UserRoleValue } from "@prisma/client";
 import { hash } from "bcryptjs";
+import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 
@@ -65,6 +66,9 @@ async function seedTestDatabase(): Promise<Record<string, unknown>> {
       // Continue with seeding - in test environment we can proceed
     }
 
+    // Generate unique IDs for this test run to avoid conflicts
+    const testIdPrefix = uuidv4().substring(0, 8);
+
     console.log("Creating test users...");
     // Create test password
     const testPassword = await hash("password123", 10);
@@ -78,7 +82,7 @@ async function seedTestDatabase(): Promise<Record<string, unknown>> {
         // Don't re-hash password on update
       },
       create: {
-        id: "customer-user",
+        id: `customer-${testIdPrefix}`,
         name: "Test Customer",
         email: "customer@example.com",
         password: testPassword,
@@ -89,7 +93,7 @@ async function seedTestDatabase(): Promise<Record<string, unknown>> {
       where: { email: "restaurant@example.com" },
       update: { name: "Test Restaurant User" },
       create: {
-        id: "restaurant-user",
+        id: `restaurant-${testIdPrefix}`,
         name: "Test Restaurant User",
         email: "restaurant@example.com",
         password: testPassword,
@@ -100,7 +104,7 @@ async function seedTestDatabase(): Promise<Record<string, unknown>> {
       where: { email: "driver@example.com" },
       update: { name: "Test Driver" },
       create: {
-        id: "driver-user",
+        id: `driver-${testIdPrefix}`,
         name: "Test Driver",
         email: "driver@example.com",
         password: testPassword,
@@ -111,7 +115,7 @@ async function seedTestDatabase(): Promise<Record<string, unknown>> {
       where: { email: "admin@example.com" },
       update: { name: "Test Admin" },
       create: {
-        id: "admin-user",
+        id: `admin-${testIdPrefix}`,
         name: "Test Admin",
         email: "admin@example.com",
         password: testPassword,
@@ -161,7 +165,7 @@ async function seedTestDatabase(): Promise<Record<string, unknown>> {
     // Create test restaurant
     const restaurant = await prisma.restaurant.create({
       data: {
-        id: "testrestaurant",
+        id: `restaurant-${testIdPrefix}`,
         name: "Test Restaurant",
         description: "Restaurant for testing",
         address: "123 Test Street",
@@ -178,7 +182,7 @@ async function seedTestDatabase(): Promise<Record<string, unknown>> {
     // Create test menu items
     const menuItem = await prisma.menuItem.create({
       data: {
-        id: "testmenuitem",
+        id: `menuitem-${testIdPrefix}`,
         name: "Test Pizza",
         description: "A delicious test pizza",
         price: 12.99,

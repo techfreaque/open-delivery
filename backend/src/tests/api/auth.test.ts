@@ -49,12 +49,8 @@ describe("Auth API", () => {
   // Add a test for our new test-auth endpoint to verify token validation
   describe("GET /api/test-auth", () => {
     it("should authenticate with test token", async () => {
-      // Log token for debugging
-      console.log(
-        "Using customer token (first 30 chars):",
-        global.customerAuthToken.substring(0, 30),
-      );
-
+      // Using the token generated via the proper signJwt function
+      // from the auth library in the setup file
       const response = await request(global.testBaseUrl)
         .get("/api/test-auth")
         .set("Authorization", `Bearer ${global.customerAuthToken}`);

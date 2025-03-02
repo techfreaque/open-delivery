@@ -18,7 +18,7 @@ export async function sendPasswordResetToken(email: string): Promise<void> {
   await emailService.sendTemplateEmail<ResetPasswordEmailTemplateVariables>({
     to: existingUser.email,
     // TODO
-    subject: "",
+    subject: "Confirm your password reset",
     templateName: "reset-password-mail",
     templateData: {
       title: "Confirm your password reset",

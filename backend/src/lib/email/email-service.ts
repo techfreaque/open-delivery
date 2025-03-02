@@ -5,6 +5,8 @@ import nodemailer from "nodemailer";
 import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import path from "path";
 
+import { env } from "../env";
+
 export interface EmailTemplateVariables {
   APP_NAME: string;
   name: string;
@@ -18,12 +20,12 @@ export class EmailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
       // ... your SMTP/transport settings
-      host: process.env.EMAIL_HOST || "smtp.ethereal.email",
-      port: parseInt(process.env.EMAIL_PORT || "587", 10),
+      host: env.EMAIL_HOST || "smtp.ethereal.email",
+      port: parseInt(env.EMAIL_PORT || "587", 10),
       secure: false,
       auth: {
-        user: process.env.EMAIL_USER || "",
-        pass: process.env.EMAIL_PASS || "",
+        user: env.EMAIL_USER || "",
+        pass: env.EMAIL_PASS || "",
       },
     });
   }
@@ -61,7 +63,7 @@ export class EmailService {
 
     // 3. Build the mail options
     const mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.EMAIL_FROM,
+      from: env.EMAIL_FROM,
       to,
       subject,
       html,

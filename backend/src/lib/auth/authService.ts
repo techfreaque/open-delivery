@@ -13,17 +13,20 @@ import type {
 } from "@/types/types";
 import { UserRoleValue } from "@/types/types";
 
+import { createErrorResponse } from "../api/apiResponse";
+import { env } from "../env";
+
 export async function getVerifiedUser(
   role: UserRoleValue = UserRoleValue.ADMIN,
-): Promise<UserResponse | undefined> {
+): Promise<UserResponse> {
   const user = await getCurrentUser();
   if (!user) {
-    return undefined;
+    throw createErrorResponse("Not signed in", 401);
   }
   if (user.roles.includes(role)) {
     return user;
   }
-  return undefined;
+  throw createErrorResponse("Unauthorized", 401);
 }
 
 /**
@@ -165,7 +168,7 @@ export async function loginUser(
     value: token,
     httpOnly: true,
     path: "/",
-    secure: process.env.NODE_ENV === "production",
+    secure: env.NODE_ENV === "production",
     sameSite: "strict",
     maxAge: 60 * 60 * 24 * 7, // 1 week
   });

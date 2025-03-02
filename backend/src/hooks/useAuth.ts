@@ -45,7 +45,7 @@ export function useAuth(): UseAuthReturn {
         setLoading(true);
         setError(null);
 
-        const response = await fetch("/api/auth/login", {
+        const response = await fetch("/api/v1/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(credentials),
@@ -79,7 +79,7 @@ export function useAuth(): UseAuthReturn {
     localStorage.removeItem("user");
     setUser(null);
     // Use logger instead of console in production
-    router.push("/auth/login");
+    router.push("/v1/auth/login");
   }, [router]);
 
   return { user, loading, login, logout, error };

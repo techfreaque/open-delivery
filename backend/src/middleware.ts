@@ -7,12 +7,12 @@ import { env } from "./lib/env";
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   // Skip middleware for public routes
-  if (request.nextUrl.pathname.startsWith("/api/auth")) {
+  if (request.nextUrl.pathname.startsWith("/api/v1/auth")) {
     return NextResponse.next();
   }
 
   // Skip middleware completely in test environment to allow tests to control auth
-  if (process.env.NODE_ENV === "test") {
+  if (env.NODE_ENV === "test") {
     return NextResponse.next();
   }
 
@@ -49,5 +49,5 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: ["/api/v1/:path*"],
 };

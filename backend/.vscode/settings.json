@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
-  
+      "vitest",
+      "tsconfigPaths"
     ],
     "editor.formatOnSave": true, // Format files on save
     "editor.codeActionsOnSave": {
