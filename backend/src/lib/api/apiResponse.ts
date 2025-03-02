@@ -11,8 +11,22 @@ export function createSuccessResponse<T>(
   data: T,
   schema: z.ZodSchema<T>,
   status: number = 200,
-): NextResponse {
-  return validateResponseData<T>(schema, data, status);
+): NextResponse<SuccessResponse<T> | ErrorResponse> {
+  // Validate the data against the schema
+  const result = schema.safeParse(data);
+
+  if (!result.success) {
+    const errorMessage = result.error.errors
+      .map((err) => `${err.path.join(".")}: ${err.message}`)
+      .join(", ");
+    return createErrorResponse(
+      `Response validation error: ${errorMessage}`,
+      500,
+    );
+  }
+
+  // For API responses, don't wrap the response in a success object, return the data directly
+  return NextResponse.json(data, { status });
 }
 
 /**
@@ -21,51 +35,14 @@ export function createSuccessResponse<T>(
 export function createErrorResponse(
   message: string,
   status: number = 400,
-): NextResponse {
-  const response = errorResponseSchema.safeParse({
+): NextResponse<ErrorResponse> {
+  const response: ErrorResponse = errorResponseSchema.safeParse({
     success: false,
-    data: message,
-  } satisfies ErrorResponse);
-  return NextResponse.json(response, { status });
-}
-
-/**
- * Validates response data against a schema
- */
-function validateResponseData<T>(
-  schema: z.ZodSchema<T>,
-  data: T,
-  status: number,
-) {
-  try {
-    const result = schema.safeParse(data);
-
-    if (!result.success) {
-      const errorMessage = result.error.errors
-        .map((err) => `${err.path.join(".")}: ${err.message}`)
-        .join(", ");
-
-      return NextResponse.json(
-        {
-          data: `Response validation error: ${errorMessage}`,
-          success: false,
-        } satisfies ErrorResponse,
-        { status: 500 },
-      );
-    }
-    return NextResponse.json({
-      success: true,
-      data: JSON.stringify(result.data),
-    } satisfies SuccessResponse);
-  } catch (error) {
-    return NextResponse.json(
-      {
-        data: "Error validating response data",
-        success: false,
-      } satisfies ErrorResponse,
-      { status: 500 },
-    );
-  }
+    message,
+  }) as ErrorResponse;
+  return NextResponse.json(response, {
+    status,
+  }) satisfies NextResponse<ErrorResponse>;
 }
 
 /**

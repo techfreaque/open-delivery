@@ -20,7 +20,6 @@ import type {
   driverCreateSchema,
   driverResponseSchema,
   driverUpdateSchema,
-  errorResponseSchema,
   idSchema,
   loginResponseSchema,
   loginSchema,
@@ -42,9 +41,18 @@ import type {
   restaurantResponseSchema,
   restaurantUpdateSchema,
   searchSchema,
-  successResponseSchema,
   userResponseSchema,
 } from "@/schemas";
+
+export type SuccessResponse<T> = {
+  success: true;
+  data?: T | undefined;
+};
+
+export type ErrorResponse = {
+  success: false;
+  message?: string | undefined;
+};
 
 // Re-export all schema types for easier access
 export type MessageResponse = z.infer<typeof messageResponseSchema>;
@@ -57,6 +65,7 @@ export type LoginData = z.infer<typeof loginSchema>;
 export type RegisterData = z.infer<typeof registerSchema>;
 export type UserResponse = z.infer<typeof userResponseSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
+
 export type ResetPasswordResetRequestData = z.infer<
   typeof resetPasswordRequestSchema
 >;
@@ -67,8 +76,6 @@ export type ResetPasswordResetConfirmData = z.infer<
 export type CartItem = z.infer<typeof cartItemSchema>;
 export type CartItemResponse = z.infer<typeof cartItemResponseSchema>;
 
-export type ErrorResponse = z.infer<typeof errorResponseSchema>;
-export type SuccessResponse = z.infer<typeof successResponseSchema>;
 export type IdParams = z.infer<typeof idSchema>;
 export type PaginationParams = z.infer<typeof paginationSchema>;
 export type SearchParams = z.infer<typeof searchSchema>;
@@ -91,6 +98,7 @@ export type OrderItemFormData = z.infer<typeof orderItemSchema>;
 export type OrderCreateFormData = z.infer<typeof orderCreateSchema>;
 export type OrderUpdateFormData = z.infer<typeof orderUpdateSchema>;
 export type OrderItemResponse = z.infer<typeof orderItemResponseSchema>;
+
 export type OrderResponse = z.infer<typeof orderResponseSchema>;
 
 export type RestaurantCreateFormData = z.infer<typeof restaurantCreateSchema>;
@@ -126,12 +134,6 @@ export { DeliveryStatus, OrderStatus, PaymentMethod, UserRoleValue };
 
 // Response types
 
-export type ApiResponse<T> = {
-  data?: T;
-  error?: string;
-  status: number;
-};
-
 export interface ApiEndpoint {
   path: string;
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -142,4 +144,13 @@ export interface ApiEndpoint {
   fieldDescriptions?: Record<string, string>;
   requiresAuth?: boolean;
   errorCodes?: Record<string, string>;
+  sampleResponse?: string;
+  examples?: Record<string, unknown>;
+  webhookEvents?: string[];
+  webhookDescription?: string;
+}
+
+export enum DatabaseProvider {
+  sqlite = "sqlite",
+  postgresql = "postgresql",
 }

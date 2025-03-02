@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import type { JSX } from "react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ENDPOINT_DOMAINS } from "@/constants";
+import type { ENDPOINT_DOMAINS } from "@/constants";
+import { getExampleForEndpoint } from "@/lib/examples/data";
 import type { ApiEndpoint } from "@/types/types";
 
 interface CodeExamplesProps {
@@ -19,203 +17,165 @@ export function CodeExamples({
   activeEndpoint,
   selectedDomain,
   requestData,
-}: CodeExamplesProps): JSX.Element {
-  const [language, setLanguage] = useState("javascript");
-  const examples = getCodeExamples(activeEndpoint, requestData, selectedDomain);
+}: CodeExamplesProps) {
+  const [activeLanguage, setActiveLanguage] = useState("curl");
+
+  // Use example data from the endpoint definition if available, otherwise generate it
+  const exampleData = activeEndpoint.examples || {
+    default: getExampleForEndpoint(activeEndpoint.path),
+  };
+
+  // Available languages for code examples
+  const languages = {
+    curl: "cURL",
+    javascript: "JavaScript",
+    python: "Python",
+    php: "PHP",
+  };
+
+  // Generate code examples for different languages
+  const generateExample = (language: string, domain: string) => {
+    const path = activeEndpoint.path;
+    const method = activeEndpoint.method;
+    const hasBody = method !== "GET" && method !== "DELETE";
+
+    // Choose an example - either use default or the first available
+    const example = exampleData.default || Object.values(exampleData)[0];
+
+    switch (language) {
+      case "curl":
+        return `curl -X ${method} "${domain}${path}" \\
+${
+  hasBody
+    ? `-H "Content-Type: application/json" \\
+-d '${JSON.stringify(example, null, 2)}' \\`
+    : ""
+}
+${activeEndpoint.requiresAuth ? `-H "Authorization: Bearer YOUR_TOKEN_HERE" \\` : ""}
+-H "Accept: application/json"`;
+
+      case "javascript":
+        return `// Using fetch API
+const response = await fetch("${domain}${path}", {
+  method: "${method}",
+  headers: {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    ${activeEndpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
+  },
+  ${hasBody ? `body: JSON.stringify(${JSON.stringify(example, null, 2)})` : ""}
+});
+
+const data = await response.json();
+console.log(data);`;
+
+      case "python":
+        return `import requests
+
+url = "${domain}${path}"
+headers = {
+    "Accept": "application/json",
+    ${activeEndpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
+    ${hasBody ? `"Content-Type": "application/json"` : ""}
+}
+${
+  hasBody
+    ? `payload = ${JSON.stringify(example, null, 2)}
+
+response = requests.${method.toLowerCase()}(url, json=payload, headers=headers)`
+    : `
+response = requests.${method.toLowerCase()}(url, headers=headers)`
+}
+data = response.json()
+print(data)`;
+
+      case "php":
+        return `<?php
+$url = "${domain}${path}";
+
+$options = [
+    'http' => [
+        'header' => "Accept: application/json\\r\\n" . 
+                    ${activeEndpoint.requiresAuth ? `"Authorization: Bearer YOUR_TOKEN_HERE\\r\\n" .` : ""} 
+                    ${hasBody ? `"Content-Type: application/json\\r\\n",` : `",`}
+        'method' => "${method}",
+        ${hasBody ? `'content' => '${JSON.stringify(example)}'` : ""}
+    ]
+];
+
+$context = stream_context_create($options);
+$result = file_get_contents($url, false, $context);
+$response = json_decode($result, true);
+
+print_r($response);
+?>`;
+
+      default:
+        return "// Example code generation not available for this language";
+    }
+  };
+
+  // Get available tabs based on examples
+  const availableExamples = Object.keys(exampleData);
+  const defaultTab =
+    availableExamples.length > 0 ? availableExamples[0] : "default";
+
   return (
-    <div className="space-y-6 p-4">
-      <Tabs value={language} onValueChange={setLanguage} className="w-full">
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="javascript">JavaScript</TabsTrigger>
-          <TabsTrigger value="typescript">TypeScript</TabsTrigger>
-          <TabsTrigger value="python">Python</TabsTrigger>
-          <TabsTrigger value="curl">cURL</TabsTrigger>
+    <div className="p-4">
+      <div className="mb-6">
+        <h3 className="text-sm font-medium mb-2">Code Examples</h3>
+        <p className="text-xs text-gray-500">
+          Use these code examples to integrate with our API
+        </p>
+      </div>
+
+      <Tabs value={activeLanguage} onValueChange={setActiveLanguage}>
+        <TabsList className="mb-4">
+          {Object.entries(languages).map(([key, label]) => (
+            <TabsTrigger key={key} value={key} className="text-xs">
+              {label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        {/* JavaScript Example */}
-        <TabsContent value="javascript">
-          <div className="bg-gray-800 text-green-400 p-4 rounded-lg overflow-auto">
-            <pre className="language-javascript">{examples.javascript}</pre>
-          </div>
-        </TabsContent>
-
-        {/* TypeScript Example */}
-        <TabsContent value="typescript">
-          <div className="bg-gray-800 text-green-400 p-4 rounded-lg overflow-auto">
-            <pre className="language-typescript">{examples.typescript}</pre>
-          </div>
-        </TabsContent>
-
-        {/* Python Example */}
-        <TabsContent value="python">
-          <div className="bg-gray-800 text-green-400 p-4 rounded-lg overflow-auto">
-            <pre className="language-python">{examples.python}</pre>
-          </div>
-        </TabsContent>
-
-        {/* cURL Example */}
-        <TabsContent value="curl">
-          <div className="bg-gray-800 text-green-400 p-4 rounded-lg overflow-auto">
-            <pre className="language-bash">{examples.curl}</pre>
-          </div>
-        </TabsContent>
+        {Object.entries(languages).map(([key, _]) => (
+          <TabsContent key={key} value={key}>
+            <div className="bg-gray-800 rounded-lg p-4 relative">
+              <div className="absolute top-2 right-2 text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                {key}
+              </div>
+              <pre className="text-green-400 font-mono text-sm overflow-auto max-h-[400px]">
+                {generateExample(key, selectedDomain)}
+              </pre>
+            </div>
+          </TabsContent>
+        ))}
       </Tabs>
 
-      <div className="flex justify-center mt-6">
-        <Link href="/v1/api-docs">
-          <Button>View Full Documentation</Button>
-        </Link>
-      </div>
+      {availableExamples.length > 1 && (
+        <div className="mt-6">
+          <h4 className="text-sm font-medium mb-2">Alternative Examples</h4>
+          <Tabs defaultValue={defaultTab}>
+            <TabsList className="mb-4">
+              {availableExamples.map((example) => (
+                <TabsTrigger key={example} value={example} className="text-xs">
+                  {example}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {availableExamples.map((example) => (
+              <TabsContent key={example} value={example}>
+                <div className="bg-gray-50 rounded-lg p-4 border">
+                  <pre className="text-sm overflow-auto max-h-[200px]">
+                    {JSON.stringify(exampleData[example], null, 2)}
+                  </pre>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
+      )}
     </div>
   );
-}
-
-function getMethodFunctionName(endpoint: ApiEndpoint): string {
-  const resourceName =
-    endpoint.path.split("/").pop()?.replace(/[{}]/g, "") || "resource";
-
-  switch (endpoint.method) {
-    case "GET":
-      return `fetch${capitalize(resourceName)}`;
-    case "POST":
-      return `create${capitalize(resourceName)}`;
-    case "PUT":
-      return `update${capitalize(resourceName)}`;
-    case "DELETE":
-      return `delete${capitalize(resourceName)}`;
-    case "PATCH":
-      return `patch${capitalize(resourceName)}`;
-    default:
-      return `handle${capitalize(resourceName)}`;
-  }
-}
-
-function getPythonFunctionName(endpoint: ApiEndpoint): string {
-  const resourceName =
-    endpoint.path.split("/").pop()?.replace(/[{}]/g, "") || "resource";
-
-  switch (endpoint.method) {
-    case "GET":
-      return `get_${resourceName}`;
-    case "POST":
-      return `create_${resourceName}`;
-    case "PUT":
-      return `update_${resourceName}`;
-    case "DELETE":
-      return `delete_${resourceName}`;
-    case "PATCH":
-      return `patch_${resourceName}`;
-    default:
-      return `handle_${resourceName}`;
-  }
-}
-
-function getTypeScriptInterface(endpoint: ApiEndpoint): string {
-  if (!endpoint.requestSchema) {
-    return "// No request schema defined";
-  }
-
-  return Object.entries(endpoint.requestSchema)
-    .map(([key, value]) => {
-      if (typeof value === "string") {
-        return `${key}: string; // ${value}`;
-      }
-      return `${key}: any; // Define proper type`;
-    })
-    .join("\n  ");
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function getCodeExamples(
-  endpoint: ApiEndpoint,
-  requestData: string,
-  selectedDomain: keyof typeof ENDPOINT_DOMAINS,
-): {
-  curl: string;
-  javascript: string;
-  typescript: string;
-  python: string;
-} {
-  return {
-    curl: `curl -X ${endpoint.method} \\
-  '${ENDPOINT_DOMAINS[selectedDomain]}${endpoint.path}' \\
-  -H 'Authorization: Bearer YOUR_TOKEN' \\
-  -H 'Content-Type: application/json' \\${
-    endpoint.method !== "GET"
-      ? `
-  -d '${requestData.replace(/\n/g, "\n  ")}'`
-      : ""
-  }`,
-    javascript: `// ${endpoint.description}
-async function ${getMethodFunctionName(endpoint)}() {
-  const response = await fetch('${ENDPOINT_DOMAINS[selectedDomain]}${endpoint.path}', {
-    method: '${endpoint.method}',
-    headers: {
-      'Authorization': 'Bearer YOUR_TOKEN',
-      'Content-Type': 'application/json'
-    }${
-      endpoint.method !== "GET"
-        ? `,
-    body: JSON.stringify(${requestData})`
-        : ""
-    }
-  });
-  
-  const data = await response.json();
-  return data;
-}`,
-    typescript: `// ${endpoint.description}
-interface RequestData {
-  ${getTypeScriptInterface(endpoint)}
-}
-
-interface ResponseData {
-  // Define your response type based on the endpoint
-}
-
-async function ${getMethodFunctionName(endpoint)}(${endpoint.method !== "GET" ? "data: RequestData" : ""}): Promise<ResponseData> {
-  const response = await fetch('${ENDPOINT_DOMAINS[selectedDomain]}${endpoint.path}', {
-    method: '${endpoint.method}',
-    headers: {
-      'Authorization': 'Bearer YOUR_TOKEN',
-      'Content-Type': 'application/json'
-    }${
-      endpoint.method !== "GET"
-        ? `,
-    body: JSON.stringify(data)`
-        : ""
-    }
-  });
-  
-  if (!response.ok) {
-    throw new Error(\`HTTP error! Status: \${response.status}\`);
-  }
-  
-  const responseData = await response.json();
-  return responseData;
-}`,
-    python: `import requests
-
-def ${getPythonFunctionName(endpoint)}():
-    headers = {
-        'Authorization': 'Bearer YOUR_TOKEN',
-        'Content-Type': 'application/json'
-    }
-    
-    ${
-      endpoint.method !== "GET"
-        ? `data = ${requestData}
-    
-    response = requests.${endpoint.method.toLowerCase()}('${ENDPOINT_DOMAINS[selectedDomain]}${endpoint.path}', headers=headers, json=data)`
-        : `response = requests.get('${ENDPOINT_DOMAINS[selectedDomain]}${endpoint.path}', headers=headers)`
-    }
-    
-    if response.status_code >= 400:
-        raise Exception(f"HTTP error! Status: {response.status_code}")
-    
-    return response.json()`,
-  };
 }

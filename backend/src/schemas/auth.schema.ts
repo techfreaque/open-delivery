@@ -29,8 +29,14 @@ export const userResponseSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   roles: z.array(z.nativeEnum(UserRoleValue)),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z
+    .string()
+    .or(z.date())
+    .transform((val) => (val instanceof Date ? val.toISOString() : val)),
+  updatedAt: z
+    .string()
+    .or(z.date())
+    .transform((val) => (val instanceof Date ? val.toISOString() : val)),
 });
 
 export const loginResponseSchema = z.object({

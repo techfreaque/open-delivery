@@ -13,11 +13,11 @@ import { restaurantResponseSchema, restaurantUpdateSchema } from "@/schemas";
 // GET a specific restaurant by ID
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: { restaurantId: string } },
 ): Promise<NextResponse> {
   try {
     const restaurant = await prisma.restaurant.findUnique({
-      where: { id: params.id },
+      where: { id: params.restaurantId },
       include: {
         menuItems: {
           where: { available: true },
@@ -43,7 +43,7 @@ export async function GET(
 // PUT update restaurant
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: { restaurantId: string } },
 ): Promise<NextResponse> {
   try {
     const user = await getCurrentUser();
@@ -53,7 +53,7 @@ export async function PUT(
     }
 
     const restaurant = await prisma.restaurant.findUnique({
-      where: { id: params.id },
+      where: { id: params.restaurantId },
     });
 
     if (!restaurant) {
@@ -71,7 +71,7 @@ export async function PUT(
     );
 
     const updated = await prisma.restaurant.update({
-      where: { id: params.id },
+      where: { id: params.restaurantId },
       data: validatedData,
     });
 

@@ -10,7 +10,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 // Use real Prisma client for E2E tests
 const prisma = new PrismaClient();
 
-describe("/api/restaurants E2E", () => {
+describe("/api/v1/restaurants E2E", () => {
   let restaurantId: string;
 
   beforeEach(() => {
@@ -36,10 +36,10 @@ describe("/api/restaurants E2E", () => {
     await prisma.$disconnect();
   });
 
-  describe("GET /api/restaurants", () => {
+  describe("GET /api/v1/restaurants", () => {
     it("should return a list of restaurants", async () => {
       const response = await request(global.testBaseUrl)
-        .get("/api/restaurants")
+        .get("/api/v1/restaurants")
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
       expect(response.status).toBe(200);
@@ -48,7 +48,7 @@ describe("/api/restaurants E2E", () => {
 
     it("should return restaurants filtered by cuisine", async () => {
       const response = await request(global.testBaseUrl)
-        .get("/api/restaurants?category=Italian")
+        .get("/api/v1/restaurants?category=Italian")
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
       expect(response.status).toBe(200);
@@ -56,10 +56,10 @@ describe("/api/restaurants E2E", () => {
     });
   });
 
-  describe("GET /api/restaurants/:id", () => {
+  describe("GET /api/v1/restaurants/:id", () => {
     it("should return a specific restaurant", async () => {
       const response = await request(global.testBaseUrl)
-        .get(`/api/restaurants/${restaurantId}`)
+        .get(`/api/v1/restaurants/${restaurantId}`)
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
       expect(response.status).toBe(200);
@@ -68,14 +68,14 @@ describe("/api/restaurants E2E", () => {
 
     it("should return 404 for non-existent restaurant", async () => {
       const response = await request(global.testBaseUrl)
-        .get("/api/restaurants/non-existent-id")
+        .get("/api/v1/restaurants/non-existent-id")
         .set("Authorization", `Bearer ${global.customerAuthToken}`);
 
       expect(response.status).toBe(404);
     });
   });
 
-  describe("POST /api/restaurants/menu", () => {
+  describe("POST /api/v1/restaurants/menu", () => {
     let newMenuItem: Partial<MenuItem>;
 
     it("should create a new menu item as restaurant owner", async () => {
@@ -91,7 +91,7 @@ describe("/api/restaurants E2E", () => {
       };
 
       const response = await request(global.testBaseUrl)
-        .post(`/api/restaurants/menu`)
+        .post(`/api/v1/restaurants/menu`)
         .set("Authorization", `Bearer ${global.restaurantAuthToken}`)
         .send(newMenuItem);
 

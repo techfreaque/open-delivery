@@ -1,24 +1,21 @@
 import type { NextResponse } from "next/server";
 
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  validateRequest,
-} from "@/lib/api/apiResponse";
+import { createErrorResponse, validateRequest } from "@/lib/api/apiResponse";
 import { loginUser } from "@/lib/auth/authService";
-import { loginResponseSchema, loginSchema } from "@/schemas";
-import type { LoginResponse } from "@/types/types";
+import { loginSchema } from "@/schemas";
+import type { ErrorResponse, LoginData, LoginResponse } from "@/types/types";
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(
+  request: Request,
+): Promise<NextResponse<LoginResponse | ErrorResponse>> {
   try {
-    const validatedData = await validateRequest(request, loginSchema);
-    const authResponse = await loginUser(validatedData);
-    return createSuccessResponse<LoginResponse>(
-      authResponse,
-      loginResponseSchema,
+    const validatedData = await validateRequest<LoginData>(
+      request,
+      loginSchema,
     );
+    return loginUser(validatedData);
   } catch (err) {
     const error = err as Error;
-    return createErrorResponse(`Failed to login: ${error.message}`, 500);
+    return createErrorResponse(`Login error: ${error.message}`, 500);
   }
 }

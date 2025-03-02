@@ -13,6 +13,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import unusedImports from "eslint-plugin-unused-imports";
 import globals from "globals";
+import nodePlugin from "eslint-plugin-node";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,7 +33,7 @@ export default [
       "dist",
       "postcss.config.mjs",
       "next.config.mjs",
-      "eslint.config.mjs",
+      "eslint.config.mjs"
     ],
   },
 
@@ -75,9 +76,11 @@ export default [
       "react-compiler": reactCompiler,
       import: importPlugin,
       prettier: eslintPluginPrettier,
+      node: nodePlugin
     },
 
     rules: {
+
       // Pull in ESLint’s base recommended rules
       ...js.configs.recommended.rules,
       // Merge TS recommended
@@ -102,6 +105,9 @@ export default [
         "error",
         { allow: ["arrowFunctions"] },
       ],
+
+      // node
+      "node/no-process-env": "error",
 
       // React Hooks
       "react-hooks/rules-of-hooks": "error",

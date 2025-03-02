@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "__DB_PROVIDER__"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  NEW
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  ASSIGNED
+  PICKED_UP
+  DELIVERED
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+}
+
+enum UserRoleValue {
+  CUSTOMER
+  RESTAURANT_ADMIN
+  RESTAURANT_EMPLOYEE
+  DRIVER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  restaurants Restaurant[]
+  orders      Order[]      @relation("CustomerOrders")
+  deliveries  Order[]      @relation("DriverDeliveries")
+  driver      Driver?
+  userRoles   UserRole[]
+  Address     Address[]
+  CartItem    CartItem[]
+  Session     Session[]
+
+  @@map("users")
+}
+
+model UserRole {
+  id     String        @id @default(uuid())
+  userId String        @map("user_id")
+  role   UserRoleValue
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, role])
+  @@map("user_roles")
+}
+
+model Address {
+  id        String  @id @default(uuid())
+  userId    String
+  label     String
+  address   String
+  isDefault Boolean @default(false)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Restaurant {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  description String
+  address     String
+  phone       String
+  email       String
+  image       String
+  rating      Float    @default(0)
+  cuisine     String
+  isOpen      Boolean  @default(true) @map("is_open")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id])
+  menuItems MenuItem[]
+  orders    Order[]
+  CartItem  CartItem[]
+
+  @@map("restaurants")
+}
+
+model MenuItem {
+  id           String   @id @default(uuid())
+  restaurantId String   @map("restaurant_id")
+  name         String
+  description  String
+  price        Float
+  image        String
+  category     String
+  isAvailable  Boolean  @default(true) @map("is_available")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
+  orderItems OrderItem[]
+  CartItem   CartItem[]
+
+  @@map("menu_items")
+}
+
+model CartItem {
+  id           String @id @default(uuid())
+  userId       String
+  restaurantId String
+  menuItemId   String
+  quantity     Int
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, menuItemId])
+  @@map("cart_items")
+}
+
+model Driver {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  vehicle      String
+  licensePlate String   @map("license_plate")
+  isActive     Boolean  @default(true) @map("is_active")
+  rating       Float    @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id])
+  earnings Earning[]
+
+  @@map("drivers")
+}
+
+model Order {
+  id           String    @id @default(uuid())
+  restaurantId String    @map("restaurant_id")
+  customerId   String    @map("customer_id")
+  driverId     String?   @map("driver_id")
+  status       String
+  total        Float
+  deliveryFee  Float     @map("delivery_fee")
+  tax          Float
+  address      String
+  createdAt    DateTime  @default(now()) @map("created_at")
+  deliveredAt  DateTime? @map("delivered_at")
+
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
+  customer   User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  driver     User?       @relation("DriverDeliveries", fields: [driverId], references: [id])
+  orderItems OrderItem[]
+  Delivery   Delivery?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String @id @default(uuid())
+  orderId    String @map("order_id")
+  menuItemId String @map("menu_item_id")
+  quantity   Int
+  price      Float
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+model Delivery {
+  id                String         @id @default(uuid())
+  orderId           String         @unique
+  status            DeliveryStatus @default(ASSIGNED)
+  estimatedDelivery DateTime?
+  estimatedTime     Int? // in minutes
+  distance          Float // in kilometers
+  tip               Float?
+  pickupLat         Float?
+  pickupLng         Float?
+  dropoffLat        Float?
+  dropoffLng        Float?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("deliveries")
+}
+
+model Earning {
+  id         String   @id @default(uuid())
+  driverId   String   @map("driver_id")
+  date       DateTime
+  amount     Float
+  deliveries Int
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  driver Driver @relation(fields: [driverId], references: [id])
+
+  @@map("earnings")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
