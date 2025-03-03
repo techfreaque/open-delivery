@@ -5,6 +5,7 @@ import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { env } from "@/lib/env";
+import type { MessageResponse, SuccessResponse } from "@/types/types";
 
 describe("Auth Password Reset API", () => {
   const baseUrl = env.TEST_SERVER_URL;
@@ -28,8 +29,10 @@ describe("Auth Password Reset API", () => {
 
       // Verify response structure
       if (response.status === 200) {
-        expect(response.body).toHaveProperty("message");
-        expect(response.body.message).toContain("Password reset email sent");
+        const responseData = response.body as SuccessResponse<MessageResponse>;
+
+        expect(responseData).toHaveProperty("data");
+        expect(responseData.data).toContain("Password reset email sent");
       }
     });
 

@@ -25,13 +25,13 @@ export async function POST(request: Request) {
     const order = await prisma.order.create({
       data: {
         status: "PENDING",
-        total: data.total,
+        total: validatedData.total,
         userId: authResult.userId,
-        restaurantId: data.restaurantId,
-        address: data.address,
-        paymentMethod: data.paymentMethod,
+        restaurantId: validatedData.restaurantId,
+        address: validatedData.address,
+        paymentMethod: validatedData.paymentMethod,
         items: {
-          create: data.items.map((item) => ({
+          create: validatedData.items.map((item) => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
             price: item.price || 0, // Get price from menu item if not provided

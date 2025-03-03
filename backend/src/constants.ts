@@ -14,6 +14,7 @@ export const backendPages = {
   login: "/v1/login",
   register: "/v1/signup",
   notFound: "/404",
+  apiDocs: "/v1/api-docs",
 };
 
 export const frontendRoutes = {

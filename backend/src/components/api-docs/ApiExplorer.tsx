@@ -59,11 +59,11 @@ export default function ApiExplorer({
     try {
       // Parse the request path and replace any path parameters
       let path = activeEndpoint.path;
-      let parsedData: any = {};
+      let parsedData: Record<string, any> = {};
 
       try {
         // Only parse request data if it's not empty
-        if (requestData.trim() !== "{}") {
+        if (requestData.trim() !== "{}" && requestData.trim() !== "") {
           parsedData = JSON.parse(requestData);
         }
 

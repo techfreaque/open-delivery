@@ -6,7 +6,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { env } from "@/lib/env";
-import type { ApiResponse, LoginResponse } from "@/types/types";
+import type { LoginResponse, SuccessResponse } from "@/types/types";
 
 describe("Auth API", () => {
   // Storage for test-generated auth tokens
@@ -20,7 +20,7 @@ describe("Auth API", () => {
           email: "customer@example.com",
           password: "password",
         });
-      const responseData = response.body as ApiResponse<LoginResponse>;
+      const responseData = response.body as SuccessResponse<LoginResponse>;
       // For debugging purposes, log the response body
       console.log("Login response body:", responseData);
 
@@ -28,22 +28,16 @@ describe("Auth API", () => {
       expect([200, 401]).toContain(response.status);
 
       if (response.status === 200) {
-        // Check basic structure - the response might be { success: true, data: ... } or direct data
-        if (responseData.success !== undefined) {
+        if (responseData.success) {
           // If wrapped in success property, look at the data property
           expect(responseData).toHaveProperty("data");
-          expect(data).toHaveProperty("token");
-          expect(data).toHaveProperty("user");
+          expect(responseData.data).toHaveProperty("token");
+          expect(responseData.data).toHaveProperty("user");
 
           // Store token
-          customerAuthToken = data.token;
+          customerAuthToken = responseData.data!.token;
         } else {
-          // Direct response
-          expect(responseData).toHaveProperty("token");
-          expect(response.body).toHaveProperty("user");
-
-          // Store token
-          customerAuthToken = response.body.token;
+          throw new Error("Login failed");
         }
 
         console.log(

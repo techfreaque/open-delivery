@@ -16,7 +16,7 @@ export async function sendPasswordResetToken(email: string): Promise<void> {
     return;
   }
 
-  const token = generatePasswordResetToken(email);
+  const token = await generatePasswordResetToken(email);
 
   const baseUrl = APP_DOMAIN;
 

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { backendPages } from "@/constants";
 import type { LoginData, LoginResponse, UserResponse } from "@/types/types";
 
 interface UseAuthReturn {
@@ -22,6 +23,10 @@ export function useAuth(): UseAuthReturn {
   useEffect(() => {
     // Check for existing user session
     const checkSession = (): void => {
+      if (typeof window === "undefined") {
+        return;
+      } // Server-side safety check
+
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         try {
@@ -51,20 +56,29 @@ export function useAuth(): UseAuthReturn {
           body: JSON.stringify(credentials),
         });
 
-        const data: LoginResponse | { error: string } = await response.json();
+        const data = await response.json();
 
-        if (!response.ok || "error" in data) {
+        if (!response.ok) {
           const errorData = data as { error: string };
           setError(errorData.error || "Login failed");
           setLoading(false);
           return null;
         }
 
-        setUser(data.user);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        const loginData = data as LoginResponse;
+        setUser(loginData.user);
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user", JSON.stringify(loginData.user));
+          // Store the token for API requests
+          if (loginData.token) {
+            localStorage.setItem("authToken", loginData.token);
+          }
+        }
+
         setLoading(false);
 
-        return data.user;
+        return loginData.user;
       } catch (err) {
         // Use logger instead of console in production
         setError(`An error occurred during login - error: ${err}`);
@@ -72,14 +86,16 @@ export function useAuth(): UseAuthReturn {
         return null;
       }
     },
-    [],
+    [router],
   );
 
   const logout = useCallback((): void => {
-    localStorage.removeItem("user");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      localStorage.removeItem("authToken");
+    }
     setUser(null);
-    // Use logger instead of console in production
-    router.push("/v1/auth/login");
+    router.push(backendPages.login);
   }, [router]);
 
   return { user, loading, login, logout, error };

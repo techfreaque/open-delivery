@@ -6,6 +6,7 @@ import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import path from "path";
 
 import { env } from "../env";
+import { debugLogger } from "../utils";
 
 export interface EmailTemplateVariables {
   APP_NAME: string;
@@ -71,10 +72,10 @@ export class EmailService {
 
     // 4. Send
     const info = await this.transporter.sendMail(mailOptions);
-    console.log(`Message sent: ${info.messageId}`);
+    debugLogger(`Email message sent: ${info.messageId}`);
 
     if (nodemailer.getTestMessageUrl(info)) {
-      console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+      debugLogger(`Email preview URL: ${nodemailer.getTestMessageUrl(info)}`);
     }
     return info;
   }

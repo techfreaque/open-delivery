@@ -28,6 +28,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // Skip middleware for public routes and auth endpoints
   if (
     request.nextUrl.pathname.startsWith("/api/v1/auth") ||
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/v1/auth") ||
     request.nextUrl.pathname.startsWith("/_next") ||
     request.nextUrl.pathname.startsWith("/public") ||
     request.nextUrl.pathname.includes("favicon.ico")
@@ -58,7 +60,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     // Verify the token
     await verifyJwt(tokenToVerify);
     return response;
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

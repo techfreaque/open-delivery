@@ -76,7 +76,7 @@ export default function SignupPage(): JSX.Element {
     const { confirmPassword: _, ...dataToSubmit } = formData;
 
     try {
-      const response = await fetch("/api/auth/signup", {
+      const response = await fetch("/api/v1/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSubmit),
@@ -89,7 +89,7 @@ export default function SignupPage(): JSX.Element {
       }
 
       // Redirect to login page after successful signup
-      router.push("/auth/login?registered=true");
+      router.push("/v1/auth/login?registered=true");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";

@@ -3,6 +3,7 @@ generator client {
 }
 
 datasource db {
+  // this gets replaced by the actual DATABASE_URL at build time
   provider = "__DB_PROVIDER__"
   url      = env("DATABASE_URL")
 }
