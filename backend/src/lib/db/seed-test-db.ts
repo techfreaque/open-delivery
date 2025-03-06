@@ -241,7 +241,6 @@ export default async function seedTestDatabase(): Promise<void> {
           updatedAt: new Date(),
           createdAt: new Date(),
           dropAddress: "123 Delivery St",
-          driverId
         },
       });
 
