@@ -1,16 +1,19 @@
 import { z } from "zod";
+
 import { menuItemResponseMinimalSchema } from "./menu.schema";
 import { restaurantProfileMinimalSchema } from "./restaurant.schema";
 
-export const cartItemUpdateSchema = z.object({
-  menuItemId: z.string().uuid(),
-  restaurantId: z.string().uuid(),
+const cartItemBaseSchema = z.object({
+  id: z.string().uuid(),
   quantity: z.number().int().min(0),
 });
 
-export const cartItemResponseSchema = z.object({
-  id: z.string().uuid(),
-  quantity: z.number().int(),
+export const cartItemUpdateSchema = cartItemBaseSchema.extend({
+  menuItemId: z.string().uuid(),
+  restaurantId: z.string().uuid(),
+});
+
+export const cartItemResponseSchema = cartItemBaseSchema.extend({
   menuItem: menuItemResponseMinimalSchema,
   restaurant: restaurantProfileMinimalSchema,
 });

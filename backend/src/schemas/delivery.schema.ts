@@ -7,18 +7,24 @@ const deliveryTypeSchema = z.enum(["PICKUP", "DELIVERY"]);
 
 const deliveryStatusSchema = z.enum(["ASSIGNED", "PICKED_UP", "DELIVERED"]);
 
-export const deliveryCreateSchema = z.object({
+const deliveryBaseSchema = z.object({
   type: deliveryTypeSchema,
+  status: deliveryStatusSchema,
   message: z.string().nullable(),
-  estimatedDelivery: dateSchema,
   estimatedTime: z.number().int(), // in minutes
+  estimatedDelivery: dateSchema,
+  deliveredAt: dateSchema,
   distance: z.number().positive(), // in kilometers
   pickupAddress: z.string().nullable(),
   dropAddress: z.string().nullable(),
+});
+
+export const deliveryCreateSchema = deliveryBaseSchema.extend({
   driverId: z.string().uuid().nullable(),
 });
 
 export const deliveryUpdateSchema = z.object({
+  id: z.string().uuid(),
   status: deliveryStatusSchema,
   estimatedDelivery: dateSchema.nullable(),
   deliveredAt: dateSchema.nullable(),
@@ -26,19 +32,9 @@ export const deliveryUpdateSchema = z.object({
   driverId: z.string().uuid().nullable(),
 });
 
-export const deliveryResponseSchema = z.object({
+export const deliveryResponseSchema = deliveryBaseSchema.extend({
   id: z.string().uuid(),
-  type: deliveryTypeSchema,
-  status: deliveryStatusSchema,
-  message: z.string().nullable(),
-  estimatedDelivery: dateSchema,
-  deliveredAt: dateSchema,
-  estimatedTime: z.number().int(),
-  distance: z.number(),
-  pickupAddress: z.string().nullable(),
-  dropAddress: z.string().nullable(),
   createdAt: dateSchema,
   updatedAt: dateSchema,
-
   driver: driverPublicResponseSchema.nullable(),
 });

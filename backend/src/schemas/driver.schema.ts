@@ -7,23 +7,27 @@ import {
   userResponseMinimalSchema,
 } from "./user.schema";
 
-export const driverCreateSchema = z.object({
-  userId: z.string().uuid(),
+const driverBaseSchema = z.object({
   vehicle: z.string(),
   licensePlate: z.string(),
 });
 
-export const driverUpdateSchema = z.object({
+export const driverCreateSchema = driverBaseSchema.extend({
+  userId: z.string().uuid(),
+});
+
+export const driverUpdateSchema = driverCreateSchema.extend({
+  vehicle: z.string(),
+  licensePlate: z.string(),
+});
+
+export const driverStatusUpdateSchema = z.object({
   driverId: z.string().uuid(),
-  vehicle: z.string().nullable(),
-  licensePlate: z.string().nullable(),
   isActive: z.boolean().nullable(),
 });
 
-export const driverPrivateResponseSchema = z.object({
+export const driverPrivateResponseSchema = driverBaseSchema.extend({
   id: z.string().uuid(),
-  vehicle: z.string(),
-  licensePlate: z.string(),
   isActive: z.boolean(),
   rating: z.number(),
   createdAt: dateSchema,

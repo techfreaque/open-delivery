@@ -2,39 +2,30 @@ import { z } from "zod";
 
 import { dateSchema } from "./common.schema";
 
-/**
- * Schema for creating a new earning record
- */
-export const earningCreateSchema = z.object({
-  userId: z.string().uuid({ message: "Valid driver ID is required" }),
+const earningBaseSchema = z.object({
   date: dateSchema,
   amount: z.number().positive({ message: "Amount must be positive" }),
   deliveries: z
     .number()
     .int()
     .positive({ message: "Deliveries count must be positive" }),
+});
+
+export const earningCreateSchema = earningBaseSchema.extend({
+  userId: z.string().uuid({ message: "Valid driver ID is required" }),
 });
 
 /**
  * Schema for updating an existing earning record
  */
-export const earningUpdateSchema = z.object({
-  date: dateSchema,
-  amount: z.number().positive({ message: "Amount must be positive" }),
-  deliveries: z
-    .number()
-    .int()
-    .positive({ message: "Deliveries count must be positive" }),
+export const earningUpdateSchema = earningBaseSchema.extend({
+  id: z.string().uuid(),
 });
 
 /**
  * Schema for earning responses
  */
-export const earningResponseSchema = z.object({
-  id: z.string().uuid(),
-  date: dateSchema,
-  amount: z.number(),
-  deliveries: z.number().int(),
+export const earningResponseSchema = earningUpdateSchema.extend({
   createdAt: dateSchema,
 });
 
