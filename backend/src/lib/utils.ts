@@ -3,7 +3,7 @@ import { twMerge } from "tailwind-merge";
 
 import { APP_NAME } from "@/constants";
 
-import { env } from "./env";
+import { envClient } from "./env-client";
 
 /**
  * Utility for conditionally joining class names
@@ -13,7 +13,7 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 export function debugLogger(message: string, ...other: unknown[]): void {
-  if (env.NODE_ENV === "development") {
+  if (envClient.NEXT_PUBLIC_NODE_ENV === "development") {
     // eslint-disable-next-line no-console
     console.log(`[${APP_NAME}][DEBUG] ${message}`, ...other);
   }

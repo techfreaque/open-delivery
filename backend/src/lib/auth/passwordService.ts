@@ -52,7 +52,10 @@ export async function requestPasswordReset(
  */
 export async function verifyAndResetPassword(
   data: ResetPasswordResetConfirmData,
-) {
+): Promise<{
+  success: boolean;
+  message?: string;
+}> {
   const { token, password } = data;
 
   // Find the password reset record

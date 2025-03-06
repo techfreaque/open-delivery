@@ -6,7 +6,7 @@ import type { ChangeEvent, FormEvent, JSX } from "react";
 import { useState } from "react";
 import { z } from "zod";
 
-import { registerSchema } from "@/schemas/auth.schema";
+import { registerSchema } from "@/schemas/user.schema";
 import type { LoginResponse, RegisterData } from "@/types/types";
 
 // Add missing type definitions

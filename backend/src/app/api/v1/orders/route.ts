@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { createSuccessResponse, validateRequest } from "@/lib/api/apiResponse";
-import { validateResponseData } from "@/lib/app-validation";
 import { verifyAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { orderCreateSchema, orderResponseSchema } from "@/schemas";
@@ -108,16 +107,7 @@ export async function GET(request: Request) {
       },
       orderBy: { createdAt: "desc" },
     });
-
-    // Validate response
-    const { data: validatedResponse, response: responseError } =
-      validateResponseData(orderResponseSchema.array(), orders);
-
-    if (responseError) {
-      return responseError;
-    }
-
-    return NextResponse.json(validatedResponse);
+    return createSuccessResponse<OrderResponse>(orders, orderResponseSchema);
   } catch (error) {
     console.error("Error fetching orders:", error);
     return NextResponse.json(

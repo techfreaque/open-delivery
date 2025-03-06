@@ -1,10 +1,6 @@
 /* eslint-disable no-console */
 
-import type {
-  DeliveryStatus,
-  OrderStatus,
-  UserRoleValue,
-} from "@prisma/client";
+import type { DeliveryStatus, DeliveryType, OrderStatus } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 
@@ -65,7 +61,7 @@ export async function seedTestDatabase(): Promise<void> {
             await prisma.userRole.create({
               data: {
                 userId: createdUser.id,
-                role: user.roleValue as UserRoleValue,
+                role: user.roleValue,
               },
             });
             console.log(`👑 Added role ${user.roleValue} to ${user.email}`);
@@ -76,8 +72,6 @@ export async function seedTestDatabase(): Promise<void> {
         }
       }
       console.log(`✅ Created ${testUsers.length} test users`);
-    } else {
-      console.log("⚠️ No test users found in test data");
     }
 
     // Create test addresses
@@ -94,6 +88,14 @@ export async function seedTestDatabase(): Promise<void> {
               label: address.label,
               address: address.address || fullAddress, // Use provided address or generate it
               userId: address.userId,
+              // Add the required fields
+              street: address.street || "Unknown Street",
+              city: address.city || "Unknown City",
+              state: address.state || "Unknown State",
+              zipCode: address.zipCode || "00000",
+              country: address.country || "Unknown Country",
+              latitude: address.latitude || 0,
+              longitude: address.longitude || 0,
             },
           });
 
@@ -118,13 +120,20 @@ export async function seedTestDatabase(): Promise<void> {
               name: restaurant.name,
               description: restaurant.description,
               image: restaurant.image,
-              address: restaurant.address,
               phone: restaurant.phone,
               email: restaurant.email,
               cuisine: restaurant.cuisine,
               rating: restaurant.rating,
               isOpen: restaurant.isOpen,
-              userId: restaurant.ownerId, // Connect to owner
+              userId: restaurant.userId || restaurant.ownerId, // Connect to owner
+              // Add the required fields
+              street: restaurant.street || "123 Restaurant St",
+              city: restaurant.city || "Restaurant City",
+              state: restaurant.state || "Restaurant State",
+              zipCode: restaurant.zipCode || "12345",
+              country: restaurant.country || "Restaurant Country",
+              latitude: restaurant.latitude || 0,
+              longitude: restaurant.longitude || 0,
             },
           });
 
@@ -156,6 +165,8 @@ export async function seedTestDatabase(): Promise<void> {
               category: menuItem.category,
               restaurantId: menuItem.restaurantId,
               isAvailable: menuItem.isAvailable,
+              // Add the required field
+              taxPercent: menuItem.taxPercent || 8.0, // Default 8% tax
             },
           });
 
@@ -183,27 +194,38 @@ export async function seedTestDatabase(): Promise<void> {
             ? deliveryAddress.address
             : "Default Address";
 
-          const createdOrder = await prisma.order.create({
-            data: {
-              id: order.id,
-              total: order.total,
-              tax: order.tax,
-              deliveryFee: order.deliveryFee,
-              status: order.status as OrderStatus,
-              customerId: order.customerId,
-              restaurantId: order.restaurantId,
-              createdAt: order.createdAt
-                ? new Date(order.createdAt)
-                : undefined,
-              deliveredAt: order.deliveredAt
-                ? new Date(order.deliveredAt)
-                : null,
-              address: addressText,
-            },
+          // Check if restaurant exists
+          const restaurant = await prisma.restaurant.findUnique({
+            where: { id: order.restaurantId },
           });
 
-          orders.push(createdOrder);
-          console.log(`🛒 Created order: ${order.id}`);
+          if (restaurant) {
+            const createdOrder = await prisma.order.create({
+              data: {
+                id: order.id,
+                total: order.total,
+                tax: order.tax,
+                deliveryFee: order.deliveryFee,
+                status: order.status as OrderStatus,
+                customerId: order.customerId,
+                address: addressText,
+                createdAt: order.createdAt
+                  ? new Date(order.createdAt)
+                  : undefined,
+                deliveredAt: order.deliveredAt
+                  ? new Date(order.deliveredAt)
+                  : null,
+                restaurant: {
+                  connect: { id: order.restaurantId },
+                },
+              },
+            });
+
+            orders.push(createdOrder);
+            console.log(`🛒 Created order: ${order.id}`);
+          } else {
+            console.log(`⚠️ Skipping order ${order.id}: Restaurant not found`);
+          }
         } catch (error) {
           console.error(`Failed to create order ${order.id}:`, error);
         }
@@ -225,6 +247,8 @@ export async function seedTestDatabase(): Promise<void> {
               price: item.price,
               menuItemId: item.menuItemId,
               orderId: item.orderId,
+              // Add the required field
+              taxPercent: item.taxPercent || 8.0, // Default 8% tax
             },
           });
 
@@ -259,6 +283,8 @@ export async function seedTestDatabase(): Promise<void> {
               pickupLng: delivery.pickupLng,
               dropoffLat: delivery.dropoffLat,
               dropoffLng: delivery.dropoffLng,
+              // Add the required field
+              type: delivery.type || "STANDARD" as DeliveryType,
             },
           });
 

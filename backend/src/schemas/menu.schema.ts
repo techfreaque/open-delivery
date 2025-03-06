@@ -1,17 +1,39 @@
 import { z } from "zod";
 
+import { categoryResponseSchema } from "./category.schema";
+import { dateSchema } from "./common.schema";
+import { restaurantProfileMinimalSchema } from "./restaurant.schema";
+
 // Base menu item schema
-export const menuItemSchema = z.object({
+export const menuItemResponseSchema = z.object({
   id: z.string().uuid(),
-  restaurantId: z.string().uuid(),
   name: z.string().min(2),
   description: z.string(),
   price: z.number().positive(),
-  image: z.string().url().optional(),
-  category: z.string(),
-  isAvailable: z.boolean().default(true),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  taxPercent: z.number().nonnegative(),
+  image: z.string().url().nullable(),
+  published: z.boolean(),
+  availableFrom: dateSchema.nullable(),
+  availableTo: dateSchema.nullable(),
+  createdAt: dateSchema,
+  updatedAt: dateSchema,
+  restaurant: restaurantProfileMinimalSchema,
+  category: categoryResponseSchema,
+});
+
+export const menuItemResponseMinimalSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(2),
+  description: z.string(),
+  price: z.number().positive(),
+  taxPercent: z.number().nonnegative(),
+  image: z.string().url().nullable(),
+  published: z.boolean(),
+  availableFrom: dateSchema.nullable(),
+  availableTo: dateSchema.nullable(),
+  createdAt: dateSchema,
+  updatedAt: dateSchema,
+  category: categoryResponseSchema,
 });
 
 // Menu item creation schema
@@ -19,31 +41,39 @@ export const menuItemCreateSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   description: z.string(),
   price: z.number().positive({ message: "Price must be greater than 0" }),
-  category: z.string(),
-  image: z.string().url().optional(),
-  isAvailable: z.boolean().default(true),
+  taxPercent: z
+    .number()
+    .nonnegative({ message: "Tax percent must be non-negative" }),
+  image: z.string().url().nullable(),
+  published: z.boolean().default(true),
+  availableFrom: dateSchema.nullable(),
+  availableTo: dateSchema.nullable(),
+  categoryId: z.string().uuid({ message: "Valid category ID is required" }),
+  restaurantId: z.string().uuid({ message: "Valid restaurant ID is required" }),
 });
 
 // Menu item update schema
 export const menuItemUpdateSchema = z.object({
-  name: z.string().min(2).optional(),
-  description: z.string().optional(),
-  price: z.number().positive().optional(),
-  category: z.string().optional(),
-  image: z.string().url().optional(),
-  isAvailable: z.boolean().optional(),
+  id: z.string().uuid(),
+  name: z.string().min(2),
+  description: z.string(),
+  price: z.number().positive(),
+  taxPercent: z.number().nonnegative(),
+  image: z.string().url().nullable(),
+  published: z.boolean(),
+  availableFrom: dateSchema.nullable(),
+  availableTo: dateSchema.nullable(),
+  createdAt: dateSchema,
+  updatedAt: dateSchema,
+  categoryId: z.string().uuid({ message: "Valid category ID is required" }),
+  restaurantId: z.string().uuid({ message: "Valid restaurant ID is required" }),
 });
 
 // Menu item search schema
 export const menuItemSearchSchema = z.object({
-  category: z.string().optional(),
-  isAvailable: z.boolean().optional(),
-  minPrice: z.number().optional(),
-  maxPrice: z.number().optional(),
-});
-
-export const menuCategorySchema = z.object({
-  name: z.string().min(1, { message: "Category name is required" }),
-  description: z.string().optional(),
-  displayOrder: z.number().int().nonnegative().optional(),
+  categoryId: z.string().uuid().nullable(),
+  published: z.boolean().nullable(),
+  minPrice: z.number().nullable(),
+  maxPrice: z.number().nullable(),
+  restaurantId: z.string().uuid().nullable(),
 });

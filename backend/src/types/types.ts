@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import {
   DeliveryStatus,
+  DeliveryType,
   OrderStatus,
   PaymentMethod,
   UserRoleValue,
@@ -12,22 +13,42 @@ import type {
   addressResponseSchema,
   addressUpdateSchema,
   cartItemResponseSchema,
-  cartItemSchema,
+  cartItemUpdateSchema,
+  categoryCreateSchema,
+  categoryResponseSchema,
+  categoryUpdateSchema,
+  countryResponseSchema,
+  countryUpdateSchema,
   dateRangeSchema,
   deliveryCreateSchema,
   deliveryResponseSchema,
   deliveryUpdateSchema,
   driverCreateSchema,
-  driverResponseSchema,
+  driverPrivateResponseSchema,
+  driverPublicResponseSchema,
+  driverRatingCreateSchema,
   driverUpdateSchema,
+  earningCreateSchema,
+  earningResponseSchema,
+  earningSearchSchema,
+  earningsSummarySchema,
+  earningUpdateSchema,
+  errorResponseSchema,
   idSchema,
+  languageCreateSchema,
+  languageResponseSchema,
+  languageUpdateSchema,
   loginResponseSchema,
-  loginSchema,
   menuItemCreateSchema,
-  menuItemSchema,
+  menuItemResponseMinimalSchema,
+  menuItemResponseSchema,
   menuItemSearchSchema,
   menuItemUpdateSchema,
   messageResponseSchema,
+  minimalCountryResponseSchema,
+  openingTimesCreateSchema,
+  openingTimesResponseSchema,
+  openingTimesUpdateSchema,
   orderCreateSchema,
   orderItemResponseSchema,
   orderItemSchema,
@@ -38,10 +59,21 @@ import type {
   resetPasswordConfirmSchema,
   resetPasswordRequestSchema,
   restaurantCreateSchema,
+  restaurantProfileMinimalSchema,
+  restaurantProfileSchema,
+  restaurantRatingCreateSchema,
   restaurantResponseSchema,
   restaurantUpdateSchema,
   searchSchema,
+  successResponseSchema,
+  userPublicDetailedResponseSchema,
+  userPublicResponseSchema,
+  userResponseMinimalSchema,
   userResponseSchema,
+  userRoleResponseSchema,
+  userRoleRestaurantCreateSchema,
+  userRoleRestaurantResponseSchema,
+  userRoleRestaurantUpdateSchema,
 } from "@/schemas";
 
 export type SuccessResponse<T> = {
@@ -55,55 +87,97 @@ export type ErrorResponse = {
 };
 
 // Re-export all schema types for easier access
-export type MessageResponse = z.infer<typeof messageResponseSchema>;
-
-export type AddressCreateFormData = z.infer<typeof addressCreateSchema>;
-export type AddressUpdateFormData = z.infer<typeof addressUpdateSchema>;
-export type AddressResponse = z.infer<typeof addressResponseSchema>;
-
-export type LoginData = z.infer<typeof loginSchema>;
-export type RegisterData = z.infer<typeof registerSchema>;
-export type UserResponse = z.infer<typeof userResponseSchema>;
-export type LoginResponse = z.infer<typeof loginResponseSchema>;
-
-export type ResetPasswordResetRequestData = z.infer<
+export type UserPublicResponseType = z.infer<typeof userPublicResponseSchema>;
+export type UserPublicDetailedResponseType = z.infer<
+  typeof userPublicDetailedResponseSchema
+>;
+export type UserResponseMinimalType = z.infer<typeof userResponseMinimalSchema>;
+export type UserResponseType = z.infer<typeof userResponseSchema>;
+export type LoginResponseType = z.infer<typeof loginResponseSchema>;
+export type RegisterType = z.infer<typeof registerSchema>;
+export type UserRoleRestaurantCreateType = z.infer<
+  typeof userRoleRestaurantCreateSchema
+>;
+export type UserRoleRestaurantResponseType = z.infer<
+  typeof userRoleRestaurantResponseSchema
+>;
+export type UserRoleRestaurantUpdateType = z.infer<
+  typeof userRoleRestaurantUpdateSchema
+>;
+export type UserRoleResponseType = z.infer<typeof userRoleResponseSchema>;
+export type ResetPasswordRequestType = z.infer<
   typeof resetPasswordRequestSchema
 >;
-export type ResetPasswordResetConfirmData = z.infer<
+export type ResetPasswordConfirmType = z.infer<
   typeof resetPasswordConfirmSchema
 >;
-
-export type CartItem = z.infer<typeof cartItemSchema>;
-export type CartItemResponse = z.infer<typeof cartItemResponseSchema>;
-
-export type IdParams = z.infer<typeof idSchema>;
-export type PaginationParams = z.infer<typeof paginationSchema>;
-export type SearchParams = z.infer<typeof searchSchema>;
-export type DateRangeParams = z.infer<typeof dateRangeSchema>;
-
-export type DeliveryCreate = z.infer<typeof deliveryCreateSchema>;
-export type DeliveryUpdate = z.infer<typeof deliveryUpdateSchema>;
-export type DeliveryResponse = z.infer<typeof deliveryResponseSchema>;
-
-export type DriverCreateFormData = z.infer<typeof driverCreateSchema>;
-export type DriverUpdateFormData = z.infer<typeof driverUpdateSchema>;
-export type DriverResponse = z.infer<typeof driverResponseSchema>;
-
-export type MenuItem = z.infer<typeof menuItemSchema>;
-export type MenuItemCreate = z.infer<typeof menuItemCreateSchema>;
-export type MenuItemUpdate = z.infer<typeof menuItemUpdateSchema>;
-export type MenuItemSearch = z.infer<typeof menuItemSearchSchema>;
-
-export type OrderItemFormData = z.infer<typeof orderItemSchema>;
-export type OrderCreateFormData = z.infer<typeof orderCreateSchema>;
-export type OrderUpdateFormData = z.infer<typeof orderUpdateSchema>;
-export type OrderItemResponse = z.infer<typeof orderItemResponseSchema>;
-
-export type OrderResponse = z.infer<typeof orderResponseSchema>;
-
-export type RestaurantCreateFormData = z.infer<typeof restaurantCreateSchema>;
-export type RestaurantUpdateFormData = z.infer<typeof restaurantUpdateSchema>;
-export type RestaurantResponse = z.infer<typeof restaurantResponseSchema>;
+export type RestaurantCreateType = z.infer<typeof restaurantCreateSchema>;
+export type RestaurantUpdateType = z.infer<typeof restaurantUpdateSchema>;
+export type RestaurantResponseType = z.infer<typeof restaurantResponseSchema>;
+export type RestaurantProfileType = z.infer<typeof restaurantProfileSchema>;
+export type RestaurantProfileMinimalType = z.infer<
+  typeof restaurantProfileMinimalSchema
+>;
+export type RestaurantRatingCreateType = z.infer<
+  typeof restaurantRatingCreateSchema
+>;
+export type DriverRatingCreateType = z.infer<typeof driverRatingCreateSchema>;
+export type OrderItemType = z.infer<typeof orderItemSchema>;
+export type OrderCreateType = z.infer<typeof orderCreateSchema>;
+export type OrderUpdateType = z.infer<typeof orderUpdateSchema>;
+export type OrderItemResponseType = z.infer<typeof orderItemResponseSchema>;
+export type OrderResponseType = z.infer<typeof orderResponseSchema>;
+export type OpeningTimesCreateType = z.infer<typeof openingTimesCreateSchema>;
+export type OpeningTimesUpdateType = z.infer<typeof openingTimesUpdateSchema>;
+export type OpeningTimesResponseType = z.infer<
+  typeof openingTimesResponseSchema
+>;
+export type MenuItemResponseType = z.infer<typeof menuItemResponseSchema>;
+export type MenuItemResponseMinimalType = z.infer<
+  typeof menuItemResponseMinimalSchema
+>;
+export type MenuItemCreateType = z.infer<typeof menuItemCreateSchema>;
+export type MenuItemUpdateType = z.infer<typeof menuItemUpdateSchema>;
+export type MenuItemSearchType = z.infer<typeof menuItemSearchSchema>;
+export type LanguageCreateType = z.infer<typeof languageCreateSchema>;
+export type LanguageUpdateType = z.infer<typeof languageUpdateSchema>;
+export type LanguageResponseType = z.infer<typeof languageResponseSchema>;
+export type CountryUpdateType = z.infer<typeof countryUpdateSchema>;
+export type CountryResponseType = z.infer<typeof countryResponseSchema>;
+export type MinimalCountryResponseType = z.infer<
+  typeof minimalCountryResponseSchema
+>;
+export type DriverCreateType = z.infer<typeof driverCreateSchema>;
+export type DriverUpdateType = z.infer<typeof driverUpdateSchema>;
+export type DriverPrivateResponseType = z.infer<
+  typeof driverPrivateResponseSchema
+>;
+export type DriverPublicResponseType = z.infer<
+  typeof driverPublicResponseSchema
+>;
+export type EarningCreateType = z.infer<typeof earningCreateSchema>;
+export type EarningUpdateType = z.infer<typeof earningUpdateSchema>;
+export type EarningResponseType = z.infer<typeof earningResponseSchema>;
+export type EarningSearchType = z.infer<typeof earningSearchSchema>;
+export type EarningsSummaryType = z.infer<typeof earningsSummarySchema>;
+export type DeliveryCreateType = z.infer<typeof deliveryCreateSchema>;
+export type DeliveryUpdateType = z.infer<typeof deliveryUpdateSchema>;
+export type DeliveryResponseType = z.infer<typeof deliveryResponseSchema>;
+export type IdType = z.infer<typeof idSchema>;
+export type PaginationType = z.infer<typeof paginationSchema>;
+export type SearchType = z.infer<typeof searchSchema>;
+export type DateRangeType = z.infer<typeof dateRangeSchema>;
+export type MessageResponseType = z.infer<typeof messageResponseSchema>;
+export type ErrorResponseType = z.infer<typeof errorResponseSchema>;
+export type SuccessResponseType = z.infer<typeof successResponseSchema>;
+export type CategoryCreateType = z.infer<typeof categoryCreateSchema>;
+export type CategoryUpdateType = z.infer<typeof categoryUpdateSchema>;
+export type CategoryResponseType = z.infer<typeof categoryResponseSchema>;
+export type CartItemUpdateType = z.infer<typeof cartItemUpdateSchema>;
+export type CartItemResponseType = z.infer<typeof cartItemResponseSchema>;
+export type AddressCreateType = z.infer<typeof addressCreateSchema>;
+export type AddressUpdateType = z.infer<typeof addressUpdateSchema>;
+export type AddressResponseType = z.infer<typeof addressResponseSchema>;
 
 type Empty = Record<string, never>;
 
@@ -130,7 +204,13 @@ export type DBDeliveryWithDetails = DBDelivery & {
 };
 
 // prisma enums
-export { DeliveryStatus, OrderStatus, PaymentMethod, UserRoleValue };
+export {
+  DeliveryStatus,
+  DeliveryType,
+  OrderStatus,
+  PaymentMethod,
+  UserRoleValue,
+};
 
 // Response types
 
@@ -151,6 +231,15 @@ export interface ApiEndpoint {
 }
 
 export enum DatabaseProvider {
-  sqlite = "sqlite",
-  postgresql = "postgresql",
+  SQLITE = "sqlite",
+  POSTGRESQL = "postgresql",
+  MYSQL = "mysql",
+  MONGODB = "mongodb",
 }
+
+// Custom API types
+export type ApiResponse<T> = {
+  data?: T;
+  error?: string;
+  status: number;
+};

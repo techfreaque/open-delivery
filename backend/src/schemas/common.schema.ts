@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 // Common reusable schemas
+export const dateSchema = z
+  .string()
+  .or(z.date())
+  .transform((val) => (val instanceof Date ? val.toISOString() : val));
+
 export const idSchema = z.object({
   id: z.string().uuid(),
 });
@@ -11,12 +16,12 @@ export const paginationSchema = z.object({
 });
 
 export const searchSchema = z.object({
-  search: z.string().optional(),
+  search: z.string().nullable(),
 });
 
 export const dateRangeSchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: dateSchema.nullable(),
+  endDate: dateSchema.nullable(),
 });
 
 // Common response schemas
@@ -29,8 +34,5 @@ export const errorResponseSchema = z.object({
 
 export const successResponseSchema = z.object({
   success: z.literal(true),
-  data: z.string().optional(),
+  data: z.string().nullable(),
 });
-
-// API Documentation schemas
-export const endpointExampleSchema = z.record(z.string(), z.unknown());

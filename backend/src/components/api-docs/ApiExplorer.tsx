@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 
 import { DomainSelector } from "@/components/api-docs/DomainSelector";
 import { EndpointDetails } from "@/components/api-docs/EndpointDetails";
-import { ENDPOINTS } from "@/components/api-docs/endpoints";
 import { EndpointsList } from "@/components/api-docs/EndpointsList";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,24 +16,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { APP_NAME, ENDPOINT_DOMAINS } from "@/constants";
+import type { ExampleData } from "@/lib/examples/data";
 import { getExampleForEndpoint } from "@/lib/examples/data";
 
 export interface ApiExplorerProps {
+  exampleData: ExampleData;
   compact?: boolean;
   showAllEndpoints?: boolean;
 }
 
 export default function ApiExplorer({
+  exampleData,
   compact = false,
   showAllEndpoints = false,
 }: ApiExplorerProps): JSX.Element {
-  const [activeEndpoint, setActiveEndpoint] = useState(ENDPOINTS[0]);
   const [responseData, setResponseData] = useState<string>("");
   const [selectedDomain, setSelectedDomain] =
     useState<keyof typeof ENDPOINT_DOMAINS>("test");
 
-  // Get example data for the current endpoint
-  const exampleData = getExampleForEndpoint(activeEndpoint.path);
   const [requestData, setRequestData] = useState<string>(() => {
     return JSON.stringify(exampleData, null, 2);
   });

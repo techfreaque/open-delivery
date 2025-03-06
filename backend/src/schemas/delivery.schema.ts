@@ -1,39 +1,44 @@
 import { z } from "zod";
 
-export const deliveryStatusSchema = z.enum([
-  "ASSIGNED",
-  "PICKED_UP",
-  "DELIVERED",
-]);
+import { dateSchema } from "./common.schema";
+import { driverPublicResponseSchema } from "./driver.schema";
+
+const deliveryTypeSchema = z.enum(["PICKUP", "DELIVERY"]);
+
+const deliveryStatusSchema = z.enum(["ASSIGNED", "PICKED_UP", "DELIVERED"]);
 
 export const deliveryCreateSchema = z.object({
-  orderId: z.string().uuid(),
-  estimatedTime: z.number().int().optional(),
-  distance: z.number().positive(),
-  pickupLat: z.number().optional(),
-  pickupLng: z.number().optional(),
-  dropoffLat: z.number().optional(),
-  dropoffLng: z.number().optional(),
+  type: deliveryTypeSchema,
+  message: z.string().nullable(),
+  estimatedDelivery: dateSchema,
+  estimatedTime: z.number().int(), // in minutes
+  distance: z.number().positive(), // in kilometers
+  pickupAddress: z.string().nullable(),
+  dropAddress: z.string().nullable(),
+  driverId: z.string().uuid().nullable(),
 });
 
 export const deliveryUpdateSchema = z.object({
-  status: deliveryStatusSchema.optional(),
-  estimatedDelivery: z.date().optional(),
+  status: deliveryStatusSchema,
+  estimatedDelivery: dateSchema.nullable(),
+  deliveredAt: dateSchema.nullable(),
+  estimatedTime: z.number().int(),
+  driverId: z.string().uuid().nullable(),
 });
 
 export const deliveryResponseSchema = z.object({
   id: z.string().uuid(),
-  orderId: z.string().uuid(),
-  status: z.string(),
-  estimatedDelivery: z.string().nullable().optional(),
-  estimatedTime: z.number().int().nullable().optional(),
+  type: deliveryTypeSchema,
+  status: deliveryStatusSchema,
+  message: z.string().nullable(),
+  estimatedDelivery: dateSchema,
+  deliveredAt: dateSchema,
+  estimatedTime: z.number().int(),
   distance: z.number(),
-  tip: z.number().nullable().optional(),
-  pickupLat: z.number().nullable().optional(),
-  pickupLng: z.number().nullable().optional(),
-  dropoffLat: z.number().nullable().optional(),
-  dropoffLng: z.number().nullable().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  order: z.any().optional(),
+  pickupAddress: z.string().nullable(),
+  dropAddress: z.string().nullable(),
+  createdAt: dateSchema,
+  updatedAt: dateSchema,
+
+  driver: driverPublicResponseSchema.nullable(),
 });

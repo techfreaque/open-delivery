@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import { useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,7 +18,7 @@ export function CodeExamples({
   activeEndpoint,
   selectedDomain,
   requestData,
-}: CodeExamplesProps) {
+}: CodeExamplesProps): JSX.Element {
   const [activeLanguage, setActiveLanguage] = useState("curl");
 
   // Use example data from the endpoint definition if available, otherwise generate it
@@ -34,7 +35,7 @@ export function CodeExamples({
   };
 
   // Generate code examples for different languages
-  const generateExample = (language: string, domain: string) => {
+  const generateExample = (language: string, domain: string): string => {
     const path = activeEndpoint.path;
     const method = activeEndpoint.method;
     const hasBody = method !== "GET" && method !== "DELETE";

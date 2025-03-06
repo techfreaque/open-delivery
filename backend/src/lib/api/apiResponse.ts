@@ -26,7 +26,10 @@ export function createSuccessResponse<T>(
   }
 
   // For API responses, don't wrap the response in a success object, return the data directly
-  return NextResponse.json(data, { status });
+  return NextResponse.json(
+    { data, success: true },
+    { status },
+  ) satisfies NextResponse<SuccessResponse<T>>;
 }
 
 /**

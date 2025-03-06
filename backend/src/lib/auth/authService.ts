@@ -13,6 +13,7 @@ import type {
   LoginData,
   LoginResponse,
   RegisterData,
+  SuccessResponse,
   UserResponse,
 } from "@/types/types";
 import { UserRoleValue } from "@/types/types";
@@ -152,7 +153,7 @@ export async function logoutUser(user: UserResponse): Promise<void> {
  */
 export async function loginUser(
   credentials: LoginData,
-): Promise<NextResponse<LoginResponse | ErrorResponse>> {
+): Promise<NextResponse<SuccessResponse<LoginResponse> | ErrorResponse>> {
   const { email, password } = credentials;
 
   const user = await prisma.user.findUnique({

@@ -1,15 +1,23 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { validateParams, validateResponseData } from "@/lib/app-validation";
+import { validateParams } from "@/lib/app-validation";
 import { getCurrentUser } from "@/lib/auth/authService";
 import { prisma } from "@/lib/db/prisma";
 import { restaurantCreateSchema } from "@/schemas";
 import { restaurantResponseSchema } from "@/schemas";
 import { searchSchema } from "@/schemas";
-import type { ApiResponse, DBRestaurant } from "@/types/types";
+import type {
+  ApiResponse,
+  DBRestaurant,
+  ErrorResponse,
+  RestaurantResponse,
+  SuccessResponse,
+} from "@/types/types";
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(
+  request: NextRequest,
+): Promise<NextResponse<SuccessResponse<RestaurantResponse> | ErrorResponse>> {
   // Extract search parameters from URL
   const { searchParams } = new URL(request.url);
   const params = Object.fromEntries(searchParams.entries());
@@ -47,16 +55,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         menuItems: true,
       },
     });
-
-    // Validate response using schema
-    const { data: validatedResponse, response: responseError } =
-      validateResponseData(restaurantResponseSchema.array(), restaurants);
-
-    if (responseError) {
-      return responseError;
-    }
-
-    return NextResponse.json(validatedResponse);
+    return createSuccessResponse<RestaurantResponse>(
+      restaurants,
+      restaurantResponseSchema,
+    );
   } catch (error) {
     console.error("Error fetching restaurants:", error);
     return NextResponse.json(
@@ -66,7 +68,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function POST(
+  request: NextRequest,
+): Promise<NextResponse<SuccessResponse<RestaurantResponse> | ErrorResponse>> {
   try {
     const user = await getCurrentUser();
 

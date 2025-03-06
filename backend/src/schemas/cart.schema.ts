@@ -1,17 +1,27 @@
 import { z } from "zod";
 
-export const cartItemSchema = z.object({
+export const cartItemUpdateSchema = z.object({
   menuItemId: z.string().uuid(),
   restaurantId: z.string().uuid(),
-  quantity: z.number().int().positive(),
+  quantity: z.number().int().min(0),
 });
 
 export const cartItemResponseSchema = z.object({
   id: z.string().uuid(),
-  userId: z.string().uuid(),
-  restaurantId: z.string().uuid(),
-  menuItemId: z.string().uuid(),
   quantity: z.number().int(),
-  menuItem: z.any().optional(),
-  restaurant: z.any().optional(),
+  menuItem: z.object({
+    name: z.string(),
+    description: z.string(),
+    price: z.number(),
+    taxPercent: z.number(),
+    image: z.string().url().nullable(),
+    category: z.object({
+      name: z.string(),
+      image: z.string().url(),
+    }),
+  }),
+  restaurant: z.object({
+    name: z.string(),
+    image: z.string().url(),
+  }),
 });

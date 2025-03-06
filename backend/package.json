@@ -4,7 +4,7 @@
   "private": false,
   "license": "GPL-3.0-only",
   "scripts": {
-    "dev": "yarn build:pre && prisma migrate dev && yarn db:seed && next dev",
+    "dev": "yarn build:pre && prisma migrate dev && yarn db:seed && NODE_OPTIONS='--inspect' next dev",
     "build": "yarn build:pre && prisma migrate deploy && next build",
     "build:pre": "yarn build:db-schema && yarn db:push && yarn build:email && prisma generate",
     "build:email": "tsx src/lib/email/compile-mjml.ts",
@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint --fix",
     "db:push": "prisma db push",
-    "db:seed": "tsx src/tests/seed-test-db.ts",
+    "db:seed": "tsx src/lib/db/seed-test-db.ts",
     "prisma:studio": "prisma studio",
     "test": "yarn build:pre && cross-env NODE_ENV=test vitest run --sequence.all",
     "test:watch": "yarn build:pre && cross-env NODE_ENV=test vitest"

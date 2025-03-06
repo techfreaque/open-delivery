@@ -49,7 +49,7 @@ export async function verifyJwt(token: string): Promise<UserResponse> {
       const base64Payload = token.split(".")[0];
       const payload = JSON.parse(atob(base64Payload)) as UserResponse;
       return payload;
-    } catch (error) {
+    } catch {
       throw new Error("Invalid token");
     }
   }
@@ -59,7 +59,7 @@ export async function verifyJwt(token: string): Promise<UserResponse> {
   try {
     const { payload } = await jose.jwtVerify(token, secret);
     return payload as UserResponse;
-  } catch (error) {
+  } catch {
     throw new Error("Invalid token");
   }
 }

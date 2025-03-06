@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const orderStatusSchema = z.enum([
+import { addressResponseSchema } from "./address.schema";
+import { dateSchema } from "./common.schema";
+import { deliveryResponseSchema } from "./delivery.schema";
+import { restaurantProfileSchema } from "./restaurant.schema";
+import { userPublicDetailedResponseSchema } from "./user.schema";
+
+const orderStatusSchema = z.enum([
   "NEW",
   "PREPARING",
   "READY",
@@ -12,43 +18,45 @@ export const orderStatusSchema = z.enum([
 export const orderItemSchema = z.object({
   menuItemId: z.string().uuid(),
   quantity: z.number().int().positive(),
+  message: z.string().nullable(),
 });
 
 export const orderCreateSchema = z.object({
   restaurantId: z.string().uuid(),
-  address: z.string(),
+  message: z.string().nullable(),
   items: z.array(orderItemSchema).min(1),
+  deliveryFee: z.number().nonnegative(),
+  driverTip: z.number().nonnegative().nullable(),
+  restaurantTip: z.number().nonnegative().nullable(),
+  projectTip: z.number().nonnegative().nullable(),
 });
 
 export const orderUpdateSchema = z.object({
-  status: orderStatusSchema.optional(),
-  driverId: z.string().uuid().optional(),
+  status: orderStatusSchema.nullable(),
+  message: z.string().nullable(),
 });
 
 export const orderItemResponseSchema = z.object({
   id: z.string().uuid(),
-  orderId: z.string().uuid(),
-  menuItemId: z.string().uuid(),
+  message: z.string().nullable(),
   quantity: z.number().int(),
   price: z.number(),
-  menuItem: z.any().optional(),
+  taxPercent: z.number(),
 });
 
 export const orderResponseSchema = z.object({
   id: z.string().uuid(),
-  restaurantId: z.string().uuid(),
-  customerId: z.string().uuid(),
-  driverId: z.string().uuid().optional().nullable(),
-  status: z.string(),
+  message: z.string().nullable(),
+  status: orderStatusSchema,
   total: z.number(),
   deliveryFee: z.number(),
-  tax: z.number(),
-  address: z.string(),
-  createdAt: z.string(),
-  deliveredAt: z.string().nullable().optional(),
-  orderItems: z.array(orderItemResponseSchema).optional(),
-  restaurant: z.any().optional(),
-  customer: z.any().optional(),
-  driver: z.any().optional(),
-  delivery: z.any().optional(),
+  driverTip: z.number().nullable(),
+  restaurantTip: z.number().nullable(),
+  projectTip: z.number().nullable(),
+  createdAt: dateSchema,
+  restaurant: restaurantProfileSchema,
+  customer: userPublicDetailedResponseSchema,
+  address: addressResponseSchema,
+  delivery: deliveryResponseSchema,
+  orderItems: z.array(orderItemResponseSchema),
 });
