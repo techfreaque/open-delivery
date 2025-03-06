@@ -12,7 +12,7 @@ import type {
   addressCreateSchema,
   addressResponseSchema,
   addressUpdateSchema,
-  cartItemResponseSchema,
+  cartItemsResponseSchema,
   cartItemUpdateSchema,
   categoryCreateSchema,
   categoryResponseSchema,
@@ -177,7 +177,7 @@ export type CategoryCreateType = z.infer<typeof categoryCreateSchema>;
 export type CategoryUpdateType = z.infer<typeof categoryUpdateSchema>;
 export type CategoryResponseType = z.infer<typeof categoryResponseSchema>;
 export type CartItemUpdateType = z.infer<typeof cartItemUpdateSchema>;
-export type CartItemResponseType = z.infer<typeof cartItemResponseSchema>;
+export type CartItemsResponseType = z.infer<typeof cartItemsResponseSchema>;
 export type AddressCreateType = z.infer<typeof addressCreateSchema>;
 export type AddressUpdateType = z.infer<typeof addressUpdateSchema>;
 export type AddressResponseType = z.infer<typeof addressResponseSchema>;
@@ -186,26 +186,48 @@ type Empty = Record<string, never>;
 
 // Prisma types
 export type DBUser = Prisma.UserGetPayload<Empty>;
+export type DBUserRole = Prisma.UserRoleGetPayload<Empty>;
+export type DBAddress = Prisma.AddressGetPayload<Empty>;
+export type DBDriver = Prisma.DriverGetPayload<Empty>;
+export type DBEarning = Prisma.EarningGetPayload<Empty>;
+export type PasswordReset = Prisma.PasswordResetGetPayload<Empty>;
 export type DBRestaurant = Prisma.RestaurantGetPayload<Empty>;
+export type DBCategory = Prisma.CategoryGetPayload<Empty>;
+export type DBOpeningTimes = Prisma.OpeningTimesGetPayload<Empty>;
+export type DBCartItem = Prisma.CartItemGetPayload<Empty>;
 export type DBMenuItem = Prisma.MenuItemGetPayload<Empty>;
 export type DBOrder = Prisma.OrderGetPayload<Empty>;
 export type DBOrderItem = Prisma.OrderItemGetPayload<Empty>;
 export type DBDelivery = Prisma.DeliveryGetPayload<Empty>;
+export type DBRestaurantRating = Prisma.RestaurantRatingGetPayload<Empty>;
+export type DBDriverRating = Prisma.DriverRatingGetPayload<Empty>;
+export type DBCountry = Prisma.CountryGetPayload<Empty>;
+export type DBLanguages = Prisma.LanguagesGetPayload<Empty>;
 
 // Extended types
-export type DBUserWithRoles = Prisma.UserGetPayload<{
-  include: { userRoles: { select: { role: true } } };
+export type DBCartItemExtended = Prisma.CartItemGetPayload<{
+  select: {
+    restaurant: {
+      select: {
+        id: true;
+        name: true;
+        image: true;
+      };
+    };
+    menuItem: {
+      select: {
+        id: true;
+        name: true;
+        restaurantId: true;
+        price: true;
+        image: true;
+        taxPercent: true;
+        category: true;
+        description: true;
+      };
+    };
+  };
 }>;
-export type DBRestaurantWithMenuItems = DBRestaurant & {
-  menuItems: MenuItem[];
-};
-export type DBOrderWithItems = DBOrder & { items: DBOrderItem[] };
-export type DBDeliveryWithDetails = DBDelivery & {
-  order: DBOrder;
-  restaurant: { name: string; address: string };
-  customer: { name: string };
-};
-
 // prisma enums
 export {
   DeliveryStatus,

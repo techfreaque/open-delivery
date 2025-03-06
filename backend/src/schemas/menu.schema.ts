@@ -1,13 +1,13 @@
 import { z } from "zod";
 
+import { categoryResponseSchema } from "./category.schema";
 import { dateSchema } from "./common.schema";
 
-export const menuItemBaseSchema = z.object({
+const menuItemBaseSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string(),
   price: z.number().min(0, "Price must be positive"),
   image: z.string().optional(),
-  category: z.string(),
   isAvailable: z.boolean().optional().default(true),
   taxPercent: z.number().min(0).default(0),
   restaurantId: z.string().uuid(),
@@ -22,6 +22,7 @@ export const menuItemCreateSchema = menuItemBaseSchema.extend({
 
 export const menuItemResponseMinimalSchema = menuItemBaseSchema.extend({
   id: z.string().uuid(),
+  category: categoryResponseSchema,
 });
 
 export const menuItemResponseSchema = menuItemResponseMinimalSchema.extend({

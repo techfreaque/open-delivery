@@ -13,7 +13,9 @@ export const cartItemUpdateSchema = cartItemBaseSchema.extend({
   restaurantId: z.string().uuid(),
 });
 
-export const cartItemResponseSchema = cartItemBaseSchema.extend({
+const cartItemResponseSchema = cartItemBaseSchema.extend({
   menuItem: menuItemResponseMinimalSchema,
   restaurant: restaurantProfileMinimalSchema,
 });
+
+export const cartItemsResponseSchema = z.array(cartItemResponseSchema);

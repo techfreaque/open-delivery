@@ -4,18 +4,22 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { backendPages } from "@/constants";
-import type { LoginData, LoginResponse, UserResponse } from "@/types/types";
+import type {
+  LoginFormType,
+  LoginResponseType,
+  UserResponseType,
+} from "@/types/types";
 
 interface UseAuthReturn {
-  user: UserResponse | null;
+  user: UserResponseType | null;
   loading: boolean;
-  login: (credentials: LoginData) => Promise<UserResponse | null>;
+  login: (credentials: LoginFormType) => Promise<UserResponseType | null>;
   logout: () => void;
   error: string | null;
 }
 
 export function useAuth(): UseAuthReturn {
-  const [user, setUser] = useState<UserResponse | null>(null);
+  const [user, setUser] = useState<UserResponseType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -30,7 +34,7 @@ export function useAuth(): UseAuthReturn {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         try {
-          const parsedUser: UserResponse = JSON.parse(storedUser);
+          const parsedUser: UserResponseType = JSON.parse(storedUser);
           setUser(parsedUser);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
@@ -45,7 +49,7 @@ export function useAuth(): UseAuthReturn {
   }, []);
 
   const login = useCallback(
-    async (credentials: LoginData): Promise<UserResponse | null> => {
+    async (credentials: LoginFormType): Promise<UserResponseType | null> => {
       try {
         setLoading(true);
         setError(null);
@@ -65,7 +69,7 @@ export function useAuth(): UseAuthReturn {
           return null;
         }
 
-        const loginData = data as LoginResponse;
+        const loginData = data as LoginResponseType;
         setUser(loginData.user);
 
         if (typeof window !== "undefined") {
@@ -86,7 +90,7 @@ export function useAuth(): UseAuthReturn {
         return null;
       }
     },
-    [router],
+    [],
   );
 
   const logout = useCallback((): void => {

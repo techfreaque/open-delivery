@@ -9,26 +9,23 @@ import {
 } from "@/lib/api/apiResponse";
 import { getVerifiedUser } from "@/lib/auth/authService";
 import { prisma } from "@/lib/db/prisma";
-import { cartSchema, removeCartItemSchema } from "@/schemas";
-import { cartResponseSchema } from "@/schemas";
+import { cartItemsResponseSchema, cartItemUpdateSchema } from "@/schemas";
+import type {
+  CartItemsResponseType,
+  DBCartItemExtended,
+  ErrorResponse,
+  SuccessResponse,
+} from "@/types/types";
 
-export async function GET(): Promise<NextResponse> {
-  const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
+export async function GET(): Promise<
+  NextResponse<SuccessResponse<CartItemsResponseType> | ErrorResponse>
+> {
   try {
-    const cart = await prisma.cart.findUnique({
-      where: { userId: user.id },
-      include: {
-        items: {
-          include: {
-            menuItem: true,
-          },
-        },
-      },
-    });
-
-    return createSuccessResponse<CartResponse>(
-      cart || { items: [] },
-      cartResponseSchema,
+    const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
+    const cartItems = await getCartItems(user.id);
+    return createSuccessResponse<CartItemsResponseType>(
+      cartItems,
+      cartItemsResponseSchema,
     );
   } catch (err) {
     const error = err as Error;
@@ -36,92 +33,99 @@ export async function GET(): Promise<NextResponse> {
   }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  const user = await getVerifiedUser();
-  try {
-    const validatedData = await validateRequest(request, cartSchema);
-    // Check if user already has a cart
-    const cart = await prisma.cart.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: {
-        userId: user.id,
-      },
-    });
-
-    // Delete existing cart items
-    await prisma.cartItem.deleteMany({
-      where: {
-        cartId: cart.id,
-      },
-    });
-
-    // Add new cart items
-    const updatedCart = await prisma.cart.update({
-      where: { id: cart.id },
-      data: {
-        items: {
-          create: validatedData.items.map((item) => ({
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-          })),
+async function getCartItems(userId: string): Promise<DBCartItemExtended[]> {
+  return prisma.cartItem.findMany({
+    where: { userId },
+    select: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
         },
       },
-      include: {
-        items: {
-          include: {
-            menuItem: true,
+      menuItem: {
+        select: {
+          id: true,
+          name: true,
+          restaurantId: true,
+          price: true,
+          image: true,
+          taxPercent: true,
+          category: true,
+          description: true,
+        },
+      },
+    },
+  });
+}
+
+export async function POST(
+  request: NextRequest,
+): Promise<
+  NextResponse<SuccessResponse<CartItemsResponseType> | ErrorResponse>
+> {
+  const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
+  const validatedData = await validateRequest(request, cartItemUpdateSchema);
+  try {
+    const menuItem = await prisma.menuItem.findUnique({
+      where: { id: validatedData.menuItemId },
+      include: { restaurant: true },
+    });
+    if (!menuItem) {
+      return createErrorResponse("Menu item not found", 404);
+    }
+
+    const existingCartItem = await prisma.cartItem.findUnique({
+      where: {
+        userId_menuItemId_restaurantId: {
+          userId: user.id,
+          menuItemId: validatedData.menuItemId,
+          restaurantId: menuItem.restaurantId,
+        },
+      },
+    });
+
+    // If quantity is 0, remove the item
+    if (validatedData.quantity === 0) {
+      if (existingCartItem) {
+        await prisma.cartItem.delete({
+          where: { id: existingCartItem.id },
+        });
+      }
+    } else {
+      // Upsert the cart item (create or update)
+      await prisma.cartItem.upsert({
+        where: {
+          userId_menuItemId_restaurantId: {
+            userId: user.id,
+            menuItemId: validatedData.menuItemId,
+            restaurantId: menuItem.restaurantId,
           },
         },
-      },
-    });
+        update: {
+          quantity: validatedData.quantity,
+        },
+        create: {
+          userId: user.id,
+          menuItemId: validatedData.menuItemId,
+          restaurantId: menuItem.restaurantId,
+          quantity: validatedData.quantity,
+        },
+        include: {
+          menuItem: true,
+          restaurant: true,
+        },
+      });
+    }
+    const cartItems = await getCartItems(user.id);
 
-    return createSuccessResponse<CartResponse>(updatedCart, cartResponseSchema);
+    return createSuccessResponse<CartItemsResponseType>(
+      cartItems,
+      cartItemsResponseSchema,
+    );
   } catch (err) {
     const error = err as Error;
     return createErrorResponse(`Failed to update cart: ${error.message}`, 500);
-  }
-}
-
-export async function DELETE(request: NextRequest): Promise<NextResponse> {
-  const user = await getVerifiedUser();
-  try {
-    const validatedData = await validateRequest(request, removeCartItemSchema);
-
-    // Get the user's cart
-    const cart = await prisma.cart.findUnique({
-      where: { userId: user.id },
-    });
-
-    if (!cart) {
-      return createErrorResponse("Cart not found", 404);
-    }
-
-    // Remove the specific item
-    await prisma.cartItem.deleteMany({
-      where: {
-        cartId: cart.id,
-        menuItemId: validatedData.menuItemId,
-      },
-    });
-
-    const updatedCart = await prisma.cart.findUnique({
-      where: { id: cart.id },
-      include: {
-        items: {
-          include: {
-            menuItem: true,
-          },
-        },
-      },
-    });
-
-    return createSuccessResponse<CartResponse>(updatedCart, cartResponseSchema);
-  } catch (err) {
-    const error = err as Error;
-    return createErrorResponse(
-      `Failed to remove item from cart: ${error.message}`,
-      500,
-    );
   }
 }

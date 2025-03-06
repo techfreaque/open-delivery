@@ -6,8 +6,8 @@ import type { ChangeEvent, FormEvent, JSX } from "react";
 import { useState } from "react";
 import { z } from "zod";
 
-import { registerSchema } from "@/schemas/user.schema";
-import type { LoginResponse, RegisterData } from "@/types/types";
+import { registerSchema } from "@/schemas";
+import type { LoginResponseType, RegisterType } from "@/types/types";
 
 // Add missing type definitions
 interface ValidationErrors {
@@ -23,8 +23,9 @@ interface SignupFormFields {
 
 export default function SignupPage(): JSX.Element {
   const router = useRouter();
-  const [formData, setFormData] = useState<RegisterData>({
-    name: "",
+  const [formData, setFormData] = useState<RegisterType>({
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -82,7 +83,7 @@ export default function SignupPage(): JSX.Element {
         body: JSON.stringify(dataToSubmit),
       });
 
-      const data = (await response.json()) as LoginResponse;
+      const data = (await response.json()) as LoginResponseType;
 
       if (!response.ok) {
         throw new Error(JSON.stringify(data) || "Signup failed");
@@ -124,27 +125,48 @@ export default function SignupPage(): JSX.Element {
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="name"
+                htmlFor="firstName"
                 className="block text-sm font-medium text-gray-700"
               >
                 Name
               </label>
               <input
-                id="name"
-                name="name"
+                id="firstName"
+                name="firstName"
                 type="text"
                 required
-                value={formData.name}
+                value={formData.firstName}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${
+                  errors.firstName ? "ring-red-300" : "ring-gray-300"
+                } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+              />
+              {errors.firstName && (
+                <p className="mt-2 text-sm text-red-600">{errors.firstName}</p>
+              )}
+            </div>
+            <div>
+              <label
+                htmlFor="lastName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Name
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                value={formData.lastName}
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${
                   errors.name ? "ring-red-300" : "ring-gray-300"
                 } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
               />
-              {errors.name && (
-                <p className="mt-2 text-sm text-red-600">{errors.name}</p>
+              {errors.lastName && (
+                <p className="mt-2 text-sm text-red-600">{errors.lastName}</p>
               )}
             </div>
-
             <div>
               <label
                 htmlFor="email"

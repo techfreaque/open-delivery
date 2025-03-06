@@ -125,8 +125,7 @@ export async function getCurrentUser(): Promise<UserResponseMinimalType | null> 
       return null;
     }
   } catch (error) {
-    console.error("Error getting current user:", error);
-    return null;
+    throw new Error(`Error getting current user, error: ${error}`);
   }
 }
 

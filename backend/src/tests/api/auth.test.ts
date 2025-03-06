@@ -6,7 +6,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { env } from "@/lib/env";
-import type { LoginResponse, SuccessResponse } from "@/types/types";
+import type { LoginResponseType, SuccessResponse } from "@/types/types";
 
 describe("Auth API", () => {
   // Storage for test-generated auth tokens
@@ -20,7 +20,7 @@ describe("Auth API", () => {
           email: "customer@example.com",
           password: "password",
         });
-      const responseData = response.body as SuccessResponse<LoginResponse>;
+      const responseData = response.body as SuccessResponse<LoginResponseType>;
       // For debugging purposes, log the response body
       console.log("Login response body:", responseData);
 

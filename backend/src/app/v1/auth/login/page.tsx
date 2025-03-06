@@ -5,7 +5,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { type FC, useState } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
-import type { LoginData } from "@/types/types";
+import type { LoginFormType } from "@/types/types";
 
 const LoginPage: FC = () => {
   return (
@@ -24,14 +24,14 @@ const LoginForm: FC = () => {
   const router = useRouter();
   const { login, loading: authLoading } = useAuth();
 
-  const [credentials, setCredentials] = useState<LoginData>({
+  const [credentials, setCredentials] = useState<LoginFormType>({
     email: "",
     password: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<
-    Partial<Record<keyof LoginData, string>>
+    Partial<Record<keyof LoginFormType, string>>
   >({});
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -42,7 +42,7 @@ const LoginForm: FC = () => {
     }));
 
     // Clear validation error for this field when user starts typing
-    if (validationErrors[name as keyof LoginData]) {
+    if (validationErrors[name as keyof LoginFormType]) {
       setValidationErrors((prev) => ({
         ...prev,
         [name]: undefined,
@@ -55,7 +55,8 @@ const LoginForm: FC = () => {
     setError(null);
 
     // Client-side validation
-    const newValidationErrors: Partial<Record<keyof LoginData, string>> = {};
+    const newValidationErrors: Partial<Record<keyof LoginFormType, string>> =
+      {};
 
     if (!credentials.email) {
       newValidationErrors.email = "Email is required";
