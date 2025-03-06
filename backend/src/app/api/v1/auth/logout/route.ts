@@ -7,15 +7,15 @@ import {
 import { getVerifiedUser, logoutUser } from "@/lib/auth/authService";
 import { messageResponseSchema } from "@/schemas";
 import type { ErrorResponse, SuccessResponse } from "@/types/types";
-import { type MessageResponse, UserRoleValue } from "@/types/types";
+import { type MessageResponseType, UserRoleValue } from "@/types/types";
 
 export async function GET(): Promise<
-  NextResponse<SuccessResponse<MessageResponse> | ErrorResponse>
+  NextResponse<SuccessResponse<MessageResponseType> | ErrorResponse>
 > {
   const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
   try {
     await logoutUser(user);
-    return createSuccessResponse<MessageResponse>(
+    return createSuccessResponse<MessageResponseType>(
       "Logged out successfully",
       messageResponseSchema,
     );

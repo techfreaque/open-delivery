@@ -3,6 +3,7 @@ import { z } from "zod";
 import { minimalCountryResponseSchema } from "./locale.schema";
 
 export const addressCreateSchema = z.object({
+  userId: z.string().uuid({ message: "Valid user ID is required" }),
   label: z.string().min(1, { message: "Label is required" }),
   street: z.string().min(1, { message: "Street is required" }),
   streetNumber: z.string().min(1, { message: "Street number is required" }),

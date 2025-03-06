@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { menuItemResponseMinimalSchema } from "./menu.schema";
+import { restaurantProfileMinimalSchema } from "./restaurant.schema";
 
 export const cartItemUpdateSchema = z.object({
   menuItemId: z.string().uuid(),
@@ -9,19 +11,6 @@ export const cartItemUpdateSchema = z.object({
 export const cartItemResponseSchema = z.object({
   id: z.string().uuid(),
   quantity: z.number().int(),
-  menuItem: z.object({
-    name: z.string(),
-    description: z.string(),
-    price: z.number(),
-    taxPercent: z.number(),
-    image: z.string().url().nullable(),
-    category: z.object({
-      name: z.string(),
-      image: z.string().url(),
-    }),
-  }),
-  restaurant: z.object({
-    name: z.string(),
-    image: z.string().url(),
-  }),
+  menuItem: menuItemResponseMinimalSchema,
+  restaurant: restaurantProfileMinimalSchema,
 });

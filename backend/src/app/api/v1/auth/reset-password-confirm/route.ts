@@ -9,48 +9,41 @@ import {
 import { verifyPasswordResetToken } from "@/lib/auth/tokens";
 import { prisma } from "@/lib/db/prisma";
 import { messageResponseSchema, resetPasswordConfirmSchema } from "@/schemas";
-import type { MessageResponse } from "@/types/types";
+import type {
+  ErrorResponse,
+  MessageResponseType,
+  SuccessResponse,
+} from "@/types/types";
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(
+  request: Request,
+): Promise<NextResponse<SuccessResponse<MessageResponseType> | ErrorResponse>> {
   try {
-    // Validate request data
     const validatedData = await validateRequest(
       request,
       resetPasswordConfirmSchema,
     );
-
-    // Verify token and get user email
-    const email = await verifyPasswordResetToken(validatedData.token);
-    if (!email) {
+    const resetPayload = await verifyPasswordResetToken(validatedData.token);
+    if (!resetPayload || !resetPayload.email || !resetPayload.userId) {
       return createErrorResponse("Invalid or expired token", 400);
     }
-
-    // Find user by email
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: resetPayload.email, id: resetPayload.userId },
     });
-
     if (!user) {
       return createErrorResponse("User not found", 404);
     }
-
-    // Hash the new password
     const hashedPassword = await hash(validatedData.confirmPassword, 10);
-
-    // Update user password
     await prisma.user.update({
       where: { id: user.id },
       data: { password: hashedPassword },
     });
 
-    return createSuccessResponse<MessageResponse>(
-      { message: "Password has been successfully reset" },
+    return createSuccessResponse<MessageResponseType>(
+      "Password has been successfully reset",
       messageResponseSchema,
     );
   } catch (err) {
-    if (err instanceof Error && err.message.includes("validation failed")) {
-      return createErrorResponse(`Invalid request: ${err.message}`, 400);
-    }
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return createErrorResponse(
       `Failed to reset password: ${errorMessage}`,

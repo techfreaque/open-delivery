@@ -48,7 +48,8 @@ export async function seedTestDatabase(): Promise<void> {
             data: {
               id: user.id,
               email: user.email,
-              name: user.name,
+              firstName: user.firstName,
+              lastName: user.lastName,
               password: hashedPassword,
             },
           });
@@ -284,7 +285,7 @@ export async function seedTestDatabase(): Promise<void> {
               dropoffLat: delivery.dropoffLat,
               dropoffLng: delivery.dropoffLng,
               // Add the required field
-              type: delivery.type || "STANDARD" as DeliveryType,
+              type: delivery.type || ("STANDARD" as DeliveryType),
             },
           });
 

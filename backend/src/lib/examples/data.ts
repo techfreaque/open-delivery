@@ -11,7 +11,6 @@ import {
   driverCreateSchema,
   driverPublicResponseSchema,
   menuItemCreateSchema,
-  menuItemSchema,
   orderCreateSchema,
   orderItemResponseSchema,
   orderResponseSchema,
@@ -20,76 +19,82 @@ import {
   restaurantResponseSchema,
 } from "@/schemas";
 import type {
-  AddressCreateFormData,
-  CartItem,
-  DeliveryCreateData,
-  DeliveryResponse,
-  DriverCreateFormData,
-  DriverResponse,
-  LoginData,
-  MenuItemCreateFormData,
-  MenuItemResponse,
-  OrderCreateData,
-  OrderItemResponse,
-  OrderResponse,
-  RegisterData,
-  ResetPasswordResetConfirmData,
-  ResetPasswordResetRequestData,
-  RestaurantCreateFormData,
-  RestaurantProfileFormData,
-  RestaurantResponse,
-  UserResponse,
+  AddressCreateType,
+  CartItemUpdateType,
+  DeliveryCreateType,
+  DeliveryResponseType,
+  DriverCreateType,
+  DriverPrivateResponseType,
+  LoginFormType,
+  MenuItemCreateType,
+  MenuItemResponseType,
+  OrderCreateType,
+  OrderItemResponseType,
+  OrderResponseType,
+  RegisterType,
+  ResetPasswordConfirmType,
+  ResetPasswordRequestType,
+  RestaurantCreateType,
+  RestaurantProfileType,
+  RestaurantResponseType,
+  UserResponseType,
 } from "@/types/types";
 
 class Examples {
   // API examples for documentation
-  private restaurantExamples: RestaurantCreateFormData[] = [
+  private restaurantExamples: RestaurantCreateType[] = [
     {
+      restaurantId: "550e8400-e29b-41d4-a716-446655440000",
       name: "Pizza Palace",
       description: "Delicious pizzas made with fresh ingredients",
-      address: "123 Main St, City",
+      mainCategoryId: "todo",
+      streetNumber: "123",
+      street: "Main St",
+      city: "City",
+      zip: "123",
+      countryId: "DE",
       phone: "+1234567890",
       email: "contact@pizzapalace.com",
       image: "https://example.com/pizzapalace.jpg",
-      cuisine: "Italian",
+      userRoles: [],
       // Add new required fields
-      street: "123 Main St",
-      city: "City",
-      state: "State",
-      zipCode: "12345",
-      country: "Country",
-      latitude: 40.712,
-      longitude: -74.006,
     },
   ];
 
-  private menuItemExamples: MenuItemCreateFormData[] = [
+  private menuItemExamples: MenuItemCreateType[] = [
     {
       name: "Margherita Pizza",
       description: "Classic cheese and tomato pizza",
       price: 9.99,
-      category: "Pizza",
       image: "https://example.com/margherita.jpg",
-      isAvailable: true,
-      // Add new required field
       taxPercent: 8.0,
+      published: true,
+      availableFrom: null,
+      availableTo: null,
+      categoryId: "todo",
+      restaurantId: "550e8400-e29b-41d4-a716-446655440000",
     },
   ];
 
-  private orderExamples: OrderCreateData[] = [
+  private orderExamples: OrderCreateType[] = [
     {
       restaurantId: "550e8400-e29b-41d4-a716-446655440000",
-      address: "456 Park Ave, City",
       items: [
         {
           menuItemId: "550e8400-e29b-41d4-a716-446655440001",
           quantity: 2,
+          message: "without cheese",
         },
       ],
+      message: "ring the doorbell",
+      deliveryFee: 2,
+      driverTip: 1,
+      restaurantTip: 1,
+      projectTip: 1,
     },
   ];
 
-  private driverExamples: DriverCreateFormData[] = [
+  private driverExamples: DriverCreateType[] = [
     {
       userId: "550e8400-e29b-41d4-a716-446655440004",
       vehicle: "Toyota Corolla",
@@ -97,16 +102,21 @@ class Examples {
     },
   ];
 
-  private addressExamples: AddressCreateFormData[] = [
+  private addressExamples: AddressCreateType[] = [
     {
       userId: "550e8400-e29b-41d4-a716-446655440002",
       label: "Home",
-      address: "789 Residential Ave, City, State, 12345",
       isDefault: false,
+      street: "street",
+      streetNumber: "43",
+      zip: "435435",
+      city: "dfgdf",
+      phone: "+1234567890",
+      countryId: "DE",
     },
   ];
 
-  private deliveryExamples: DeliveryCreateData[] = [
+  private deliveryExamples: DeliveryCreateType[] = [
     {
       orderId: "550e8400-e29b-41d4-a716-446655440003",
       distance: 3.5,
@@ -118,10 +128,11 @@ class Examples {
     },
   ];
 
-  private userExamples: Partial<UserResponse>[] = [
+  private userExamples: Partial<UserResponseType>[] = [
     {
       id: "550e8400-e29b-41d4-a716-446655440002",
-      name: "John Doe",
+      firstName: "John",
+      lastName: "Doe",
       email: "john@example.com",
       roles: [UserRoleValue.CUSTOMER],
     },
@@ -131,24 +142,24 @@ class Examples {
     login: {
       email: "user@example.com",
       password: "Password123",
-    } as LoginData,
+    } as LoginFormType,
     register: {
       name: "New User",
       email: "newuser@example.com",
       password: "Password123",
       confirmPassword: "Password123",
-    } as RegisterData,
+    } as RegisterType,
     resetRequest: {
       email: "user@example.com",
-    } as ResetPasswordResetRequestData,
+    } as ResetPasswordRequestType,
     resetConfirm: {
       token: "reset-token-example",
       password: "NewPassword123",
       confirmPassword: "NewPassword123",
-    } as ResetPasswordResetConfirmData,
+    } as ResetPasswordConfirmType,
   };
 
-  private cartExamples: CartItem[] = [
+  private cartExamples: CartItemUpdateType[] = [
     {
       menuItemId: "550e8400-e29b-41d4-a716-446655440001",
       restaurantId: "550e8400-e29b-41d4-a716-446655440000",
@@ -160,28 +171,32 @@ class Examples {
   private testUsers = [
     {
       id: "e6f5f3f0-3aa7-4b50-9450-a1e88c590b44",
-      name: "Admin User",
+      firstName: "Admin",
+      lastName: "User",
       email: "admin@example.com",
       password: "password",
       roleValue: UserRoleValue.ADMIN,
     },
     {
       id: "36d7d08a-db1e-4db7-bd9d-25136adeb46f",
-      name: "Customer User",
+      firstName: "Customer",
+      lastName: "User",
       email: "customer@example.com",
       password: "password",
       roleValue: UserRoleValue.CUSTOMER,
     },
     {
       id: "1f4b3d55-36b1-43c2-8456-7b1f9a36a81f",
-      name: "Restaurant Owner",
+      firstName: "Restaurant",
+      lastName: "Owner",
       email: "restaurant@example.com",
       password: "password",
       roleValue: UserRoleValue.RESTAURANT_ADMIN,
     },
     {
       id: "8d6765be-1929-4985-8634-cac0e3a87034",
-      name: "Delivery Driver",
+      firstName: "Delivery",
+      lastName: "Driver",
       email: "driver@example.com",
       password: "password",
       roleValue: UserRoleValue.DRIVER,
@@ -254,7 +269,7 @@ class Examples {
       country: "USA",
       latitude: 40.712,
       longitude: -74.005,
-    } as RestaurantResponse,
+    } as RestaurantResponseType,
     {
       id: "e4f7g6e5-d8c7-6b5a-1e0d-9f8g7e6f5d4c",
       name: "Burger Barn",
@@ -275,7 +290,7 @@ class Examples {
       country: "USA",
       latitude: 40.713,
       longitude: -74.007,
-    } as RestaurantResponse,
+    } as RestaurantResponseType,
   ];
 
   private testMenuItems = [
@@ -290,7 +305,7 @@ class Examples {
       isAvailable: true,
       // Add new required field
       taxPercent: 8.0,
-    } as MenuItemResponse,
+    } as MenuItemResponseType,
     {
       id: "g6h9i8j7-f0e9-8d7c-3g2f-1h0i9j8k7l6m",
       name: "Pepperoni Pizza",
@@ -302,7 +317,7 @@ class Examples {
       isAvailable: true,
       // Add new required field
       taxPercent: 8.0,
-    } as MenuItemResponse,
+    } as MenuItemResponseType,
     {
       id: "h7i0j9k8-g1f0-9e8d-4h3g-2i1j0k9l8m7n",
       name: "Classic Burger",
@@ -314,7 +329,7 @@ class Examples {
       isAvailable: true,
       // Add new required field
       taxPercent: 8.0,
-    } as MenuItemResponse,
+    } as MenuItemResponseType,
   ];
 
   private testOrders = [
@@ -329,7 +344,7 @@ class Examples {
       address: "123 Main St, Cityville, Stateland 12345, USA",
       createdAt: "2023-01-01T12:00:00Z",
       deliveredAt: null,
-    } as OrderResponse,
+    } as OrderResponseType,
     {
       id: "j9k2l1m0-i3h2-1g0f-6j5i-4k3l2m1n0o9p",
       total: 12.98,
@@ -341,7 +356,7 @@ class Examples {
       address: "123 Main St, Cityville, Stateland 12345, USA",
       createdAt: "2023-01-02T12:00:00Z",
       deliveredAt: "2023-01-02T13:30:00Z",
-    } as OrderResponse,
+    } as OrderResponseType,
   ];
 
   private testOrderItems = [
@@ -354,7 +369,7 @@ class Examples {
       menuItem: this.testMenuItems[0],
       // Add new required field
       taxPercent: 8.0,
-    } as OrderItemResponse,
+    } as OrderItemResponseType,
     {
       id: "l1m4n3o2-k5j4-3i2h-8l7k-6m5n4o3p2q1r",
       quantity: 1,
@@ -364,7 +379,7 @@ class Examples {
       menuItem: this.testMenuItems[2],
       // Add new required field
       taxPercent: 8.0,
-    } as OrderItemResponse,
+    } as OrderItemResponseType,
   ];
 
   private testDeliveries = [
@@ -384,7 +399,7 @@ class Examples {
       updatedAt: "2023-01-01T12:05:00Z",
       // Add new required field
       type: "STANDARD" as DeliveryType,
-    } as DeliveryResponse,
+    } as DeliveryResponseType,
     {
       id: "n3o6p5q4-m7l6-5k4j-0n9m-8o7p6q5r4s3t",
       orderId: "j9k2l1m0-i3h2-1g0f-6j5i-4k3l2m1n0o9p",
@@ -401,7 +416,7 @@ class Examples {
       updatedAt: "2023-01-02T13:30:00Z",
       // Add new required field
       type: "EXPRESS" as DeliveryType,
-    } as DeliveryResponse,
+    } as DeliveryResponseType,
   ];
 
   private testDrivers = [
@@ -414,7 +429,7 @@ class Examples {
       rating: 4.8,
       createdAt: "2023-01-01T09:00:00Z",
       updatedAt: "2023-01-01T09:00:00Z",
-    } as DriverResponse,
+    } as DriverPrivateResponseType,
   ];
 
   private testRestaurantProfiles = [
@@ -431,35 +446,35 @@ class Examples {
       cuisineType: "Italian",
       deliveryRadius: 5,
       isActive: true,
-    } as RestaurantProfileFormData,
+    } as RestaurantProfileType,
   ];
 
   // Public accessors for API examples
-  get restaurants(): RestaurantCreateFormData[] {
+  get restaurants(): RestaurantCreateType[] {
     return this.restaurantExamples;
   }
 
-  get menuItems(): MenuItemCreateFormData[] {
+  get menuItems(): MenuItemCreateType[] {
     return this.menuItemExamples;
   }
 
-  get orders(): OrderCreateData[] {
+  get orders(): OrderCreateType[] {
     return this.orderExamples;
   }
 
-  get drivers(): DriverCreateFormData[] {
+  get drivers(): DriverCreateType[] {
     return this.driverExamples;
   }
 
-  get addresses(): AddressCreateFormData[] {
+  get addresses(): AddressCreateType[] {
     return this.addressExamples;
   }
 
-  get deliveries(): DeliveryCreateData[] {
+  get deliveries(): DeliveryCreateType[] {
     return this.deliveryExamples;
   }
 
-  get users(): Partial<UserResponse>[] {
+  get users(): Partial<UserResponseType>[] {
     return this.userExamples;
   }
 
@@ -467,11 +482,11 @@ class Examples {
     return this.authExamples;
   }
 
-  get cart(): CartItem[] {
+  get cart(): CartItemUpdateType[] {
     return this.cartExamples;
   }
 
-  get restaurantProfiles(): RestaurantProfileFormData[] {
+  get restaurantProfiles(): RestaurantProfileType[] {
     return this.testRestaurantProfiles;
   }
 
@@ -592,7 +607,7 @@ class Examples {
 
       // Validate test data if needed
       z.array(restaurantResponseSchema).parse(this.testRestaurants);
-      z.array(menuItemSchema).parse(this.testMenuItems);
+      z.array(menuItemCreateSchema).parse(this.testMenuItems);
       z.array(orderResponseSchema.partial()).parse(this.testOrders);
       z.array(orderItemResponseSchema.partial()).parse(this.testOrderItems);
       z.array(deliveryResponseSchema.partial()).parse(this.testDeliveries);

@@ -5,16 +5,16 @@ import { loginUser } from "@/lib/auth/authService";
 import { loginSchema } from "@/schemas";
 import type {
   ErrorResponse,
-  LoginData,
-  LoginResponse,
+  LoginFormType,
+  LoginResponseType,
   SuccessResponse,
 } from "@/types/types";
 
 export async function POST(
   request: Request,
-): Promise<NextResponse<SuccessResponse<LoginResponse> | ErrorResponse>> {
+): Promise<NextResponse<SuccessResponse<LoginResponseType> | ErrorResponse>> {
   try {
-    const validatedData = await validateRequest<LoginData>(
+    const validatedData = await validateRequest<LoginFormType>(
       request,
       loginSchema,
     );

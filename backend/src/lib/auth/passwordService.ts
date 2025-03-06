@@ -1,14 +1,14 @@
 import { prisma } from "@/lib/db/prisma";
 import type {
-  ResetPasswordResetConfirmData,
-  ResetPasswordResetRequestData,
+  ResetPasswordConfirmType,
+  ResetPasswordRequestType,
 } from "@/types/types";
 
 /**
  * Request a password reset by creating a token and sending an email
  */
 export async function requestPasswordReset(
-  data: ResetPasswordResetRequestData,
+  data: ResetPasswordRequestType,
 ): Promise<{
   success: boolean;
   token?: string; // Remove undefined from token since we actually return it
@@ -51,7 +51,7 @@ export async function requestPasswordReset(
  * Verify a reset token and update the user's password
  */
 export async function verifyAndResetPassword(
-  data: ResetPasswordResetConfirmData,
+  data: ResetPasswordConfirmType,
 ): Promise<{
   success: boolean;
   message?: string;

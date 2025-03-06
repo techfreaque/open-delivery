@@ -3,7 +3,7 @@ import "server-only";
 import * as jose from "jose";
 
 import { env } from "@/lib/env";
-import type { UserResponse } from "@/types/types";
+import type { UserResponseMinimalType } from "@/types/types";
 
 // Use a stable secret key for tests
 const secretKey =
@@ -18,7 +18,9 @@ if (!secretKey) {
 /**
  * Sign a JWT with the given payload
  */
-export async function signJwt(payload: UserResponse): Promise<string> {
+export async function signJwt(
+  payload: UserResponseMinimalType,
+): Promise<string> {
   const secret = new TextEncoder().encode(secretKey);
 
   // For tests, use a simplified signature
@@ -39,7 +41,9 @@ export async function signJwt(payload: UserResponse): Promise<string> {
 /**
  * Verify a JWT and return its payload
  */
-export async function verifyJwt(token: string): Promise<UserResponse> {
+export async function verifyJwt(
+  token: string,
+): Promise<UserResponseMinimalType> {
   // Special handling for test tokens
   if (
     token.endsWith(".test_signature_for_e2e_tests") &&
@@ -47,7 +51,9 @@ export async function verifyJwt(token: string): Promise<UserResponse> {
   ) {
     try {
       const base64Payload = token.split(".")[0];
-      const payload = JSON.parse(atob(base64Payload)) as UserResponse;
+      const payload = JSON.parse(
+        atob(base64Payload),
+      ) as UserResponseMinimalType;
       return payload;
     } catch {
       throw new Error("Invalid token");
@@ -58,7 +64,7 @@ export async function verifyJwt(token: string): Promise<UserResponse> {
 
   try {
     const { payload } = await jose.jwtVerify(token, secret);
-    return payload as UserResponse;
+    return payload as UserResponseMinimalType;
   } catch {
     throw new Error("Invalid token");
   }

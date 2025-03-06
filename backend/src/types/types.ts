@@ -39,6 +39,7 @@ import type {
   languageResponseSchema,
   languageUpdateSchema,
   loginResponseSchema,
+  loginSchema,
   menuItemCreateSchema,
   menuItemResponseMinimalSchema,
   menuItemResponseSchema,
@@ -87,6 +88,10 @@ export type ErrorResponse = {
 };
 
 // Re-export all schema types for easier access
+export type MessageResponseType = z.infer<typeof messageResponseSchema>;
+export type ErrorResponseType = z.infer<typeof errorResponseSchema>;
+export type SuccessResponseType = z.infer<typeof successResponseSchema>;
+
 export type UserPublicResponseType = z.infer<typeof userPublicResponseSchema>;
 export type UserPublicDetailedResponseType = z.infer<
   typeof userPublicDetailedResponseSchema
@@ -94,6 +99,7 @@ export type UserPublicDetailedResponseType = z.infer<
 export type UserResponseMinimalType = z.infer<typeof userResponseMinimalSchema>;
 export type UserResponseType = z.infer<typeof userResponseSchema>;
 export type LoginResponseType = z.infer<typeof loginResponseSchema>;
+export type LoginFormType = z.infer<typeof loginSchema>;
 export type RegisterType = z.infer<typeof registerSchema>;
 export type UserRoleRestaurantCreateType = z.infer<
   typeof userRoleRestaurantCreateSchema
@@ -167,9 +173,6 @@ export type IdType = z.infer<typeof idSchema>;
 export type PaginationType = z.infer<typeof paginationSchema>;
 export type SearchType = z.infer<typeof searchSchema>;
 export type DateRangeType = z.infer<typeof dateRangeSchema>;
-export type MessageResponseType = z.infer<typeof messageResponseSchema>;
-export type ErrorResponseType = z.infer<typeof errorResponseSchema>;
-export type SuccessResponseType = z.infer<typeof successResponseSchema>;
 export type CategoryCreateType = z.infer<typeof categoryCreateSchema>;
 export type CategoryUpdateType = z.infer<typeof categoryUpdateSchema>;
 export type CategoryResponseType = z.infer<typeof categoryResponseSchema>;

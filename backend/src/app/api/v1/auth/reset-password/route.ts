@@ -5,39 +5,28 @@ import {
   createSuccessResponse,
   validateRequest,
 } from "@/lib/api/apiResponse";
-import { prisma } from "@/lib/db/prisma";
 import { sendPasswordResetToken } from "@/lib/email/senders";
 import { messageResponseSchema, resetPasswordRequestSchema } from "@/schemas";
-import type { MessageResponse } from "@/types/types";
+import type {
+  ErrorResponse,
+  MessageResponseType,
+  SuccessResponse,
+} from "@/types/types";
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(
+  request: Request,
+): Promise<NextResponse<SuccessResponse<MessageResponseType> | ErrorResponse>> {
   try {
-    // Validate request data
     const validatedData = await validateRequest(
       request,
       resetPasswordRequestSchema,
     );
-
-    // Check if user exists with this email
-    const user = await prisma.user.findUnique({
-      where: { email: validatedData.email },
-    });
-
-    if (!user) {
-      return createErrorResponse("User not found with this email address", 404);
-    }
-
-    // Send password reset token
     await sendPasswordResetToken(validatedData.email);
-
-    return createSuccessResponse<MessageResponse>(
-      { message: "Password reset email sent" },
+    return createSuccessResponse<MessageResponseType>(
+      "Password reset email sent, If the email exists in our system, you will receive an email with instructions to reset your password.",
       messageResponseSchema,
     );
   } catch (err) {
-    if (err instanceof Error && err.message.includes("validation failed")) {
-      return createErrorResponse(`Invalid request: ${err.message}`, 400);
-    }
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return createErrorResponse(
       `Failed to handle password reset: ${errorMessage}`,
