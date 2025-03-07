@@ -31,6 +31,17 @@ export default async function seedTestDatabase(): Promise<void> {
   for (const userData of users) {
     try {
       const hashedPassword = await bcrypt.hash(userData.password, 10);
+
+      // Check if user exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email: userData.email },
+      });
+
+      if (existingUser) {
+        console.log(`⚠️ Skipping user ${userData.email}: Already exists`);
+        continue;
+      }
+
       const newUser = await prisma.user.create({
         data: {
           id: userData.id,
@@ -126,8 +137,22 @@ export default async function seedTestDatabase(): Promise<void> {
   for (const address of addresses) {
     try {
       // Create combined address string from individual components
-      const createdAddress = await prisma.address.create({
-        data: {
+      const createdAddress = await prisma.address.upsert({
+        where: { id: address.id },
+        update: {
+          userId: address.userId,
+          label: address.label,
+          street: address.street,
+          streetNumber: address.streetNumber,
+          city: address.city,
+          zip: address.zip,
+          phone: address.phone,
+          isDefault: address.isDefault,
+          countryId: address.country,
+          name: address.name,
+          message: address.message,
+        },
+        create: {
           id: address.id,
           userId: address.userId,
           label: address.label,
@@ -154,8 +179,23 @@ export default async function seedTestDatabase(): Promise<void> {
   const createdRestaurants = [];
   for (const restaurant of restaurants) {
     try {
-      const createdRestaurant = await prisma.restaurant.create({
-        data: {
+      const createdRestaurant = await prisma.restaurant.upsert({
+        where: { id: restaurant.id },
+        update: {
+          name: restaurant.name,
+          description: restaurant.description,
+          image: restaurant.image,
+          phone: restaurant.phone,
+          email: restaurant.email,
+          street: restaurant.street,
+          streetNumber: restaurant.streetNumber || "1",
+          city: restaurant.city,
+          zip: "12345",
+          countryId: "DE",
+          mainCategoryId: "cat-pizza",
+          updatedAt: new Date(),
+        },
+        create: {
           id: restaurant.id,
           name: restaurant.name,
           description: restaurant.description,
@@ -165,7 +205,7 @@ export default async function seedTestDatabase(): Promise<void> {
           street: restaurant.street,
           streetNumber: restaurant.streetNumber || "1",
           city: restaurant.city,
-          zip: restaurant.zip,
+          zip: "12345",
           countryId: "DE",
           userRoles: {
             create: [
@@ -193,8 +233,21 @@ export default async function seedTestDatabase(): Promise<void> {
   const menuItemsCreated = [];
   for (const menuItem of menuItems) {
     try {
-      const createdMenuItem = await prisma.menuItem.create({
-        data: {
+      // Remove the category check that's causing errors
+      const createdMenuItem = await prisma.menuItem.upsert({
+        where: { id: menuItem.id },
+        update: {
+          name: menuItem.name,
+          description: menuItem.description,
+          price: menuItem.price,
+          image: menuItem.image || "",
+          taxPercent: menuItem.taxPercent,
+          published: true,
+          restaurantId: menuItem.restaurantId,
+          categoryId: "cat-pizza",
+          updatedAt: new Date(),
+        },
+        create: {
           id: menuItem.id,
           name: menuItem.name,
           description: menuItem.description,
@@ -217,7 +270,7 @@ export default async function seedTestDatabase(): Promise<void> {
   }
   console.log(`✅ Created ${menuItemsCreated.length} test menu items`);
 
-  // Create orders
+  // Create orders and order items only if the restaurants exist
   const ordersCreated = [];
   for (const order of orders) {
     // Check if restaurant exists
@@ -229,8 +282,10 @@ export default async function seedTestDatabase(): Promise<void> {
       continue;
     }
 
+    // For order items, we should check both order and menu item
+    // Only attempt to create order items for orders that were successfully created
     try {
-      // Create a delivery first (required for order)
+      // Create order with delivery
       const delivery = await prisma.delivery.create({
         data: {
           type: DeliveryType.DELIVERY,
@@ -241,61 +296,89 @@ export default async function seedTestDatabase(): Promise<void> {
           updatedAt: new Date(),
           createdAt: new Date(),
           dropAddress: "123 Delivery St",
+          order: {
+            create: {
+              id: order.id,
+              status: order.status,
+              total: order.total,
+              deliveryFee: order.deliveryFee || 2.99,
+              message: "Ring the doorbell",
+              restaurantId: order.restaurantId,
+              customerId: order.customerId,
+              // Use a known existing address ID
+              addressId: createdAddresses[0]?.id || addresses[0]?.id,
+              createdAt: new Date(),
+            },
+          },
+        },
+        include: {
+          order: true,
         },
       });
 
-      // Create order
-      const createdOrder = await prisma.order.create({
-        data: {
-          id: order.id,
-          status: order.status,
-          total: order.total,
-          deliveryFee: order.deliveryFee || 2.99,
-          message: "Ring the doorbell",
-          restaurantId: order.restaurantId,
-          customerId: order.customerId,
-          deliveryId: delivery.id,
-          createdAt: new Date(),
-        },
-      });
+      // Now we can safely create order items for this order
+      if (delivery.order) {
+        const createdOrder = delivery.order;
+        ordersCreated.push(createdOrder);
+        console.log(`📦 Created order: ${createdOrder.id}`);
 
-      ordersCreated.push(createdOrder);
-      console.log(`📦 Created order: ${createdOrder.id}`);
+        // Find and create order items for this order
+        const itemsForOrder = orderItems.filter(
+          (item) => item.orderId === createdOrder.id,
+        );
+        for (const item of itemsForOrder) {
+          try {
+            // Check if menu item exists
+            const menuItem = menuItemsCreated.find(
+              (m) => m.id === item.menuItemId,
+            );
+            if (!menuItem) {
+              console.warn(`⚠️ Skipping order item: Menu item not found`);
+              continue;
+            }
+
+            await prisma.orderItem.create({
+              data: {
+                id: item.id,
+                quantity: item.quantity,
+                price: item.price,
+                taxPercent: item.taxPercent,
+                menuItemId: item.menuItemId,
+                orderId: createdOrder.id,
+                message: "No extra cheese please",
+              },
+            });
+            console.log(`📝 Created order item`);
+          } catch (itemError) {
+            console.error(`Failed to create order item:`, itemError);
+          }
+        }
+      }
     } catch (error) {
       console.error(`Failed to create order ${order.id}:`, error);
     }
   }
   console.log(`✅ Created ${ordersCreated.length} test orders`);
 
-  // Create order items
-  const orderItemsCreated = [];
-  for (const item of testOrderItems) {
-    try {
-      const createdItem = await prisma.orderItem.create({
-        data: {
-          id: item.id,
-          quantity: item.quantity,
-          price: item.price,
-          taxPercent: item.taxPercent,
-          menuItemId: item.menuItemId,
-          orderId: item.orderId,
-          message: "No extra cheese please",
-        },
-      });
-
-      orderItemsCreated.push(createdItem);
-    } catch (error) {
-      console.error(`Failed to create order item ${item.id}:`, error);
-    }
-  }
-  console.log(`✅ Created ${orderItemsCreated.length} test order items`);
-
   // Create driver profiles
   const driversCreated = [];
   for (const driver of drivers) {
     try {
-      const createdDriver = await prisma.driver.create({
-        data: {
+      const createdDriver = await prisma.driver.upsert({
+        where: { userId: driver.userId },
+        update: {
+          vehicle: driver.vehicle,
+          licensePlate: driver.licensePlate,
+          isActive: true,
+          street: "123 Driver St",
+          streetNumber: "1",
+          zip: "12345",
+          city: "Driver City",
+          countryId: "DE",
+          radius: 10.0, // Delivery radius in km
+          updatedAt: new Date(),
+        },
+        create: {
           id: driver.id,
           userId: driver.userId,
           vehicle: driver.vehicle,
@@ -329,7 +412,7 @@ if (require.main === module) {
       console.error("Error seeding database:", e);
       process.exit(1);
     })
-    .finally(async () => {
-      await prisma.$disconnect();
+    .finally(() => {
+      void prisma.$disconnect();
     });
 }

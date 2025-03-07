@@ -39,9 +39,7 @@
     "**/*.test.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "prisma/schema-builder.ts",
-    "src/tests/api/orders.test.ts.n",
-    "src/tests/api/restaurants.test.ts.n"
+    "prisma/schema-builder.ts"
   ],
   "exclude": [
     "node_modules",

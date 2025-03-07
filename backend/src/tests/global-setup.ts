@@ -55,6 +55,8 @@ async function cleanDatabase(): Promise<void> {
       prisma.session.deleteMany({}),
       prisma.address.deleteMany({}),
       prisma.user.deleteMany({}),
+      prisma.languages.deleteMany({}),
+      prisma.country.deleteMany({}),
     ]);
 
     console.log("Database cleaned successfully");

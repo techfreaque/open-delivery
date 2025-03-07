@@ -126,7 +126,6 @@ export const ENDPOINTS: ApiEndpoint[] = [
     description: "Create a new menu item",
     requestSchema: menuItemCreateSchema.shape,
     responseSchema: menuItemUpdateSchema.shape,
-    requiredFields: ["name", "description", "price", "category"],
     requiresAuth: true,
     errorCodes: {
       400: "Bad Request - Invalid menu item data",
@@ -144,7 +143,6 @@ export const ENDPOINTS: ApiEndpoint[] = [
     description: "Create a new order",
     requestSchema: orderCreateSchema.shape,
     responseSchema: orderResponseSchema.shape,
-    requiredFields: ["restaurantId", "items", "address"],
     requiresAuth: true,
     errorCodes: {
       400: "Bad Request - Invalid order data",
