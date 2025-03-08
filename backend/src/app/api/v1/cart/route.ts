@@ -1,4 +1,3 @@
-import { UserRoleValue } from "@prisma/client";
 import type { NextRequest } from "next/server";
 import type { NextResponse } from "next/server";
 
@@ -10,11 +9,12 @@ import {
 import { getVerifiedUser } from "@/lib/auth/authService";
 import { prisma } from "@/lib/db/prisma";
 import { cartItemsResponseSchema, cartItemUpdateSchema } from "@/schemas";
-import type {
-  CartItemsResponseType,
-  DBCartItemExtended,
-  ErrorResponse,
-  SuccessResponse,
+import {
+  type CartItemsResponseType,
+  type DBCartItemExtended,
+  type ErrorResponse,
+  type SuccessResponse,
+  UserRoleValue,
 } from "@/types/types";
 
 export async function GET(): Promise<

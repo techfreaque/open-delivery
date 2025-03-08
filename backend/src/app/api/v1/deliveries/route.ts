@@ -1,9 +1,9 @@
 import type { Prisma } from "@prisma/client";
-import { DeliveryStatus, UserRoleValue } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { getVerifiedUser } from "@/lib/auth/authService";
 import { prisma } from "@/lib/db/prisma";
+import { DeliveryStatus, UserRoleValue } from "@/types/types";
 
 // GET deliveries for current driver
 export async function GET(request: Request): Promise<NextResponse> {

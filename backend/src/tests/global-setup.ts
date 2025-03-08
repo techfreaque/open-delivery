@@ -3,13 +3,10 @@
  * Global setup for all tests
  * This runs once before all test files
  */
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db/prisma";
 
 import seedTestDatabase from "../lib/db/seed-test-db";
 import { startServer } from "./test-server";
-
-// Create a single PrismaClient instance
-const prisma = new PrismaClient();
 
 export default async function setup() {
   try {

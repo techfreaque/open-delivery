@@ -1,5 +1,3 @@
-import "server-only";
-
 import * as jose from "jose";
 
 import { env } from "@/lib/env";

@@ -1,16 +1,11 @@
-"use client";
-
 import Link from "next/link";
 import type { JSX } from "react";
-import { useState } from "react";
 
-import ApiExplorer from "@/components/api-docs/ApiExplorer";
+import { ApiExplorer } from "@/components/api-docs/ApiExplorer";
 import { Button } from "@/components/ui/button";
 import { frontendRoutes } from "@/constants";
 
 export default function Home(): JSX.Element {
-  const [activeTab, setActiveTab] = useState("portal");
-
   return (
     <>
       {/* Hero Section */}

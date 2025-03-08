@@ -2,53 +2,52 @@
 
 import Link from "next/link";
 import type { JSX } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { DomainSelector } from "@/components/api-docs/DomainSelector";
-import { EndpointDetails } from "@/components/api-docs/EndpointDetails";
-import { EndpointsList } from "@/components/api-docs/EndpointsList";
-import { Button } from "@/components/ui/button";
+import type { ENDPOINT_DOMAINS } from "@/constants";
+import { APP_NAME } from "@/constants";
+import { getExampleForEndpoint } from "@/lib/examples/data";
+import type { ApiEndpoint } from "@/types/types";
+
+import { Button } from "../ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { APP_NAME, ENDPOINT_DOMAINS } from "@/constants";
-import type { ExampleData } from "@/lib/examples/data";
-import { getExampleForEndpoint } from "@/lib/examples/data";
+} from "../ui/card";
+import { DomainSelector } from "./DomainSelector";
+import { EndpointDetails } from "./EndpointDetails";
+import { ENDPOINTS } from "./endpoints";
+import { EndpointsList } from "./EndpointsList";
 
-export interface ApiExplorerProps {
-  exampleData: ExampleData;
+interface ApiExplorerProps {
   compact?: boolean;
-  showAllEndpoints?: boolean;
 }
 
-export default function ApiExplorer({
-  exampleData,
-  compact = false,
-  showAllEndpoints = false,
-}: ApiExplorerProps): JSX.Element {
+export function ApiExplorer({ compact }: ApiExplorerProps): JSX.Element {
   const [responseData, setResponseData] = useState<string>("");
   const [selectedDomain, setSelectedDomain] =
-    useState<keyof typeof ENDPOINT_DOMAINS>("test");
+    useState<keyof typeof ENDPOINT_DOMAINS>("dev");
 
+  const [activeEndpoint, setActiveEndpoint] = useState<ApiEndpoint>(() =>
+    getExampleForEndpoint(ENDPOINTS[0].path),
+  );
   const [requestData, setRequestData] = useState<string>(() => {
-    return JSON.stringify(exampleData, null, 2);
+    return JSON.stringify(activeEndpoint.examples, null, 2);
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [responseStatus, setResponseStatus] = useState<number | null>(null);
 
-  // Update request data when endpoint changes
-  useEffect(() => {
-    // Use example data based on the endpoint type
-    const example = getExampleForEndpoint(activeEndpoint.path);
-    setRequestData(JSON.stringify(example, null, 2));
+  // Handlers
+  const handleEndpointChange = (newEndpoint: ApiEndpoint): void => {
+    setActiveEndpoint(getExampleForEndpoint(newEndpoint.path));
+    setRequestData(newEndpoint.examples[0]);
     setResponseData("");
     setResponseStatus(null);
-  }, [activeEndpoint]);
+  };
 
   const handleTryIt = async (): Promise<void> => {
     setIsLoading(true);
@@ -270,9 +269,8 @@ export default function ApiExplorer({
               <div className="lg:col-span-1 space-y-3">
                 <EndpointsList
                   activeEndpoint={activeEndpoint}
-                  onEndpointChange={setActiveEndpoint}
+                  onEndpointChange={handleEndpointChange}
                   compact={compact}
-                  showAllEndpoints={showAllEndpoints}
                 />
               </div>
 

@@ -13,21 +13,15 @@ interface EndpointsListProps {
   activeEndpoint: ApiEndpoint;
   onEndpointChange: (endpoint: ApiEndpoint) => void;
   compact?: boolean;
-  showAllEndpoints?: boolean;
   displayEndpoints?: ApiEndpoint[];
-  setActiveEndpoint?: (endpoint: ApiEndpoint) => void;
 }
 
 export function EndpointsList({
   activeEndpoint,
   onEndpointChange,
   compact = false,
-  showAllEndpoints = false,
   displayEndpoints,
-  setActiveEndpoint,
 }: EndpointsListProps): JSX.Element {
-  const handleEndpointChange = setActiveEndpoint || onEndpointChange;
-
   // Group endpoints by their base path
   const groupedEndpoints = useMemo(() => {
     const groups: Record<string, ApiEndpoint[]> = {};
@@ -52,11 +46,11 @@ export function EndpointsList({
       return displayEndpoints;
     }
 
-    if (showAllEndpoints) {
+    if (!compact) {
       return ENDPOINTS;
     }
     return compact ? ENDPOINTS.slice(0, 5) : ENDPOINTS;
-  }, [compact, showAllEndpoints, displayEndpoints]);
+  }, [compact, displayEndpoints]);
 
   return (
     <div className="space-y-6">
@@ -91,7 +85,7 @@ export function EndpointsList({
                       ? "border-primary ring-1 ring-primary bg-primary/5"
                       : ""
                   }`}
-                  onClick={() => handleEndpointChange(endpoint)}
+                  onClick={() => onEndpointChange(endpoint)}
                 >
                   <div className="flex items-center space-x-2">
                     <span
@@ -123,7 +117,7 @@ export function EndpointsList({
         );
       })}
 
-      {!showAllEndpoints && endpointsToShow.length < ENDPOINTS.length && (
+      {compact && endpointsToShow.length < ENDPOINTS.length && (
         <div className="pt-4">
           <Link href="/v1/api-docs">
             <Button variant="outline" size="sm" className="w-full">

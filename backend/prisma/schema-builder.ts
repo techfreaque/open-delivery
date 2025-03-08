@@ -1,3 +1,4 @@
+import { config } from "dotenv";
 import { readFileSync, writeFileSync } from "fs";
 import { z } from "zod";
 
@@ -13,6 +14,8 @@ export const validateEnv = (): z.infer<typeof envSchema> => {
   // eslint-disable-next-line node/no-process-env
   return envSchema.parse(process.env);
 };
+
+config();
 
 // Export validated environment for use throughout the application
 export const env = validateEnv();

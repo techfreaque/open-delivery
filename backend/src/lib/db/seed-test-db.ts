@@ -3,13 +3,13 @@
  * Seed script for test database
  * This creates sample data for testing purposes
  */
-import { DeliveryStatus, DeliveryType, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-import { examples } from "../examples/data";
+import { DeliveryStatus, DeliveryType } from "@/types/types";
 
+import { examples } from "../examples/data";
+import { prisma } from "./prisma";
 // Initialize Prisma client
-const prisma = new PrismaClient();
 
 export default async function seedTestDatabase(): Promise<void> {
   console.log("🌱 Seeding test database...");

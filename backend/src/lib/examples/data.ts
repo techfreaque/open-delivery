@@ -1,5 +1,3 @@
-import type { DeliveryType } from "@prisma/client";
-import { DeliveryStatus, OrderStatus, UserRoleValue } from "@prisma/client";
 import { z } from "zod";
 
 import {
@@ -18,25 +16,29 @@ import {
   restaurantProfileSchema,
   restaurantResponseSchema,
 } from "@/schemas";
-import type {
-  AddressCreateType,
-  CartItemUpdateType,
-  DeliveryCreateType,
-  DeliveryResponseType,
-  DriverCreateType,
-  DriverPrivateResponseType,
-  LoginFormType,
-  MenuItemCreateType,
-  MenuItemResponseType,
-  OrderCreateType,
-  OrderItemResponseType,
-  RegisterType,
-  ResetPasswordConfirmType,
-  ResetPasswordRequestType,
-  RestaurantCreateType,
-  RestaurantProfileType,
-  RestaurantResponseType,
-  UserResponseType,
+import type { ApiEndpoint, DeliveryType } from "@/types/types";
+import {
+  type AddressCreateType,
+  type CartItemUpdateType,
+  type DeliveryCreateType,
+  type DeliveryResponseType,
+  DeliveryStatus,
+  type DriverCreateType,
+  type DriverPrivateResponseType,
+  type LoginFormType,
+  type MenuItemCreateType,
+  type MenuItemResponseType,
+  type OrderCreateType,
+  type OrderItemResponseType,
+  OrderStatus,
+  type RegisterType,
+  type ResetPasswordConfirmType,
+  type ResetPasswordRequestType,
+  type RestaurantCreateType,
+  type RestaurantProfileType,
+  type RestaurantResponseType,
+  type UserResponseType,
+  UserRoleValue,
 } from "@/types/types";
 
 class Examples {
@@ -514,7 +516,7 @@ class Examples {
   }
 
   // Get example data for a specific endpoint based on path
-  getExampleForEndpoint(path: string): Record<string, any> {
+  getExampleForEndpoint(path: string): ApiEndpoint {
     // Extract the resource type from the path
     const resourcePath = path.replace(/^\/api\/v1\//, "").split("/")[0];
 
@@ -648,7 +650,7 @@ export const testRestaurantProfiles = examples.testData.restaurantProfiles;
 export type ExampleData = ReturnType<typeof examples.getExampleForEndpoint>;
 
 // Helper function for API explorer
-export function getExampleForEndpoint(path: string): Record<string, any> {
+export function getExampleForEndpoint(path: string): ApiEndpoint {
   return examples.getExampleForEndpoint(path);
 }
 

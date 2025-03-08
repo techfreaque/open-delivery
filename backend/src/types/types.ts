@@ -1,11 +1,4 @@
 import type { Prisma } from "@prisma/client";
-import {
-  DeliveryStatus,
-  DeliveryType,
-  OrderStatus,
-  PaymentMethod,
-  UserRoleValue,
-} from "@prisma/client";
 import type { z } from "zod";
 
 import type {
@@ -229,13 +222,41 @@ export type DBCartItemExtended = Prisma.CartItemGetPayload<{
   };
 }>;
 // prisma enums
-export {
-  DeliveryStatus,
-  DeliveryType,
-  OrderStatus,
-  PaymentMethod,
-  UserRoleValue,
-};
+
+export enum OrderStatus {
+  NEW = "NEW",
+  PREPARING = "PREPARING",
+  READY = "READY",
+  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
+  DELIVERED = "DELIVERED",
+  CANCELLED = "CANCELLED",
+}
+
+export enum DeliveryType {
+  PICKUP = "PICKUP",
+  DELIVERY = "DELIVERY",
+}
+
+export enum DeliveryStatus {
+  ASSIGNED = "ASSIGNED",
+  PICKED_UP = "PICKED_UP",
+  DELIVERED = "DELIVERED",
+}
+
+export enum PaymentMethod {
+  CARD = "CARD",
+  CASH = "CASH",
+}
+
+export enum UserRoleValue {
+  CUSTOMER = "CUSTOMER",
+  RESTAURANT_ADMIN = "RESTAURANT_ADMIN",
+  RESTAURANT_EMPLOYEE = "RESTAURANT_EMPLOYEE",
+  DRIVER = "DRIVER",
+  ADMIN = "ADMIN",
+}
+
+// export { , , ,  };
 
 // Response types
 
@@ -250,7 +271,7 @@ export interface ApiEndpoint {
   requiresAuth?: boolean;
   errorCodes?: Record<string, string>;
   sampleResponse?: string;
-  examples?: Record<string, unknown>;
+  examples: Record<string, unknown>;
   webhookEvents?: string[];
   webhookDescription?: string;
 }
