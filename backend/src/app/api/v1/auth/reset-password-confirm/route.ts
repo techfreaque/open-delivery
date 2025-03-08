@@ -45,6 +45,9 @@ export async function POST(
     );
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    if (err instanceof Error && err.name === "ValidationError") {
+      return createErrorResponse(errorMessage, 400);
+    }
     return createErrorResponse(
       `Failed to reset password: ${errorMessage}`,
       500,

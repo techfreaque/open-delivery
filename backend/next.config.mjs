@@ -8,10 +8,16 @@ try {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
+  },
+  webpack: (config, { isServer }) => {
+    // Add a fallback for the Handlebars module
+    config.resolve.alias['handlebars'] = 'handlebars/dist/handlebars.min.js';
+    
+    return config;
   },
   images: {
     unoptimized: true,

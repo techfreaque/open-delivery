@@ -41,8 +41,6 @@ export const userResponseSchema = z.object({
 
 export const loginResponseSchema = z.object({
   user: userResponseSchema,
-  expiresAt: z.string().or(z.date()),
-  createdAt: z.string().or(z.date()),
-  updatedAt: z.string().or(z.date()),
+  expiresAt: dateSchema,
   token: z.string(),
 });

@@ -25,11 +25,10 @@ import { env } from "../env";
 export async function getVerifiedUser(
   role: UserRoleValue,
   restaurantId?: string,
-): Promise<UserResponseMinimalType> {
+): Promise<UserResponseMinimalType | undefined> {
   const user = await getCurrentUser();
   if (!user) {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error
-    throw createErrorResponse("Not signed in", 401);
+    return undefined;
   }
   if (role === UserRoleValue.CUSTOMER) {
     return user;
@@ -50,8 +49,7 @@ export async function getVerifiedUser(
   if (roles.some((r) => r.role === role)) {
     return user;
   }
-  // eslint-disable-next-line @typescript-eslint/only-throw-error
-  throw createErrorResponse("Unauthorized", 401);
+  return undefined;
 }
 
 /**
@@ -148,6 +146,7 @@ export async function getFullUser(userId: string) {
       id: true,
       firstName: true,
       lastName: true,
+      email: true,
       password: true,
       userRoles: {
         select: {
@@ -264,7 +263,11 @@ export async function loginUser(
     maxAge: 60 * 60 * 24 * 7, // 1 week
   });
   return createSuccessResponse<LoginResponseType>(
-    { user: user, token },
+    {
+      user: user,
+      token,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    },
     loginResponseSchema,
   );
 }

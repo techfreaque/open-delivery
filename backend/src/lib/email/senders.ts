@@ -16,7 +16,7 @@ export async function sendPasswordResetToken(email: string): Promise<void> {
     return;
   }
 
-  const token = await generatePasswordResetToken(email);
+  const token = await generatePasswordResetToken(email, existingUser.id);
 
   const baseUrl = APP_DOMAIN;
 
@@ -25,13 +25,13 @@ export async function sendPasswordResetToken(email: string): Promise<void> {
   const emailService = new EmailService();
   await emailService.sendTemplateEmail<ResetPasswordEmailTemplateVariables>({
     to: existingUser.email,
-    // TODO handle message and template
-    subject: "Confirm your password reset",
+    subject: "Reset your password",
     templateName: "reset-password-mail",
     templateData: {
-      title: "Confirm your password reset",
-      message: "",
-      name: existingUser.name,
+      title: "Reset your password",
+      message:
+        "You requested a password reset. Click the button below to set a new password for your account.",
+      name: existingUser.firstName,
       passwordResetUrl,
       APP_NAME,
     },

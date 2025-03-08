@@ -49,11 +49,14 @@ export class EmailService {
     subject: string;
     templateName: string;
     templateData: T;
-  }): Promise<SMTPTransport.SentMessageInfo> {
+  }): Promise<SMTPTransport.SentMessageInfo | null> {
     // 1. Load the compiled template (which is plain HTML with Handlebars placeholders)
     const compiledPath = path.join(
-      __dirname,
-      "compiled_templates",
+      process.cwd(),
+      "src",
+      "lib",
+      "email",
+      "compiled-templates",
       `${templateName}.html`,
     );
     const templateContent = fs.readFileSync(compiledPath, "utf-8");
@@ -69,14 +72,18 @@ export class EmailService {
       subject,
       html,
     };
+    try {
+      // 4. Send
+      const info = await this.transporter.sendMail(mailOptions);
+      debugLogger(`Email message sent: ${info.messageId}`);
 
-    // 4. Send
-    const info = await this.transporter.sendMail(mailOptions);
-    debugLogger(`Email message sent: ${info.messageId}`);
-
-    if (nodemailer.getTestMessageUrl(info)) {
-      debugLogger(`Email preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+      if (nodemailer.getTestMessageUrl(info)) {
+        debugLogger(`Email preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+      }
+      return info;
+    } catch (error) {
+      console.error("Error sending email:", error);
+      return null;
     }
-    return info;
   }
 }

@@ -22,20 +22,11 @@ export async function signJwt(
   payload: UserResponseMinimalType,
 ): Promise<string> {
   const secret = new TextEncoder().encode(secretKey);
-
-  // For tests, use a simplified signature
-  if (env.NODE_ENV === "test") {
-    const token = `${btoa(JSON.stringify(payload))}.test_signature_for_e2e_tests`;
-    return token;
-  }
-
-  const token = await new jose.SignJWT({ ...payload })
+  return new jose.SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d") // Token expires in 7 days
     .sign(secret);
-
-  return token;
 }
 
 /**

@@ -21,6 +21,25 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
         },
+        {
+            "name": "Debug Vitest Tests",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+            "args": [
+                "run",
+            ],
+            "smartStep": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "NODE_ENV": "test",
+                "DEBUG_TESTS": "true"
+            }
+        }
     ],
     "compounds": [
         {

@@ -43,17 +43,22 @@ async function cleanDatabase(): Promise<void> {
 
   try {
     await prisma.$transaction([
+      // First delete items that depend on orders
       prisma.orderItem.deleteMany({}),
+      // Then delete the delivery records
+      prisma.delivery.deleteMany({}),
+      // Then delete orders
       prisma.order.deleteMany({}),
+      // Then delete other tables with less dependencies
       prisma.cartItem.deleteMany({}),
       prisma.menuItem.deleteMany({}),
       prisma.earning.deleteMany({}),
-      prisma.delivery.deleteMany({}),
       prisma.restaurant.deleteMany({}),
       prisma.driver.deleteMany({}),
       prisma.userRole.deleteMany({}),
       prisma.session.deleteMany({}),
       prisma.address.deleteMany({}),
+      prisma.passwordReset.deleteMany({}),
       prisma.user.deleteMany({}),
       prisma.languages.deleteMany({}),
       prisma.country.deleteMany({}),

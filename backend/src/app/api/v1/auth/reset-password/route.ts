@@ -23,11 +23,14 @@ export async function POST(
     );
     await sendPasswordResetToken(validatedData.email);
     return createSuccessResponse<MessageResponseType>(
-      "Password reset email sent, If the email exists in our system, you will receive an email with instructions to reset your password.",
+      "Password reset email sent. If the email exists in our system, you will receive instructions to reset your password.",
       messageResponseSchema,
     );
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    if (err instanceof Error && err.name === "ValidationError") {
+      return createErrorResponse(errorMessage, 400);
+    }
     return createErrorResponse(
       `Failed to handle password reset: ${errorMessage}`,
       500,

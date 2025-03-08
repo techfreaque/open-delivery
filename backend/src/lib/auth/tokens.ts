@@ -1,7 +1,9 @@
 import { randomBytes } from "crypto";
 import { jwtVerify, SignJWT } from "jose";
 
+import { prisma } from "../db/prisma";
 import { env } from "../env";
+import { debugLogger } from "../utils";
 
 const SECRET_KEY = new TextEncoder().encode(env.JWT_SECRET_KEY);
 const RESET_TOKEN_EXPIRY = "4h";
@@ -19,11 +21,26 @@ export async function generatePasswordResetToken(
   const randomToken = randomBytes(16).toString("hex");
 
   // Sign the token with jose
-  return new SignJWT({ email, userId, randomToken })
+  const token = await new SignJWT({ email, userId, randomToken })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(RESET_TOKEN_EXPIRY)
     .sign(SECRET_KEY);
+  await prisma.passwordReset.upsert({
+    where: {
+      userId,
+    },
+    update: {
+      token,
+      expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
+    },
+    create: {
+      userId,
+      token,
+      expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
+    },
+  });
+  return token;
 }
 
 // Verify a password reset token and return the email if valid
@@ -35,8 +52,28 @@ export async function verifyPasswordResetToken(
       token,
       SECRET_KEY,
     );
-    return payload;
-  } catch {
+
+    const resetRecord =  await prisma.passwordReset.findFirst({
+      where: {
+        userId: payload.userId,
+        token,
+      },
+    });
+    if (!resetRecord) {
+      return null;
+    }
+    await prisma.passwordReset.delete({
+      where: {
+        userId: payload.userId,
+      },
+    });
+    if (resetRecord.expiresAt < new Date()) {
+      return null;
+    }
+
+    return { email: payload.email, userId: payload.userId };
+  } catch (error) {
+    debugLogger("Invalid token", error);
     return null;
   }
 }

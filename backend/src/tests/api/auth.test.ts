@@ -6,7 +6,12 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { env } from "@/lib/env";
-import type { LoginResponseType, SuccessResponse } from "@/types/types";
+import type {
+  ErrorResponse,
+  LoginResponseType,
+  SuccessResponse,
+  UserResponseType,
+} from "@/types/types";
 
 describe("Auth API", () => {
   // Storage for test-generated auth tokens
@@ -21,36 +26,25 @@ describe("Auth API", () => {
           password: "password",
         });
       const responseData = response.body as SuccessResponse<LoginResponseType>;
-      // For debugging purposes, log the response body
-      console.log("Login response body:", responseData);
-
-      // Make the test more forgiving for debugging purposes
-      expect([200, 401]).toContain(response.status);
-
-      if (response.status === 200) {
-        if (responseData.success) {
-          // If wrapped in success property, look at the data property
-          expect(responseData).toHaveProperty("data");
-          expect(responseData.data).toHaveProperty("token");
-          expect(responseData.data).toHaveProperty("user");
-
-          // Store token
-          customerAuthToken = responseData.data!.token;
-        } else {
-          throw new Error("Login failed");
-        }
-
-        console.log(
-          "[TEST DEBUG] Generated customer token (first 30 chars):",
-          customerAuthToken?.substring(0, 30),
-        );
-
-        // Make the token available globally for other tests
-        global.customerAuthToken = customerAuthToken;
+      // Log response for debugging
+      if (response.status !== 200) {
+        console.log("Auth/me response:", response.body);
       }
 
-      // For now, make the test pass even with incorrect status
-      expect(true).toBe(true);
+      expect([200]).toContain(response.status);
+      expect(responseData).toHaveProperty("success", true);
+      expect(responseData).toHaveProperty("data");
+      expect(responseData.data).toHaveProperty("token");
+      expect(responseData.data).toHaveProperty("user");
+      expect(responseData.data).toHaveProperty("expiresAt");
+
+      // Store token
+      customerAuthToken = responseData.data!.token;
+      global.customerAuthToken = customerAuthToken;
+      console.log(
+        "[TEST DEBUG] Generated customer token (first 30 chars):",
+        customerAuthToken?.substring(0, 30),
+      );
     });
 
     it("should reject authentication with invalid credentials", async () => {
@@ -60,33 +54,16 @@ describe("Auth API", () => {
           email: "customer@example.com",
           password: "wrongPassword",
         });
+      // Log response for debugging
+      if (response.status !== 401) {
+        console.log("Auth/me response:", response.body);
+      }
 
       // API should return 401 for invalid credentials
       expect(response.status).toBe(401);
-    });
-  });
-
-  describe("GET /api/v1/login", () => {
-    it("should authenticate with test token", async () => {
-      // Use the global test token instead of one generated in this test
-      const token = global.customerAuthToken;
-
-      if (!token) {
-        console.log("Using fallback token");
-        // Test is failing here, let's skip for now
-        return;
-      }
-
-      const response = await request(env.TEST_SERVER_URL)
-        .get("/api/v1/login")
-        .set("Authorization", `Bearer ${token}`);
-
-      if (response.status !== 200) {
-        console.log("login failure response:", response.body);
-      }
-
-      // Make test more permissive for now
-      expect([200, 401, 404]).toContain(response.status);
+      const responseData = response.body as ErrorResponse;
+      expect(responseData).toHaveProperty("success", false);
+      expect(responseData.message).toContain("Invalid email or password");
     });
   });
 
@@ -96,10 +73,8 @@ describe("Auth API", () => {
       const token =
         global.customerAuthToken || global.testTokens?.customerAuthToken;
 
-      // Skip test if no token is available
       if (!token) {
-        console.log("No auth token available, skipping test");
-        return;
+        throw new Error("No token available for test");
       }
 
       const response = await request(env.TEST_SERVER_URL)
@@ -112,16 +87,21 @@ describe("Auth API", () => {
       }
 
       // Make test more permissive for now
-      expect([200, 401, 403, 500]).toContain(response.status);
+      expect([200]).toContain(response.status);
+      const responseData = response.body as SuccessResponse<UserResponseType>;
+
+      expect(responseData).toHaveProperty("success", true);
+      expect(responseData).toHaveProperty("data");
+      expect(responseData.data).toHaveProperty("email");
+      expect(responseData.data).toHaveProperty("userRoles");
+      expect(responseData.data).toHaveProperty("firstName");
     });
 
     it("should reject unauthorized requests", async () => {
       const response = await request(env.TEST_SERVER_URL).get(
         "/api/v1/auth/me",
       );
-
-      // Make test more permissive
-      expect([401, 500]).toContain(response.status);
+      expect([401]).toContain(response.status);
     });
   });
 });
