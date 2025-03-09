@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db/prisma";
 import { loginResponseSchema } from "@/schemas";
 import type {
   ErrorResponse,
+  FullUserType,
   LoginFormType,
   LoginResponseType,
   RegisterType,
@@ -137,7 +138,7 @@ export async function logoutUser(user: UserResponseMinimalType): Promise<void> {
   return;
 }
 
-export async function getFullUser(userId: string) {
+export async function getFullUser(userId: string): Promise<FullUserType> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {

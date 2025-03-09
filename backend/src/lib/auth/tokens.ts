@@ -53,7 +53,7 @@ export async function verifyPasswordResetToken(
       SECRET_KEY,
     );
 
-    const resetRecord =  await prisma.passwordReset.findFirst({
+    const resetRecord = await prisma.passwordReset.findFirst({
       where: {
         userId: payload.userId,
         token,

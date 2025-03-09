@@ -11,12 +11,17 @@ const deliveryBaseSchema = z.object({
   type: deliveryTypeSchema,
   status: deliveryStatusSchema,
   message: z.string().nullable(),
-  estimatedTime: z.number().int(), // in minutes
-  estimatedDelivery: dateSchema,
-  deliveredAt: dateSchema,
-  distance: z.number().positive(), // in kilometers
-  pickupAddress: z.string().nullable(),
-  dropAddress: z.string().nullable(),
+  estimatedDeliveryTime: z.number().int().nullable(), // in minutes
+  estimatedPreparationTime: z.number().int(), // in minutes
+  distance: z.number().positive().nullable(), // in kilometers
+  street: z.string().nullable(),
+  streetNumber: z.string().nullable(),
+  zip: z.string().nullable(),
+  city: z.string().nullable(),
+  phone: z.string().nullable(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+  countryId: z.string().nullable(),
 });
 
 export const deliveryCreateSchema = deliveryBaseSchema.extend({
@@ -29,12 +34,13 @@ export const deliveryUpdateSchema = z.object({
   estimatedDelivery: dateSchema.nullable(),
   deliveredAt: dateSchema.nullable(),
   estimatedTime: z.number().int(),
+  orderId: z.string().uuid(),
   driverId: z.string().uuid().nullable(),
 });
 
 export const deliveryResponseSchema = deliveryBaseSchema.extend({
   id: z.string().uuid(),
-  createdAt: dateSchema,
   updatedAt: dateSchema,
   driver: driverPublicResponseSchema.nullable(),
+  orderId: z.string().uuid(),
 });

@@ -21,6 +21,9 @@ export async function POST(
     return registerUser(validatedData);
   } catch (err) {
     const error = err as Error;
+    if (error.name === "ValidationError") {
+      return createErrorResponse(`Validation error: ${error.message}`, 400);
+    }
     return createErrorResponse(`Failed to sign up: ${error.message}`, 500);
   }
 }

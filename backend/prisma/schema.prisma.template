@@ -41,6 +41,18 @@ enum UserRoleValue {
   ADMIN
 }
 
+enum MessageType {
+  CUSTOMER
+  RESTAURANT
+  DRIVER
+  RESTAURANT_RATING
+  DRIVER_RATING
+  MENU_ITEM
+  ORDER
+  DELIVERY
+  EARNING
+}
+
 model User {
   id                 String             @id @default(uuid())
   email              String             @unique
@@ -49,18 +61,18 @@ model User {
   lastName           String
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
-  deliveries         Delivery[]
-  orders             Order[]
   driverId           String?
   driver             Driver?
+  passwordReset      PasswordReset?
+  orders             Order[]
   userRoles          UserRole[]
   addresses          Address[]
   cartItems          CartItem[]
   sessions           Session[]
-  passwordReset      PasswordReset?
   ratingsGiven       RestaurantRating[]
   ratingsGivenDriver DriverRating[]
   earnings           Earning[]
+  messages           Messages[]
 
   @@map("users")
 }
@@ -71,6 +83,8 @@ model Driver {
   vehicle      String
   licensePlate String
   radius       Float // in kilometers
+  latitude     Float
+  longitude    Float
   street       String
   streetNumber String
   zip          String
@@ -82,6 +96,8 @@ model Driver {
   userId       String
   user         User           @relation(fields: [userId], references: [id])
   ratings      DriverRating[]
+  messages     Messages[]
+  Delivery     Delivery[]
 
   @@unique([userId])
   @@map("drivers")
@@ -125,7 +141,6 @@ model Address {
   country      Country @relation(fields: [countryId], references: [code])
   userId       String
   user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders       Order[]
 }
 
 model OpeningTimes {
@@ -145,11 +160,12 @@ model Country {
   code        String       @id
   name        String
   languages   Languages[]
-  createdAt   DateTime
-  updatedAt   DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   drivers     Driver[]
   addresses   Address[]
   restaurants Restaurant[]
+  Delivery    Delivery[]
 
   @@map("countries")
 }
@@ -158,14 +174,15 @@ model Languages {
   code      String    @id
   name      String
   countries Country[]
-  createdAt DateTime
-  updatedAt DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("languages")
 }
 
 model Restaurant {
   id             String             @id @default(uuid())
+  published      Boolean
   name           String
   description    String
   street         String
@@ -175,8 +192,10 @@ model Restaurant {
   phone          String
   email          String
   image          String
-  createdAt      DateTime
-  updatedAt      DateTime
+  latitude       Float
+  longitude      Float
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   countryId      String
   country        Country            @relation(fields: [countryId], references: [code])
   mainCategoryId String
@@ -187,6 +206,7 @@ model Restaurant {
   cartItems      CartItem[]
   userRoles      UserRole[]
   ratings        RestaurantRating[]
+  messages       Messages[]
 
   @@map("restaurants")
 }
@@ -196,20 +216,24 @@ model RestaurantRating {
   rating       Float
   userId       String
   restaurantId String
+  createdAt    DateTime   @default(now())
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id])
+  messages     Messages[]
 
   @@unique([userId, restaurantId])
   @@map("ratings")
 }
 
 model DriverRating {
-  id          String @id @default(uuid())
+  id          String     @id @default(uuid())
   rating      Float
+  createdAt   DateTime   @default(now())
   userId      String
-  user        User   @relation(fields: [userId], references: [id])
+  user        User       @relation(fields: [userId], references: [id])
   ratedUserId String
-  ratedUser   Driver @relation(fields: [ratedUserId], references: [id], onDelete: Cascade)
+  ratedUser   Driver     @relation(fields: [ratedUserId], references: [id], onDelete: Cascade)
+  messages    Messages[]
 
   @@unique([userId, ratedUserId])
   @@map("user_ratings")
@@ -219,8 +243,8 @@ model Category {
   id         String       @id @default(uuid())
   name       String
   image      String
-  createdAt  DateTime
-  updatedAt  DateTime
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
   menuItems  MenuItem[]
   restaurant Restaurant[]
 
@@ -237,14 +261,15 @@ model MenuItem {
   published     Boolean
   availableFrom DateTime?
   availableTo   DateTime?
-  createdAt     DateTime
-  updatedAt     DateTime
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   categoryId    String
   category      Category    @relation(fields: [categoryId], references: [id])
   restaurantId  String
   restaurant    Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   orderItems    OrderItem[]
   cartItems     CartItem[]
+  messages      Messages[]
 
   @@map("menu_items")
 }
@@ -255,6 +280,8 @@ model CartItem {
   restaurantId String
   menuItemId   String
   quantity     Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   menuItem     MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
@@ -266,21 +293,22 @@ model CartItem {
 model Order {
   id            String      @id @default(uuid())
   message       String?
-  status        String
+  status        OrderStatus @default(NEW)
+  tax           Float
   total         Float
   deliveryFee   Float
   driverTip     Float?
   restaurantTip Float?
   projectTip    Float?
   createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   restaurantId  String
   restaurant    Restaurant  @relation(fields: [restaurantId], references: [id])
   customerId    String
   customer      User        @relation(fields: [customerId], references: [id])
-  addressId     String
-  address       Address     @relation(fields: [addressId], references: [id])
   delivery      Delivery?
   orderItems    OrderItem[]
+  messages      Messages[]
 
   @@map("orders")
 }
@@ -300,25 +328,58 @@ model OrderItem {
 }
 
 model Delivery {
-  id                String         @id @default(uuid())
-  type              DeliveryType
-  status            DeliveryStatus @default(ASSIGNED)
-  message           String?
-  estimatedDelivery DateTime
-  deliveredAt       DateTime?
-  estimatedTime     Int? // in minutes
-  distance          Float // in kilometers
-  pickupAddress     String?
-  dropAddress       String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  driverId          String?
-  driver            User?          @relation(fields: [driverId], references: [id])
-  order             Order          @relation(fields: [orderId], references: [id])
-  orderId           String
+  id                       String         @id @default(uuid())
+  type                     DeliveryType
+  status                   DeliveryStatus @default(ASSIGNED)
+  message                  String?
+  estimatedDeliveryTime    Int?
+  estimatedPreparationTime Int
+  distance                 Float?
+  street                   String?
+  streetNumber             String?
+  zip                      String?
+  city                     String?
+  phone                    String?
+  latitude                 Float?
+  longitude                Float?
+  countryId                String?
+  country                  Country?       @relation(fields: [countryId], references: [code])
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  driverId                 String?
+  driver                   Driver?        @relation(fields: [driverId], references: [id])
+  messages                 Messages[]
+  order                    Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId                  String
 
   @@unique([orderId])
   @@map("deliveries")
+}
+
+model Messages {
+  id                 String            @id @default(uuid())
+  type               MessageType
+  createdAt          DateTime          @default(now())
+  user               User?             @relation(fields: [userId], references: [id])
+  driver             Driver?           @relation(fields: [driverId], references: [id])
+  restaurant         Restaurant?       @relation(fields: [restaurantId], references: [id])
+  restaurantRating   RestaurantRating? @relation(fields: [restaurantRatingId], references: [id])
+  driverRating       DriverRating?     @relation(fields: [driverRatingId], references: [id])
+  menuItem           MenuItem?         @relation(fields: [menuItemId], references: [id])
+  order              Order?            @relation(fields: [orderId], references: [id])
+  delivery           Delivery?         @relation(fields: [deliveryId], references: [id])
+  earning            Earning?          @relation(fields: [earningId], references: [id])
+  userId             String?
+  driverId           String?
+  restaurantId       String?
+  restaurantRatingId String?
+  driverRatingId     String?
+  menuItemId         String?
+  orderId            String?
+  deliveryId         String?
+  earningId          String?
+
+  @@map("messages")
 }
 
 model Earning {
@@ -329,7 +390,8 @@ model Earning {
   deliveries Int
   createdAt  DateTime @default(now())
 
-  driver User @relation(fields: [userId], references: [id])
+  driver   User       @relation(fields: [userId], references: [id])
+  messages Messages[]
 
   @@map("earnings")
 }

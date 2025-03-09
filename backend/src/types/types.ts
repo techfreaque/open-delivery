@@ -5,6 +5,7 @@ import type {
   addressCreateSchema,
   addressResponseSchema,
   addressUpdateSchema,
+  adminRegisterSchema,
   cartItemsResponseSchema,
   cartItemUpdateSchema,
   categoryCreateSchema,
@@ -53,6 +54,7 @@ import type {
   resetPasswordConfirmSchema,
   resetPasswordRequestSchema,
   restaurantCreateSchema,
+  restaurantGetSchema,
   restaurantProfileMinimalSchema,
   restaurantProfileSchema,
   restaurantRatingCreateSchema,
@@ -94,6 +96,7 @@ export type UserResponseType = z.infer<typeof userResponseSchema>;
 export type LoginResponseType = z.infer<typeof loginResponseSchema>;
 export type LoginFormType = z.infer<typeof loginSchema>;
 export type RegisterType = z.infer<typeof registerSchema>;
+export type AdminRegisterType = z.infer<typeof adminRegisterSchema>;
 export type UserRoleRestaurantCreateType = z.infer<
   typeof userRoleRestaurantCreateSchema
 >;
@@ -112,6 +115,7 @@ export type ResetPasswordConfirmType = z.infer<
 >;
 export type RestaurantCreateType = z.infer<typeof restaurantCreateSchema>;
 export type RestaurantUpdateType = z.infer<typeof restaurantUpdateSchema>;
+export type RestaurantGetType = z.infer<typeof restaurantGetSchema>;
 export type RestaurantResponseType = z.infer<typeof restaurantResponseSchema>;
 export type RestaurantProfileType = z.infer<typeof restaurantProfileSchema>;
 export type RestaurantProfileMinimalType = z.infer<
@@ -200,6 +204,26 @@ export type DBLanguages = Prisma.LanguagesGetPayload<Empty>;
 // Extended types
 export type DBCartItemExtended = Prisma.CartItemGetPayload<{
   select: {
+    id: true;
+    quantity: true;
+    menuItem: {
+      select: {
+        id: true;
+        name: true;
+        description: true;
+        price: true;
+        taxPercent: true;
+        image: true;
+        restaurantId: true;
+        category: {
+          select: {
+            id: true;
+            name: true;
+            image: true;
+          };
+        };
+      };
+    };
     restaurant: {
       select: {
         id: true;
@@ -207,22 +231,85 @@ export type DBCartItemExtended = Prisma.CartItemGetPayload<{
         image: true;
       };
     };
-    menuItem: {
+  };
+}>;
+
+export type FullUserType = Prisma.UserGetPayload<{
+  select: {
+    id: true;
+    firstName: true;
+    lastName: true;
+    email: true;
+    password: true;
+    userRoles: {
+      select: {
+        role: true;
+        id: true;
+        restaurantId: true;
+      };
+    };
+    createdAt: true;
+    updatedAt: true;
+    addresses: {
       select: {
         id: true;
+        userId: true;
+        label: true;
         name: true;
-        restaurantId: true;
-        price: true;
-        image: true;
-        taxPercent: true;
-        category: true;
-        description: true;
+        message: true;
+        street: true;
+        streetNumber: true;
+        zip: true;
+        city: true;
+        phone: true;
+        isDefault: true;
+        country: {
+          select: {
+            code: true;
+            name: true;
+          };
+        };
+      };
+    };
+    cartItems: {
+      select: {
+        id: true;
+        quantity: true;
+        menuItem: {
+          select: {
+            id: true;
+            name: true;
+            description: true;
+            price: true;
+            taxPercent: true;
+            image: true;
+            published: true;
+            availableFrom: true;
+            availableTo: true;
+            createdAt: true;
+            updatedAt: true;
+            category: {
+              select: {
+                id: true;
+                name: true;
+                image: true;
+              };
+            };
+          };
+        };
+        restaurant: {
+          select: {
+            id: true;
+            name: true;
+            image: true;
+          };
+        };
       };
     };
   };
 }>;
-// prisma enums
 
+// prisma enums (cloned from prisma schema)
 export enum OrderStatus {
   NEW = "NEW",
   PREPARING = "PREPARING",
@@ -256,36 +343,9 @@ export enum UserRoleValue {
   ADMIN = "ADMIN",
 }
 
-// export { , , ,  };
-
-// Response types
-
-export interface ApiEndpoint {
-  path: string;
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  description: string;
-  requestSchema?: Record<string, unknown>;
-  responseSchema?: Record<string, unknown>;
-  requiredFields?: string[];
-  fieldDescriptions?: Record<string, string>;
-  requiresAuth?: boolean;
-  errorCodes?: Record<string, string>;
-  sampleResponse?: string;
-  examples: Record<string, unknown>;
-  webhookEvents?: string[];
-  webhookDescription?: string;
-}
-
 export enum DatabaseProvider {
   SQLITE = "sqlite",
   POSTGRESQL = "postgresql",
   MYSQL = "mysql",
   MONGODB = "mongodb",
 }
-
-// Custom API types
-export type ApiResponse<T> = {
-  data?: T;
-  error?: string;
-  status: number;
-};

@@ -7,17 +7,16 @@ const menuItemBaseSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string(),
   price: z.number().min(0, "Price must be positive"),
-  image: z.string().optional(),
-  isAvailable: z.boolean().optional().default(true),
+  image: z.string().nullable(),
   taxPercent: z.number().min(0).default(0),
   restaurantId: z.string().uuid(),
 });
 
 export const menuItemCreateSchema = menuItemBaseSchema.extend({
   published: z.boolean().optional().default(true),
-  availableFrom: z.date().nullable().optional(),
-  availableTo: z.date().nullable().optional(),
-  categoryId: z.string().uuid().optional(),
+  availableFrom: dateSchema.nullable(),
+  availableTo: dateSchema.nullable(),
+  categoryId: z.string().uuid(),
 });
 
 export const menuItemResponseMinimalSchema = menuItemBaseSchema.extend({
@@ -26,8 +25,11 @@ export const menuItemResponseMinimalSchema = menuItemBaseSchema.extend({
 });
 
 export const menuItemResponseSchema = menuItemResponseMinimalSchema.extend({
-  createdAt: z.string().or(z.date()),
-  updatedAt: z.string().or(z.date()),
+  isAvailable: z.boolean().optional().default(true),
+  availableFrom: dateSchema.nullable(),
+  availableTo: dateSchema.nullable(),
+  createdAt: dateSchema,
+  updatedAt: dateSchema,
 });
 
 export const menuItemSchema = z.object({

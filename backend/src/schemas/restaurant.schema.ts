@@ -23,6 +23,9 @@ const restaurantBaseSchema = z.object({
     .min(5, { message: "Phone number must be at least 5 characters long" }),
   email: z.string().email({ message: "Invalid email address" }),
   image: z.string().url({ message: "Image must be a valid URL" }),
+  latitude: z.number(),
+  longitude: z.number(),
+  published: z.boolean(),
 });
 
 export const restaurantCreateSchema = restaurantBaseSchema.extend({
@@ -55,4 +58,17 @@ export const restaurantProfileMinimalSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, { message: "Restaurant name is required" }),
   image: z.string().url().nullable(),
+});
+
+export const restaurantGetSchema = z.object({
+  search: z.string().min(2).nullable().optional(),
+  countryCode: z.string().length(2),
+  zip: z.string().min(1),
+  street: z.string().min(1).optional().nullable(),
+  streetNumber: z.string().min(1).optional().nullable(),
+  radius: z.number().max(50),
+  rating: z.number().min(0).max(5).optional().nullable(),
+  currentlyOpen: z.boolean().optional().nullable(),
+  page: z.number().int().positive().default(1),
+  limit: z.number().int().positive().max(100).default(100),
 });

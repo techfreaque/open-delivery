@@ -3,7 +3,7 @@ import 'dotenv/config';
 export default {
   expo: {
     name: "Open Delivery",
-    slug: "open-delivery",
+    slug: "openeats",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./src/assets/images/icon.png",
@@ -36,7 +36,7 @@ export default {
     extra: {
       BACKEND_URL: process.env.BACKEND_URL || "http://localhost:3000",
       eas: {
-        projectId: "your-project-id"
+        projectId: "b742decb-5007-48d3-94e3-d9f24572ddf2"
       }
     }
   }

@@ -20,8 +20,7 @@ export async function GET(
       where: { id: params.restaurantId },
       include: {
         menuItems: {
-          where: { available: true },
-          orderBy: { category: "asc" },
+          where: { published: true },
         },
       },
     });

@@ -13,7 +13,10 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 export function debugLogger(message: string, ...other: unknown[]): void {
-  if (envClient.NEXT_PUBLIC_NODE_ENV === "development" || envClient.NEXT_PUBLIC_NODE_ENV === "test") {
+  if (
+    envClient.NEXT_PUBLIC_NODE_ENV === "development" ||
+    envClient.NEXT_PUBLIC_NODE_ENV === "test"
+  ) {
     // eslint-disable-next-line no-console
     console.log(`[${APP_NAME}][DEBUG] ${message}`, ...other);
   }

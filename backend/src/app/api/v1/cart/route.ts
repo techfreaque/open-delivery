@@ -20,8 +20,11 @@ import {
 export async function GET(): Promise<
   NextResponse<SuccessResponse<CartItemsResponseType> | ErrorResponse>
 > {
+  const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
+  if (!user) {
+    return createErrorResponse("Not signed in", 401);
+  }
   try {
-    const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
     const cartItems = await getCartItems(user.id);
     return createSuccessResponse<CartItemsResponseType>(
       cartItems,
@@ -29,6 +32,9 @@ export async function GET(): Promise<
     );
   } catch (err) {
     const error = err as Error;
+    if (error.name === "ValidationError") {
+      return createErrorResponse(`Validation error: ${error.message}`, 400);
+    }
     return createErrorResponse(`Failed to fetch cart: ${error.message}`, 500);
   }
 }
@@ -37,23 +43,31 @@ async function getCartItems(userId: string): Promise<DBCartItemExtended[]> {
   return prisma.cartItem.findMany({
     where: { userId },
     select: {
+      id: true,
+      quantity: true,
+      menuItem: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          price: true,
+          taxPercent: true,
+          image: true,
+          restaurantId: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
       restaurant: {
         select: {
           id: true,
           name: true,
           image: true,
-        },
-      },
-      menuItem: {
-        select: {
-          id: true,
-          name: true,
-          restaurantId: true,
-          price: true,
-          image: true,
-          taxPercent: true,
-          category: true,
-          description: true,
         },
       },
     },
@@ -66,6 +80,9 @@ export async function POST(
   NextResponse<SuccessResponse<CartItemsResponseType> | ErrorResponse>
 > {
   const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
+  if (!user) {
+    return createErrorResponse("Not signed in", 401);
+  }
   const validatedData = await validateRequest(request, cartItemUpdateSchema);
   try {
     const menuItem = await prisma.menuItem.findUnique({
@@ -74,6 +91,15 @@ export async function POST(
     });
     if (!menuItem) {
       return createErrorResponse("Menu item not found", 404);
+    }
+    if (menuItem.published === false) {
+      return createErrorResponse("Menu item currently not available", 404);
+    }
+    if (menuItem.availableFrom && menuItem.availableFrom < new Date()) {
+      return createErrorResponse("Menu item not available yet", 404);
+    }
+    if (menuItem.availableTo && menuItem.availableTo > new Date()) {
+      return createErrorResponse("Menu item no longer available", 404);
     }
 
     const existingCartItem = await prisma.cartItem.findUnique({
@@ -94,7 +120,6 @@ export async function POST(
         });
       }
     } else {
-      // Upsert the cart item (create or update)
       await prisma.cartItem.upsert({
         where: {
           userId_menuItemId_restaurantId: {
@@ -126,6 +151,9 @@ export async function POST(
     );
   } catch (err) {
     const error = err as Error;
+    if (error.name === "ValidationError") {
+      return createErrorResponse(`Validation error: ${error.message}`, 400);
+    }
     return createErrorResponse(`Failed to update cart: ${error.message}`, 500);
   }
 }

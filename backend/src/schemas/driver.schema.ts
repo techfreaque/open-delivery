@@ -10,6 +10,12 @@ import {
 const driverBaseSchema = z.object({
   vehicle: z.string(),
   licensePlate: z.string(),
+  street: z.string(),
+  streetNumber: z.string(),
+  zip: z.string(),
+  city: z.string(),
+  countryId: z.string(),
+  radius: z.number(),
 });
 
 export const driverCreateSchema = driverBaseSchema.extend({
@@ -39,7 +45,7 @@ export const driverPublicResponseSchema = z.object({
   id: z.string().uuid(),
   vehicle: z.string(),
   licensePlate: z.string(),
-  rating: z.number(),
+  // rating: z.number(),
   createdAt: dateSchema,
   user: userPublicResponseSchema,
 });

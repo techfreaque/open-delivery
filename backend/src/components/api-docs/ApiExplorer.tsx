@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import type { JSX } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { ENDPOINT_DOMAINS } from "@/constants";
 import { APP_NAME } from "@/constants";
-import { getExampleForEndpoint } from "@/lib/examples/data";
-import type { ApiEndpoint } from "@/types/types";
+import type { ApiEndpoint } from "@/lib/api-docs/endpoints";
+import { getExampleForEndpoint } from "@/lib/api-docs/endpoints";
 
 import { Button } from "../ui/button";
 import {
@@ -19,7 +19,6 @@ import {
 } from "../ui/card";
 import { DomainSelector } from "./DomainSelector";
 import { EndpointDetails } from "./EndpointDetails";
-import { ENDPOINTS } from "./endpoints";
 import { EndpointsList } from "./EndpointsList";
 
 interface ApiExplorerProps {
@@ -30,12 +29,14 @@ export function ApiExplorer({ compact }: ApiExplorerProps): JSX.Element {
   const [responseData, setResponseData] = useState<string>("");
   const [selectedDomain, setSelectedDomain] =
     useState<keyof typeof ENDPOINT_DOMAINS>("dev");
-
-  const [activeEndpoint, setActiveEndpoint] = useState<ApiEndpoint>(() =>
-    getExampleForEndpoint(ENDPOINTS[0].path),
+  const initialExample = useMemo(
+    () => getExampleForEndpoint(["auth", "login"]),
+    [],
   );
+  const [activeEndpoint, setActiveEndpoint] =
+    useState<ApiEndpoint<any, any, any>>(initialExample);
   const [requestData, setRequestData] = useState<string>(() => {
-    return JSON.stringify(activeEndpoint.examples, null, 2);
+    return initialExample.examples;
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(false);

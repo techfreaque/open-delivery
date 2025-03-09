@@ -40,7 +40,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "prisma/schema-builder.ts"
-, "src/tests/api/auth-reset-password.test.ts"  ],
+, "src/tests/api/restaurants.test.ts.n"  ],
   "exclude": [
     "node_modules",
     ".next"

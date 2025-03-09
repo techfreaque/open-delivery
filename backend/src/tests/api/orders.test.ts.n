@@ -6,6 +6,8 @@ import { PrismaClient } from "@prisma/client";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { TEST_SERVER_URL } from "@/lib/env";
+
 // Use real Prisma client for E2E tests
 const prisma = new PrismaClient();
 
@@ -18,7 +20,7 @@ describe("/api/v1/orders E2E", () => {
 
   beforeAll(async () => {
     // Set up auth tokens by logging in users
-    const customerResponse = await request(env.TEST_SERVER_URL)
+    const customerResponse = await request(TEST_SERVER_URL)
       .post("/api/v1/auth/login")
       .send({
         email: "customer@example.com",
@@ -26,7 +28,7 @@ describe("/api/v1/orders E2E", () => {
       });
     customerAuthToken = customerResponse.body.token;
 
-    const restaurantResponse = await request(env.TEST_SERVER_URL)
+    const restaurantResponse = await request(TEST_SERVER_URL)
       .post("/api/v1/auth/login")
       .send({
         email: "restaurant@example.com",
@@ -76,7 +78,7 @@ describe("/api/v1/orders E2E", () => {
         paymentMethod: "CASH",
       };
 
-      const response = await request(env.TEST_SERVER_URL)
+      const response = await request(TEST_SERVER_URL)
         .post("/api/v1/orders")
         .set("Authorization", `Bearer ${customerAuthToken}`)
         .send(newOrder);
@@ -92,7 +94,7 @@ describe("/api/v1/orders E2E", () => {
 
   describe("GET /api/v1/orders", () => {
     it("should return customer orders when authenticated as customer", async () => {
-      const response = await request(env.TEST_SERVER_URL)
+      const response = await request(TEST_SERVER_URL)
         .get("/api/v1/orders")
         .set("Authorization", `Bearer ${customerAuthToken}`);
 
@@ -101,7 +103,7 @@ describe("/api/v1/orders E2E", () => {
     });
 
     it("should return restaurant orders when authenticated as restaurant admin", async () => {
-      const response = await request(env.TEST_SERVER_URL)
+      const response = await request(TEST_SERVER_URL)
         .get("/api/v1/orders")
         .set("Authorization", `Bearer ${restaurantAuthToken}`);
 
@@ -118,7 +120,7 @@ describe("/api/v1/orders E2E", () => {
         return;
       }
 
-      const response = await request(env.TEST_SERVER_URL)
+      const response = await request(TEST_SERVER_URL)
         .get(`/api/v1/orders/${createdOrderId}`)
         .set("Authorization", `Bearer ${customerAuthToken}`);
 

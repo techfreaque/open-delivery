@@ -1,85 +1,220 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
 
-import { validateParams } from "@/lib/app-validation";
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  validateGetRequest,
+  validateRequest,
+} from "@/lib/api/apiResponse";
 import { getCurrentUser } from "@/lib/auth/authService";
 import { prisma } from "@/lib/db/prisma";
-import { restaurantCreateSchema } from "@/schemas";
-import { restaurantResponseSchema } from "@/schemas";
-import { searchSchema } from "@/schemas";
+import { calculateDistance } from "@/lib/geo/distance";
+import {
+  restaurantCreateSchema,
+  restaurantGetSchema,
+  restaurantResponseSchema,
+} from "@/schemas";
 import type {
-  ApiResponse,
-  DBRestaurant,
   ErrorResponse,
-  RestaurantResponse,
+  RestaurantCreateType,
+  RestaurantGetType,
+  RestaurantResponseType,
   SuccessResponse,
 } from "@/types/types";
 
 export async function GET(
   request: NextRequest,
-): Promise<NextResponse<SuccessResponse<RestaurantResponse> | ErrorResponse>> {
-  // Extract search parameters from URL
-  const { searchParams } = new URL(request.url);
-  const params = Object.fromEntries(searchParams.entries());
-
-  // Validate search parameters with schema
-  const { data: validParams, response: validationError } = validateParams(
-    params,
-    searchSchema,
-  );
-
-  if (validationError) {
-    return validationError;
-  }
-
+): Promise<
+  NextResponse<SuccessResponse<RestaurantResponseType[]> | ErrorResponse>
+> {
   try {
-    // Apply filters based on validated params
-    const category = validParams?.category;
-    const query = validParams?.query;
+    const validatedData = await validateGetRequest<RestaurantGetType>(
+      request,
+      restaurantGetSchema,
+    );
 
-    const restaurants = await prisma.restaurant.findMany({
+    const {
+      search,
+      countryCode,
+      zip,
+      street,
+      streetNumber,
+      radius = 10, // Default radius to 10km if not specified
+      rating,
+      currentlyOpen,
+      page = 1,
+      limit = 20,
+    } = validatedData;
+
+    // First, get coordinates for the search location
+    const searchLocation = await prisma.geoLocation.findFirst({
       where: {
-        ...(category
-          ? { cuisineType: { contains: category, mode: "insensitive" } }
-          : {}),
-        ...(query
-          ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { description: { contains: query, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-      },
-      include: {
-        menuItems: true,
+        countryCode,
+        zip,
+        ...(street ? { street } : {}),
+        ...(streetNumber ? { streetNumber } : {}),
       },
     });
-    return createSuccessResponse<RestaurantResponse>(
-      restaurants,
-      restaurantResponseSchema,
+
+    if (!searchLocation) {
+      return createErrorResponse("Location not found", 404);
+    }
+
+    // Build base query conditions
+    const where: any = {
+      country: {
+        code: countryCode,
+      },
+    };
+
+    // Handle search filter
+    if (search && search.length >= 2) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        {
+          menuItems: {
+            some: {
+              name: { contains: search, mode: "insensitive" },
+            },
+          },
+        },
+        {
+          mainCategory: {
+            name: { contains: search, mode: "insensitive" },
+          },
+        },
+      ];
+    }
+
+    // Handle rating filter
+    if (rating !== undefined && rating !== null) {
+      where.rating = {
+        gte: rating,
+      };
+    }
+
+    // Handle opening hours filter
+    if (currentlyOpen === true) {
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); // Convert Sunday from 0 to 7
+      const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+
+      where.openingTimes = {
+        some: {
+          day: dayOfWeek,
+          open: { lte: currentTime },
+          close: { gte: currentTime },
+          OR: [
+            {
+              validFrom: null,
+              validTo: null,
+            },
+            {
+              validFrom: { lte: now },
+              validTo: { gte: now },
+            },
+          ],
+        },
+      };
+    }
+
+    // Fetch restaurants with initial filters
+    let restaurants = await prisma.restaurant.findMany({
+      where,
+      include: {
+        country: true,
+        mainCategory: true,
+        latitude: true,
+        longitude: true,
+        menuItems: {
+          take: 10,
+          where: {
+            published: true,
+          },
+          include: {
+            category: true,
+          },
+        },
+        openingTimes: true,
+        userRoles: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        rating: "desc",
+      },
+    });
+
+    // Filter and enhance with distance information
+    const restaurantsWithDistance = restaurants
+      .filter((restaurant) => {
+        const distance = calculateDistance(
+          searchLocation.latitude,
+          searchLocation.longitude,
+          restaurant.latitude,
+          restaurant.longitude,
+        );
+
+        // Add distance to restaurant object for sorting and display
+        (restaurant as any).distance = Number(distance.toFixed(1));
+
+        // Filter by radius
+        return distance <= radius;
+      })
+      .sort((a, b) => (a as any).distance - (b as any).distance);
+
+    // Apply pagination
+    const skip = (page - 1) * limit;
+    const paginatedRestaurants = restaurantsWithDistance.slice(
+      skip,
+      skip + limit,
     );
-  } catch (error) {
-    console.error("Error fetching restaurants:", error);
-    return NextResponse.json(
-      { message: "Error fetching restaurants" },
-      { status: 500 },
+
+    // Prepare response with pagination metadata
+    const response = {
+      data: paginatedRestaurants,
+      pagination: {
+        total: restaurantsWithDistance.length,
+        page,
+        limit,
+        pages: Math.ceil(restaurantsWithDistance.length / limit),
+      },
+    };
+
+    return createSuccessResponse(response);
+  } catch (err) {
+    const error = err as Error;
+    if (error.name === "ValidationError") {
+      return createErrorResponse(`Validation error: ${error.message}`, 400);
+    }
+    return createErrorResponse(
+      `Failed to fetch restaurants: ${error.message}`,
+      500,
     );
   }
 }
 
 export async function POST(
   request: NextRequest,
-): Promise<NextResponse<SuccessResponse<RestaurantResponse> | ErrorResponse>> {
+): Promise<
+  NextResponse<SuccessResponse<RestaurantResponseType> | ErrorResponse>
+> {
   try {
+    // Get current user
     const user = await getCurrentUser();
-
     if (!user) {
-      const response: ApiResponse<null> = {
-        error: "Unauthorized",
-        status: 401,
-      };
-      return NextResponse.json(response, { status: 401 });
+      return createErrorResponse("Unauthorized", 401);
     }
 
     // Check if user has restaurant admin role
@@ -93,53 +228,50 @@ export async function POST(
       roles.includes("RESTAURANT_ADMIN") || roles.includes("ADMIN");
 
     if (!canCreateRestaurant) {
-      const response: ApiResponse<null> = {
-        error: "Not authorized to create restaurants",
-        status: 403,
-      };
-      return NextResponse.json(response, { status: 403 });
+      return createErrorResponse("Insufficient permissions", 403);
     }
 
     // Validate restaurant data
-    const body = await request.json();
-    const validation = restaurantCreateSchema.safeParse(body);
-
-    if (!validation.success) {
-      const response: ApiResponse<null> = {
-        error: "Invalid restaurant data",
-        status: 400,
-      };
-      return NextResponse.json(response, { status: 400 });
-    }
+    const validatedData = await validateRequest<RestaurantCreateType>(
+      request,
+      restaurantCreateSchema,
+    );
 
     // Create restaurant
     const newRestaurant = await prisma.restaurant.create({
       data: {
-        ...validation.data,
+        ...validatedData,
         userId: user.id,
         isOpen: false,
         rating: 0,
+        orderCount: 0,
+      },
+      include: {
+        country: true,
+        mainCategory: true,
+        menuItems: true,
+        openingTimes: true,
+        userRoles: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    const response: ApiResponse<DBRestaurant> = {
-      data: {
-        ...newRestaurant,
-        createdAt: newRestaurant.createdAt.toISOString(),
-        updatedAt: newRestaurant.updatedAt.toISOString(),
-      },
-      status: 201,
-    };
-
-    return NextResponse.json(response, { status: 201 });
+    return createSuccessResponse(newRestaurant, restaurantResponseSchema);
   } catch (error) {
-    console.error("Error creating restaurant:", error);
-
-    const response: ApiResponse<null> = {
-      error: "Failed to create restaurant",
-      status: 500,
-    };
-
-    return NextResponse.json(response, { status: 500 });
+    const err = error as Error;
+    return createErrorResponse(
+      `Failed to create restaurant: ${err.message}`,
+      500,
+    );
   }
 }

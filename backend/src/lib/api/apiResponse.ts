@@ -13,6 +13,23 @@ export function createSuccessResponse<T>(
   schema: z.ZodSchema<T>,
   status: number = 200,
 ): NextResponse<SuccessResponse<T> | ErrorResponse> {
+  const { error, data: validatedData } = validateData(data, schema);
+  if (error) {
+    return createErrorResponse(error, 400);
+  }
+  return NextResponse.json(
+    { data: validatedData, success: true },
+    { status },
+  ) as NextResponse<SuccessResponse<T>>;
+}
+
+export function validateData<T>(
+  data: T,
+  schema: z.ZodSchema<T>,
+): {
+  data?: T;
+  error?: string;
+} {
   try {
     // Validate the data against the schema
     const result = schema.safeParse(data);
@@ -21,23 +38,17 @@ export function createSuccessResponse<T>(
       const errorMessage = result.error.errors
         .map((err) => `${err.path.join(".")}: ${err.message}`)
         .join(", ");
-      return createErrorResponse(
-        `Response validation error: ${errorMessage}`,
-        500,
-      );
+      return { error: errorMessage };
     }
 
     // For API responses, don't wrap the response in a success object, return the data directly
-    return NextResponse.json(
-      { data: result.data, success: true },
-      { status },
-    ) satisfies NextResponse<SuccessResponse<T>>;
+    return { data: result.data };
   } catch (error) {
     const message =
       error instanceof Error
         ? error.message
         : "Unknown error validating response";
-    return createErrorResponse(`Response processing error: ${message}`, 500);
+    return { error: message };
   }
 }
 
@@ -82,13 +93,26 @@ export async function validateRequest<T>(
 }
 
 /**
- * Format Zod error messages
+ * Validates request body against a schema
  */
-function formatZodError(error: unknown): string {
-  if (error instanceof ZodError) {
-    return error.errors
-      .map((e) => `${e.path.join(".")}: ${e.message}`)
-      .join(", ");
+export function validateGetRequest<T>(
+  request: Request,
+  schema: ZodSchema<T>,
+): T {
+  try {
+    const { searchParams } = new URL(request.url);
+    const params = Object.fromEntries(searchParams.entries());
+    const validatedData = schema.parse(params);
+    return validatedData;
+  } catch (error) {
+    if (error instanceof ZodError) {
+      // Create a validation error with formatted message
+      const validationError = new Error(
+        `Validation error: ${error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")}`,
+      );
+      validationError.name = "ValidationError";
+      throw validationError;
+    }
+    throw error;
   }
-  return "Unknown validation error";
 }

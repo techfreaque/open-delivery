@@ -8,9 +8,18 @@ const userRoleTypeSchema = z.enum([
   "ADMIN",
 ]);
 
+const userRoleRestaurantTypeSchema = z.enum([
+  "RESTAURANT_ADMIN",
+  "RESTAURANT_EMPLOYEE",
+]);
+
 export const userRoleRestaurantCreateSchema = z.object({
-  role: userRoleTypeSchema,
+  role: userRoleRestaurantTypeSchema,
   userId: z.string().uuid(),
+});
+
+export const userRoleAdminCreateSchema = z.object({
+  role: userRoleTypeSchema,
 });
 
 export const userRoleRestaurantResponseSchema = z.object({
@@ -19,7 +28,10 @@ export const userRoleRestaurantResponseSchema = z.object({
   userId: z.string().uuid(),
 });
 
-export const userRoleRestaurantUpdateSchema = userRoleRestaurantResponseSchema;
+export const userRoleRestaurantUpdateSchema =
+  userRoleRestaurantCreateSchema.extend({
+    id: z.string().uuid(),
+  });
 
 export const userRoleResponseSchema = z.object({
   id: z.string().uuid(),

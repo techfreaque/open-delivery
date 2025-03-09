@@ -4,8 +4,8 @@ import { menuItemResponseMinimalSchema } from "./menu.schema";
 import { restaurantProfileMinimalSchema } from "./restaurant.schema";
 
 const cartItemBaseSchema = z.object({
-  id: z.string().uuid(),
   quantity: z.number().int().min(0),
+  userId: z.string().uuid(),
 });
 
 export const cartItemUpdateSchema = cartItemBaseSchema.extend({

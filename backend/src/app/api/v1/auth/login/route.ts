@@ -21,7 +21,6 @@ export async function POST(
     return loginUser(validatedData);
   } catch (err) {
     const error = err as Error;
-    // Check if it's a validation error
     if (error.name === "ValidationError") {
       return createErrorResponse(`Validation error: ${error.message}`, 400);
     }

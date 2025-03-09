@@ -1,9 +1,11 @@
 import { z } from "zod";
 
-import { addressResponseSchema } from "./address.schema";
 import { dateSchema } from "./common.schema";
-import { deliveryResponseSchema } from "./delivery.schema";
-import { restaurantProfileSchema } from "./restaurant.schema";
+import {
+  deliveryCreateSchema,
+  deliveryResponseSchema,
+} from "./delivery.schema";
+import { restaurantProfileMinimalSchema, restaurantProfileSchema } from "./restaurant.schema";
 import { userPublicDetailedResponseSchema } from "./user.schema";
 
 const orderStatusSchema = z.enum([
@@ -23,21 +25,24 @@ export const orderItemSchema = z.object({
 
 export const orderCreateSchema = z.object({
   restaurantId: z.string().uuid(),
+  customerId: z.string().uuid(),
   message: z.string().nullable(),
-  items: z.array(orderItemSchema).min(1),
+  orderItems: z.array(orderItemSchema).min(1),
   deliveryFee: z.number().nonnegative(),
   driverTip: z.number().nonnegative().nullable(),
+  delivery: deliveryCreateSchema,
   restaurantTip: z.number().nonnegative().nullable(),
   projectTip: z.number().nonnegative().nullable(),
 });
 
 export const orderUpdateSchema = z.object({
-  status: orderStatusSchema.nullable(),
+  status: orderStatusSchema,
   message: z.string().nullable(),
 });
 
 export const orderItemResponseSchema = z.object({
   id: z.string().uuid(),
+  menuItemId: z.string().uuid(),
   message: z.string().nullable(),
   quantity: z.number().int(),
   price: z.number(),
@@ -54,9 +59,9 @@ export const orderResponseSchema = z.object({
   restaurantTip: z.number().nullable(),
   projectTip: z.number().nullable(),
   createdAt: dateSchema,
-  restaurant: restaurantProfileSchema,
+  updatedAt: dateSchema,
+  restaurant: restaurantProfileMinimalSchema,
   customer: userPublicDetailedResponseSchema,
-  address: addressResponseSchema,
   delivery: deliveryResponseSchema,
   orderItems: z.array(orderItemResponseSchema),
 });
