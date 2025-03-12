@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { userRoleAdminCreateSchema } from "./user-roles.schema";
 
-const registerBaseSchema = z.object({
+export const registerBaseSchema = z.object({
   firstName: z.string().min(1, { message: "First Name is required" }),
   lastName: z.string().min(1, { message: "Last Name is required" }),
   email: z.string().email({ message: "Please enter a valid email address" }),

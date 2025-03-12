@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import type { ChangeEvent, FormEvent } from "react";
 import { type FC, useState } from "react";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
+import { parseError } from "@/lib/utils";
 import type { LoginFormType } from "@/types/types";
 
 const LoginPage: FC = () => {
@@ -78,11 +79,9 @@ const LoginForm: FC = () => {
     setIsLoading(true);
 
     try {
-      // Use the login function from useAuth hook
       await login(credentials);
-      router.push("/v1/api-docs");
     } catch (err) {
-      const authError = err as Error;
+      const authError = parseError(err);
       setError(authError.message || "Authentication failed");
     } finally {
       setIsLoading(false);

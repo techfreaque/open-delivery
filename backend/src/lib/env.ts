@@ -15,6 +15,7 @@ export const envSchema = z.object({
   EMAIL_PASS: z.string(),
   DEBUG_TESTS: z.string().optional(),
   TEST_SERVER_URL: z.string(),
+  GOOGLE_MAPS_API_KEY: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;

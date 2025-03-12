@@ -72,14 +72,18 @@ import type {
   userRoleRestaurantUpdateSchema,
 } from "@/schemas";
 
+export type ResponseType<TResponseData> =
+  | SuccessResponse<TResponseData>
+  | ErrorResponse;
+
 export type SuccessResponse<T> = {
   success: true;
-  data?: T | undefined;
+  data: T;
 };
 
 export type ErrorResponse = {
   success: false;
-  message?: string | undefined;
+  message: string;
 };
 
 // Re-export all schema types for easier access

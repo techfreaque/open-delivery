@@ -6,7 +6,7 @@ import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import path from "path";
 
 import { env } from "../env";
-import { debugLogger } from "../utils";
+import { debugLogger, errorLogger } from "../utils";
 
 export interface EmailTemplateVariables {
   APP_NAME: string;
@@ -82,7 +82,7 @@ export class EmailService {
       }
       return info;
     } catch (error) {
-      console.error("Error sending email:", error);
+      errorLogger("Error sending email:", error);
       return null;
     }
   }

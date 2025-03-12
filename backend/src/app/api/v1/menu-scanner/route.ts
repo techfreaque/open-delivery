@@ -85,6 +85,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       try {
         extractedItems = JSON.parse(content);
       } catch (e) {
+        // TODO retry up to three times with the conversation history + the error message
         return NextResponse.json(
           { error: "Invalid response format from AI", raw: content },
           { status: 500 },

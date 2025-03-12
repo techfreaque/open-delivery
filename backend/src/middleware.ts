@@ -2,7 +2,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { verifyJwt } from "@/lib/auth/jwt";
-import { env } from "@/lib/env";
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const response = NextResponse.next();
@@ -28,17 +27,13 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // Skip middleware for public routes and auth endpoints
   if (
     request.nextUrl.pathname.startsWith("/api/v1/auth") ||
+    request.nextUrl.pathname.startsWith("/v1/api-docs") ||
     request.nextUrl.pathname === "/" ||
     request.nextUrl.pathname.startsWith("/v1/auth") ||
     request.nextUrl.pathname.startsWith("/_next") ||
     request.nextUrl.pathname.startsWith("/public") ||
     request.nextUrl.pathname.includes("favicon.ico")
   ) {
-    return response;
-  }
-
-  // Skip middleware completely in test environment
-  if (env.NODE_ENV === "test") {
     return response;
   }
 

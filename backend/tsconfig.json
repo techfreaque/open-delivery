@@ -10,7 +10,7 @@
       "vitest/globals"
     ],
     "allowJs": true,
-    "target": "ES6",
+    "target": "ES2018",
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
@@ -39,8 +39,9 @@
     "**/*.test.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "prisma/schema-builder.ts"
-, "src/tests/api/restaurants.test.ts.n"  ],
+    "prisma/schema-builder.ts",
+    "src/tests/api/restaurants.test.ts.n"
+  ],
   "exclude": [
     "node_modules",
     ".next"

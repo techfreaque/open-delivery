@@ -5,7 +5,7 @@ import {
   deliveryCreateSchema,
   deliveryResponseSchema,
 } from "./delivery.schema";
-import { restaurantProfileMinimalSchema, restaurantProfileSchema } from "./restaurant.schema";
+import { restaurantProfileMinimalSchema } from "./restaurant.schema";
 import { userPublicDetailedResponseSchema } from "./user.schema";
 
 const orderStatusSchema = z.enum([

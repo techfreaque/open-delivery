@@ -2,107 +2,36 @@ import {
   loginResponseSchema,
   loginSchema,
   orderCreateSchema,
-  registerSchema,
+  registerBaseSchema,
   restaurantCreateSchema,
+  restaurantGetSchema,
+  restaurantResponseSchema,
 } from "@/schemas";
-import type { LoginFormType } from "@/types/types";
 
 import { examples, type ExamplesList } from "../examples/data";
 
 class ApiExamples {
   // Get example data for a specific endpoint based on path
-  getExampleForEndpoint(path: string[]): ApiEndpoint {
-    // Extract the resource type from the path
-
-    switch (resourcePath) {
-      case "restaurants":
-        if (path.includes("profile")) {
-          return this.restaurantProfiles[0];
-        } else if (path.includes("POST") || path.endsWith("restaurants")) {
-          return this.restaurants[0];
-        } else {
-          return { id: this.restaurantExamples.example1.id };
-        }
-
-      case "menu-items":
-        return path.includes("POST")
-          ? this.menuItems[0]
-          : { id: this.testMenuItems[0].id };
-
-      case "orders":
-        return path.includes("POST")
-          ? this.orders[0]
-          : { id: this.testOrders[0].id };
-
-      case "drivers":
-        return path.includes("POST")
-          ? this.drivers[0]
-          : { id: this.testDrivers[0].id };
-
-      case "addresses":
-        return {
-          ...this.addresses[0],
-          userId: this.users[0].id,
-        };
-
-      case "deliveries":
-        return {
-          ...this.deliveries[0],
-          orderId: this.orders[0].id,
-        };
-
-      case "cart":
-        return {
-          menuItemId: this.testMenuItems[0].id,
-          restaurantId: this.testRestaurants[0].id,
-          quantity: 2,
-        };
-
-      case "auth":
-        if (path.includes("login")) {
-          return this.auth.login;
-        }
-        if (path.includes("register")) {
-          return this.auth.register;
-        }
-        if (path.includes("password-reset/request")) {
-          return this.auth.resetRequest;
-        }
-        if (path.includes("password-reset/confirm")) {
-          return this.auth.resetConfirm;
-        }
-        return {};
-
-      case "users":
-        if (path.includes("me")) {
-          return { id: "current-user" };
-        }
-        return { id: this.testUsers[0].id };
-
-      case "search":
-        return { search: "pizza" };
-
-      case "statistics":
-        return {
-          startDate: new Date().toISOString().split("T")[0],
-          endDate: new Date().toISOString().split("T")[0],
-        };
-
-      default:
-        if (path.includes("{id}")) {
-          return { id: "550e8400-e29b-41d4-a716-446655440000" };
-        }
-        return {};
+  getExampleForEndpoint(path: string[]): ActiveApiEndpoint {
+    const method = path[path.length - 1];
+    const _path = path.slice(0, -1);
+    let endpoint: ApiEndpoint = this.endpoints as unknown as ApiEndpoint;
+    for (const p of path) {
+      endpoint = endpoint[p] as ApiEndpoint;
     }
+    return {
+      endpoint,
+      method,
+      path: ["api", "v1", ..._path],
+      fullPath: path,
+    };
   }
   // Helper function for API explorer
-  private endpoints = {
+  public endpoints = {
     // Auth endpoints
     auth: {
       login: {
         POST: {
-          path: "/api/auth/login",
-          method: "POST",
           description: "Authenticate user and generate JWT token",
           requestSchema: loginSchema.shape,
           responseSchema: loginResponseSchema.shape,
@@ -117,28 +46,13 @@ class ApiExamples {
             500: "Internal server error",
           },
           examples: examples.testData.userExamples,
-        } satisfies ApiEndpoint<
-          typeof loginSchema.shape,
-          typeof loginResponseSchema.shape,
-          LoginFormType
-        >,
-      },
-
-      signup: {
+        },
+      } satisfies ApiEndpoints,
+      register: {
         POST: {
-          path: "/api/auth/signup",
-          method: "POST",
           description: "Register a new user account",
-          requestSchema: registerSchema.shape,
-          responseSchema: {
-            id: "uuid",
-            email: "user@example.com",
-            name: "User Name",
-            roles: ["CUSTOMER"],
-            createdAt: "timestamp",
-            updatedAt: "timestamp",
-          },
-          requiredFields: ["name", "email", "password", "confirmPassword"],
+          requestSchema: registerBaseSchema.shape,
+          responseSchema: loginResponseSchema.shape,
           fieldDescriptions: {
             name: "User's full name",
             email: "User's email address",
@@ -151,36 +65,28 @@ class ApiExamples {
             409: "Email already in use",
             500: "Internal server error",
           },
-          validation: "signupSchema",
         },
       },
+
       me: {
         GET: {
-          path: "/api/auth/me",
-          method: "GET",
           description: "Get current authenticated user's information",
-          responseSchema: {
-            id: "uuid",
-            email: "user@example.com",
-            name: "User Name",
-            roles: ["ROLE"],
-            createdAt: "timestamp",
-            updatedAt: "timestamp",
-          },
+          requestSchema: undefined,
+          examples: undefined,
+          fieldDescriptions: undefined,
+          responseSchema: loginResponseSchema.shape,
           requiresAuth: true,
           errorCodes: {
             401: "Not authenticated",
             500: "Internal server error",
           },
         },
-      },
+      } satisfies ApiEndpoints,
     },
 
     // Restaurant endpoints
     restaurants: {
       GET: {
-        path: "/api/restaurants",
-        method: "GET",
         description: "Get all restaurants",
         responseSchema: [
           {
@@ -198,77 +104,59 @@ class ApiExamples {
             updatedAt: "timestamp",
           },
         ],
+        requestSchema: undefined,
+        examples: undefined,
+        fieldDescriptions: undefined,
         requiresAuth: false,
         errorCodes: {
           500: "Internal server error",
         },
       },
-    },
+    } satisfies ApiEndpoints,
     restaurant: {
       GET: {
-        path: "/api/restaurant",
-        method: "GET",
         description: "Get restaurant by ID",
-        responseSchema: {
-          id: "uuid",
-          name: "Restaurant Name",
-          description: "Restaurant description",
-          address: "Restaurant address",
-          phone: "Restaurant phone",
-          email: "restaurant@example.com",
-          image: "image_url",
-          rating: 4.5,
-          cuisine: "Restaurant cuisine",
-          isOpen: true,
-          menuItems: [
-            {
-              id: "uuid",
-              name: "Menu Item Name",
-              description: "Menu item description",
-              price: 9.99,
-              image: "image_url",
-              category: "Menu item category",
-              isAvailable: true,
-            },
-          ],
-          createdAt: "timestamp",
-          updatedAt: "timestamp",
-        },
+        requestSchema: restaurantGetSchema.shape,
+        responseSchema: restaurantResponseSchema.shape,
         requiresAuth: false,
+        examples: examples.testData.restaurantExamples,
+        fieldDescriptions: {
+          search: "Search query",
+          countryCode: "Country code",
+          zip: "ZIP code",
+          street: "Street name",
+          streetNumber: "Street number",
+          radius: "Search radius in km",
+          rating: "Minimum rating",
+          currentlyOpen: "Only show currently open restaurants",
+          page: "Page number",
+          limit: "Number of results per page",
+        },
         errorCodes: {
           404: "Restaurant not found",
           500: "Internal server error",
         },
       },
       POST: {
-        path: "/api/restaurants",
-        method: "POST",
         description: "Create a new restaurant",
         requestSchema: restaurantCreateSchema.shape,
-        responseSchema: {
-          id: "uuid",
-          name: "Restaurant Name",
-          description: "Restaurant description",
-          address: "Restaurant address",
-          phone: "Restaurant phone",
-          email: "restaurant@example.com",
-          image: "image_url",
-          rating: 0,
-          cuisine: "Restaurant cuisine",
-          isOpen: false,
-          createdAt: "timestamp",
-          updatedAt: "timestamp",
-        },
-        requiredFields: ["name", "address", "phone", "email"],
+        responseSchema: restaurantResponseSchema.shape,
         fieldDescriptions: {
           name: "Restaurant name",
           description: "Restaurant description",
-          address: "Restaurant physical address",
-          phone: "Restaurant contact phone",
-          email: "Restaurant contact email",
-          image: "Restaurant image URL",
-          cuisine: "Restaurant cuisine type",
+          street: "Street name",
+          streetNumber: "Street number",
+          zip: "ZIP code",
+          city: "City",
+          phone: "Phone number",
+          email: "Email address",
+          image: "Image URL",
+          published: "Published status",
+          countryId: "Country ID",
+          mainCategoryId: "Main category ID",
+          userRoles: "User roles",
         },
+        examples: examples.testData.restaurantExamples,
         requiresAuth: true,
         errorCodes: {
           400: "Invalid request data",
@@ -276,15 +164,12 @@ class ApiExamples {
           403: "Not authorized",
           500: "Internal server error",
         },
-        validation: "restaurantCreateSchema",
       },
-    },
+    } satisfies ApiEndpoints,
 
     // Orders endpoints
     orders: {
       GET: {
-        path: "/api/orders",
-        method: "GET",
         description: "Get all orders for the authenticated user",
         responseSchema: [
           {
@@ -317,8 +202,6 @@ class ApiExamples {
         },
       },
       POST: {
-        path: "/api/orders",
-        method: "POST",
         description: "Create a new order",
         requestSchema: orderCreateSchema.shape,
         responseSchema: {
@@ -342,7 +225,6 @@ class ApiExamples {
           createdAt: "timestamp",
           deliveredAt: null,
         },
-        requiredFields: ["restaurantId", "items", "address"],
         fieldDescriptions: {
           restaurantId: "ID of the restaurant",
           items: "Array of order items (menuItemId and quantity)",
@@ -355,28 +237,34 @@ class ApiExamples {
           404: "Restaurant or menu item not found",
           500: "Internal server error",
         },
-        validation: "orderCreateSchema",
       },
-    },
+    } satisfies ApiEndpoints,
   };
 }
 
-const apiDocs = new ApiExamples();
+export const apiDocsData = new ApiExamples();
 
-export function getExampleForEndpoint(
-  path: string[],
-): ApiEndpoint<any, any, any> {
-  return apiDocs.getExampleForEndpoint(path);
+export function getExampleForEndpoint(path: string[]): ActiveApiEndpoint {
+  return apiDocsData.getExampleForEndpoint(path);
 }
 
-export interface ApiEndpoint<TRequestSchema, TResponseSchema, TExampleSchema> {
-  path: string;
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+export type ActiveApiEndpoint = {
+  endpoint: ApiEndpoint;
+  method: string;
+  path: string[];
+  fullPath: string[];
+};
+
+export type ApiEndpoint = {
   description: string;
-  requestSchema: TRequestSchema;
-  responseSchema: TResponseSchema;
-  fieldDescriptions: Record<string, string>;
+  requestSchema: Record<string, any> | undefined;
+  responseSchema: Record<string, any>;
+  fieldDescriptions: Record<string, string> | undefined;
   requiresAuth: boolean;
   errorCodes: Record<string, string>;
-  examples: ExamplesList<TExampleSchema>;
-}
+  examples: ExamplesList<Record<string, any>> | undefined;
+};
+
+export type ApiEndpoints = {
+  [method in "GET" | "POST" | "PUT" | "DELETE" | "PATCH"]?: ApiEndpoint;
+};

@@ -39,7 +39,7 @@ describe("Auth API", () => {
       expect(responseData.data).toHaveProperty("expiresAt");
 
       // Store token
-      customerAuthToken = responseData.data!.token;
+      customerAuthToken = responseData.data.token;
       global.customerAuthToken = customerAuthToken;
       console.log(
         "[TEST DEBUG] Generated customer token (first 30 chars):",

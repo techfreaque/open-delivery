@@ -11,8 +11,8 @@ export const ENDPOINT_DOMAINS = {
 
 export const backendPages = {
   home: "/",
-  login: "/v1/login",
-  register: "/v1/signup",
+  login: "/v1/auth/login",
+  register: "/v1/auth/signup",
   notFound: "/404",
   apiDocs: "/v1/api-docs",
 };

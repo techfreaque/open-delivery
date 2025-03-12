@@ -23,8 +23,6 @@ const restaurantBaseSchema = z.object({
     .min(5, { message: "Phone number must be at least 5 characters long" }),
   email: z.string().email({ message: "Invalid email address" }),
   image: z.string().url({ message: "Image must be a valid URL" }),
-  latitude: z.number(),
-  longitude: z.number(),
   published: z.boolean(),
 });
 
@@ -48,6 +46,8 @@ export const restaurantProfileSchema = restaurantBaseSchema.extend({
   mainCategory: z.any().nullable(),
   menuItems: z.array(menuItemResponseMinimalSchema),
   openingTimes: openingTimesResponseSchema,
+  latitude: z.number(),
+  longitude: z.number(),
 });
 
 export const restaurantResponseSchema = restaurantProfileSchema.extend({

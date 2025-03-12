@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import "../setup"; // Import test setup
 
 import { PrismaClient } from "@prisma/client";

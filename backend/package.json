@@ -4,7 +4,7 @@
   "private": false,
   "license": "GPL-3.0-only",
   "scripts": {
-    "dev": "yarn build:pre && prisma migrate dev && yarn db:seed && NODE_OPTIONS='--inspect' next dev",
+    "dev": "yarn build:pre && prisma migrate dev && yarn db:seed && NODE_OPTIONS='--inspect' next dev --turbopack",
     "build": "yarn build:pre && prisma migrate deploy && next build",
     "build:pre": "yarn build:db-schema && yarn db:push && yarn build:email && prisma generate",
     "build:email": "tsx src/lib/email/compile-mjml.ts",
@@ -18,6 +18,7 @@
     "test:watch": "yarn build:pre && cross-env NODE_ENV=test vitest"
   },
   "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.4.0",
     "@hookform/resolvers": "4.1.2",
     "@prisma/client": "^6.4.1",
     "@radix-ui/react-accordion": "^1.2.3",

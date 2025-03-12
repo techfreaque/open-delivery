@@ -5,26 +5,18 @@ import { useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ENDPOINT_DOMAINS } from "@/constants";
-import { getExampleForEndpoint } from "@/lib/examples/data";
-import type { ApiEndpoint } from "@/types/types";
+import type { ActiveApiEndpoint } from "@/lib/api-docs/endpoints";
 
 interface CodeExamplesProps {
-  activeEndpoint: ApiEndpoint;
+  activeEndpoint: ActiveApiEndpoint;
   selectedDomain: keyof typeof ENDPOINT_DOMAINS;
-  requestData: string;
 }
 
 export function CodeExamples({
   activeEndpoint,
   selectedDomain,
-  requestData,
 }: CodeExamplesProps): JSX.Element {
   const [activeLanguage, setActiveLanguage] = useState("curl");
-
-  // Use example data from the endpoint definition if available, otherwise generate it
-  const exampleData = activeEndpoint.examples || {
-    default: getExampleForEndpoint(activeEndpoint.path),
-  };
 
   // Available languages for code examples
   const languages = {
@@ -41,7 +33,10 @@ export function CodeExamples({
     const hasBody = method !== "GET" && method !== "DELETE";
 
     // Choose an example - either use default or the first available
-    const example = exampleData.default || Object.values(exampleData)[0];
+    const example =
+      activeEndpoint.endpoint.examples?.default ||
+      (activeEndpoint.endpoint.examples &&
+        Object.values(activeEndpoint.endpoint.examples)[0]);
 
     switch (language) {
       case "curl":
@@ -52,7 +47,7 @@ ${
 -d '${JSON.stringify(example, null, 2)}' \\`
     : ""
 }
-${activeEndpoint.requiresAuth ? `-H "Authorization: Bearer YOUR_TOKEN_HERE" \\` : ""}
+${activeEndpoint.endpoint.requiresAuth ? `-H "Authorization: Bearer YOUR_TOKEN_HERE" \\` : ""}
 -H "Accept: application/json"`;
 
       case "javascript":
@@ -62,7 +57,7 @@ const response = await fetch("${domain}${path}", {
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json",
-    ${activeEndpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
+    ${activeEndpoint.endpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
   },
   ${hasBody ? `body: JSON.stringify(${JSON.stringify(example, null, 2)})` : ""}
 });
@@ -76,7 +71,7 @@ console.log(data);`;
 url = "${domain}${path}"
 headers = {
     "Accept": "application/json",
-    ${activeEndpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
+    ${activeEndpoint.endpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
     ${hasBody ? `"Content-Type": "application/json"` : ""}
 }
 ${
@@ -97,7 +92,7 @@ $url = "${domain}${path}";
 $options = [
     'http' => [
         'header' => "Accept: application/json\\r\\n" . 
-                    ${activeEndpoint.requiresAuth ? `"Authorization: Bearer YOUR_TOKEN_HERE\\r\\n" .` : ""} 
+                    ${activeEndpoint.endpoint.requiresAuth ? `"Authorization: Bearer YOUR_TOKEN_HERE\\r\\n" .` : ""} 
                     ${hasBody ? `"Content-Type: application/json\\r\\n",` : `",`}
         'method' => "${method}",
         ${hasBody ? `'content' => '${JSON.stringify(example)}'` : ""}
@@ -117,7 +112,7 @@ print_r($response);
   };
 
   // Get available tabs based on examples
-  const availableExamples = Object.keys(exampleData);
+  const availableExamples = Object.keys(activeEndpoint.endpoint.examples || {});
   const defaultTab =
     availableExamples.length > 0 ? availableExamples[0] : "default";
 
@@ -139,7 +134,7 @@ print_r($response);
           ))}
         </TabsList>
 
-        {Object.entries(languages).map(([key, _]) => (
+        {Object.keys(languages).map((key) => (
           <TabsContent key={key} value={key}>
             <div className="bg-gray-800 rounded-lg p-4 relative">
               <div className="absolute top-2 right-2 text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
@@ -169,7 +164,11 @@ print_r($response);
               <TabsContent key={example} value={example}>
                 <div className="bg-gray-50 rounded-lg p-4 border">
                   <pre className="text-sm overflow-auto max-h-[200px]">
-                    {JSON.stringify(exampleData[example], null, 2)}
+                    {JSON.stringify(
+                      activeEndpoint.endpoint.examples?.[example],
+                      null,
+                      2,
+                    )}
                   </pre>
                 </div>
               </TabsContent>

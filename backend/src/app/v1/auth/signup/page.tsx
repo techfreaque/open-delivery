@@ -6,8 +6,9 @@ import type { ChangeEvent, FormEvent, JSX } from "react";
 import { useState } from "react";
 import { z } from "zod";
 
+import { useAuth } from "@/hooks/use-auth";
 import { registerSchema } from "@/schemas";
-import type { LoginResponseType, RegisterType } from "@/types/types";
+import type { RegisterType } from "@/types/types";
 
 // Add missing type definitions
 interface ValidationErrors {
@@ -31,9 +32,7 @@ export default function SignupPage(): JSX.Element {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [signupError, setSignupError] = useState<string | null>(null);
-
+  const { signup, loading, error } = useAuth();
   const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -70,34 +69,7 @@ export default function SignupPage(): JSX.Element {
       return;
     }
 
-    setIsLoading(true);
-
-    // Extract data to send (omit confirmPassword)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { confirmPassword: _, ...dataToSubmit } = formData;
-
-    try {
-      const response = await fetch("/api/v1/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSubmit),
-      });
-
-      const data = (await response.json()) as LoginResponseType;
-
-      if (!response.ok) {
-        throw new Error(JSON.stringify(data) || "Signup failed");
-      }
-
-      // Redirect to login page after successful signup
-      router.push("/v1/auth/login?registered=true");
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An unknown error occurred";
-      setSignupError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+    signup;
   };
 
   return (
@@ -109,12 +81,12 @@ export default function SignupPage(): JSX.Element {
           </h2>
         </div>
 
-        {signupError && (
+        {error && (
           <div className="rounded-md bg-red-50 p-4">
             <div className="flex">
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800">
-                  {signupError}
+                  {error}
                 </h3>
               </div>
             </div>
@@ -242,10 +214,10 @@ export default function SignupPage(): JSX.Element {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-400"
             >
-              {isLoading ? "Creating account..." : "Create account"}
+              {loading ? "Creating account..." : "Create account"}
             </button>
           </div>
 

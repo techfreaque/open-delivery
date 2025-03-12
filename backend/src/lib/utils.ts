@@ -21,3 +21,25 @@ export function debugLogger(message: string, ...other: unknown[]): void {
     console.log(`[${APP_NAME}][DEBUG] ${message}`, ...other);
   }
 }
+
+export function parseError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
+}
+
+export function errorLogger(
+  message: string,
+  error: unknown,
+  ...other: unknown[]
+): void {
+  const typedError = parseError(error);
+  if (
+    envClient.NEXT_PUBLIC_NODE_ENV === "development" ||
+    envClient.NEXT_PUBLIC_NODE_ENV === "test"
+  ) {
+    // eslint-disable-next-line no-console
+    console.error(`[${APP_NAME}][ERROR] ${message}`, typedError, ...other);
+  } else {
+    // TODO
+    console.error(`[${APP_NAME}][ERROR] ${message}`, typedError, ...other);
+  }
+}
