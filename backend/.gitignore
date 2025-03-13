@@ -31,3 +31,4 @@ prisma/db/app-db/dev.db
 prisma/schema.prisma
 
 .dev-db
+.env.nope
