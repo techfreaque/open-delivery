@@ -4,11 +4,12 @@
   "private": false,
   "license": "GPL-3.0-only",
   "scripts": {
-    "dev": "yarn build:pre && prisma migrate dev && yarn db:seed && NODE_OPTIONS='--inspect' next dev --turbopack",
+    "dev": "yarn dev:db && yarn build:pre && prisma migrate dev && yarn db:seed && NODE_OPTIONS='--inspect' next dev --turbopack",
     "build": "yarn build:pre && prisma migrate deploy && next build",
     "build:pre": "yarn build:db-schema && yarn db:push && yarn build:email && prisma generate",
     "build:email": "tsx src/lib/email/compile-mjml.ts",
     "build:db-schema": "tsx prisma/schema-builder.ts",
+    "dev:db": "docker compose -f docker-compose-dev.yml up -d",
     "start": "next start",
     "lint": "eslint --fix",
     "db:push": "prisma db push",
