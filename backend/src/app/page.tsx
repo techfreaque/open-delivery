@@ -43,7 +43,7 @@ export default function Home(): JSX.Element {
         </div>
       </section>
       <main className="flex-1 container mx-auto px-4 py-12">
-        <ApiExplorer compact={true} />
+        <ApiExplorer />
       </main>
     </>
   );
