@@ -8,6 +8,7 @@ import { ENDPOINT_DOMAINS } from "@/constants";
 import { APP_NAME } from "@/constants";
 import type { ActiveApiEndpoint } from "@/lib/api-docs/endpoints";
 import { getExampleForEndpoint } from "@/lib/api-docs/endpoints";
+import { envClient } from "@/lib/env-client";
 
 import { Button } from "../ui/button";
 import {
@@ -27,8 +28,9 @@ interface ApiExplorerProps {
 
 export function ApiExplorer({ compact }: ApiExplorerProps): JSX.Element {
   const [responseData, setResponseData] = useState<string>("");
-  const [selectedDomain, setSelectedDomain] =
-    useState<keyof typeof ENDPOINT_DOMAINS>("dev");
+  const [selectedDomain, setSelectedDomain] = useState<
+    keyof typeof ENDPOINT_DOMAINS
+  >(envClient.NEXT_PUBLIC_NODE_ENV === "production" ? "prod" : "dev");
   const initialExample = useMemo(
     () => getExampleForEndpoint(["auth", "login"]),
     [],
