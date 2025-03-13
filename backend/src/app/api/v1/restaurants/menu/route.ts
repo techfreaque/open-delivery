@@ -5,8 +5,6 @@ import {
   createSuccessResponse,
   validateRequest,
 } from "@/lib/api/apiResponse";
-import { verifyRestaurantAccess } from "@/lib/auth/authMiddleware";
-import { createMenuItem } from "@/lib/restaurants/menuService";
 import { menuItemSchema } from "@/schemas";
 
 export async function POST(request: Request): Promise<NextResponse> {

@@ -3,8 +3,6 @@ import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth/authService";
 import { prisma } from "@/lib/db/prisma";
-import { earningsSchema } from "@/schemas";
-import type { ApiResponse } from "@/types/types";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {

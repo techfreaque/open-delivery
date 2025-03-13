@@ -16,6 +16,7 @@ export const envSchema = z.object({
   DEBUG_TESTS: z.string().optional(),
   TEST_SERVER_URL: z.string(),
   GOOGLE_MAPS_API_KEY: z.string(),
+  OPENAI_API_KEY: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;
