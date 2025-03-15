@@ -6,7 +6,6 @@ import { useState } from "react";
 import { CodeExamples } from "@/components/api-docs/CodeExamples";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ENDPOINT_DOMAINS } from "@/constants";
 import type { ActiveApiEndpoint } from "@/lib/api-docs/endpoints";
 
 interface EndpointDetailsProps {
@@ -15,7 +14,7 @@ interface EndpointDetailsProps {
   responseData: string;
   responseStatus: number | null;
   isLoading: boolean;
-  selectedDomain: keyof typeof ENDPOINT_DOMAINS;
+  selectedDomain: string;
   handleTryIt: () => Promise<void>;
   setRequestData: (data: string) => void;
 }
@@ -52,7 +51,7 @@ export function EndpointDetails({
             >
               {endpoint.method}
             </span>
-            <span className="font-mono text-sm">{endpoint.path}</span>
+            <span className="font-mono text-sm">{endpoint.path.join("/")}</span>
           </div>
           {endpoint.endpoint.requiresAuth && (
             <span className="text-xs bg-gray-200 px-2 py-1 rounded">

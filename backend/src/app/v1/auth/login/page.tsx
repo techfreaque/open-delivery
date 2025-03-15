@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { ChangeEvent, FormEvent } from "react";
 import { type FC, useState } from "react";
 
@@ -22,7 +21,6 @@ const LoginPage: FC = () => {
 };
 
 const LoginForm: FC = () => {
-  const router = useRouter();
   const { login, loading: authLoading } = useAuth();
 
   const [credentials, setCredentials] = useState<LoginFormType>({

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { ChangeEvent, FormEvent, JSX } from "react";
 import { useState } from "react";
 import { z } from "zod";
@@ -23,7 +22,6 @@ interface SignupFormFields {
 }
 
 export default function SignupPage(): JSX.Element {
-  const router = useRouter();
   const [formData, setFormData] = useState<RegisterType>({
     firstName: "",
     lastName: "",
@@ -63,13 +61,10 @@ export default function SignupPage(): JSX.Element {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setSignupError(null);
-
     if (!validateForm()) {
       return;
     }
-
-    signup;
+    await signup(formData);
   };
 
   return (
@@ -85,9 +80,7 @@ export default function SignupPage(): JSX.Element {
           <div className="rounded-md bg-red-50 p-4">
             <div className="flex">
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">
-                  {error}
-                </h3>
+                <h3 className="text-sm font-medium text-red-800">{error}</h3>
               </div>
             </div>
           </div>

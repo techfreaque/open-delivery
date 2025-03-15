@@ -7,6 +7,7 @@ export const envSchema = z.object({
   NEXT_PUBLIC_BACKEND_PROD: z.string(),
   NEXT_PUBLIC_BACKEND_DEV: z.string(),
   NEXT_PUBLIC_BACKEND_TEST: z.string(),
+  NEXT_PUBLIC_GA_ID: z.string().optional(),
 });
 
 export type EnvFrontend = z.infer<typeof envSchema>;

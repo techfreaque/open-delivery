@@ -4,12 +4,11 @@ import type { JSX } from "react";
 import { useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ENDPOINT_DOMAINS } from "@/constants";
 import type { ActiveApiEndpoint } from "@/lib/api-docs/endpoints";
 
 interface CodeExamplesProps {
   activeEndpoint: ActiveApiEndpoint;
-  selectedDomain: keyof typeof ENDPOINT_DOMAINS;
+  selectedDomain: string;
 }
 
 export function CodeExamples({
@@ -28,7 +27,7 @@ export function CodeExamples({
 
   // Generate code examples for different languages
   const generateExample = (language: string, domain: string): string => {
-    const path = activeEndpoint.path;
+    const apiUrl = [domain, ...activeEndpoint.path].join("/");
     const method = activeEndpoint.method;
     const hasBody = method !== "GET" && method !== "DELETE";
 
@@ -40,7 +39,7 @@ export function CodeExamples({
 
     switch (language) {
       case "curl":
-        return `curl -X ${method} "${domain}${path}" \\
+        return `curl -X ${method} "${apiUrl}" \\
 ${
   hasBody
     ? `-H "Content-Type: application/json" \\
@@ -52,7 +51,7 @@ ${activeEndpoint.endpoint.requiresAuth ? `-H "Authorization: Bearer YOUR_TOKEN_H
 
       case "javascript":
         return `// Using fetch API
-const response = await fetch("${domain}${path}", {
+const response = await fetch("${apiUrl}", {
   method: "${method}",
   headers: {
     "Content-Type": "application/json",
@@ -68,7 +67,7 @@ console.log(data);`;
       case "python":
         return `import requests
 
-url = "${domain}${path}"
+url = "${apiUrl}"
 headers = {
     "Accept": "application/json",
     ${activeEndpoint.endpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
@@ -87,7 +86,7 @@ print(data)`;
 
       case "php":
         return `<?php
-$url = "${domain}${path}";
+$url = "${apiUrl}";
 
 $options = [
     'http' => [

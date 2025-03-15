@@ -59,6 +59,7 @@ model User {
   password           String
   firstName          String
   lastName           String
+  imageUrl           String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   driverId           String?
@@ -73,6 +74,8 @@ model User {
   ratingsGivenDriver DriverRating[]
   earnings           Earning[]
   messages           Messages[]
+  uI                 UI[]
+  bugReport          BugReport[]
 
   @@map("users")
 }
@@ -97,7 +100,7 @@ model Driver {
   user         User           @relation(fields: [userId], references: [id])
   ratings      DriverRating[]
   messages     Messages[]
-  Delivery     Delivery[]
+  delivery     Delivery[]
 
   @@unique([userId])
   @@map("drivers")
@@ -181,34 +184,49 @@ model Languages {
 }
 
 model Restaurant {
-  id             String             @id @default(uuid())
-  published      Boolean
-  name           String
-  description    String
-  street         String
-  streetNumber   String
-  zip            String
-  city           String
-  phone          String
-  email          String
-  image          String
-  latitude       Float
-  longitude      Float
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  countryId      String
-  country        Country            @relation(fields: [countryId], references: [code])
-  mainCategoryId String
-  mainCategory   Category           @relation(fields: [mainCategoryId], references: [id])
-  openingTimes   OpeningTimes[]
-  menuItems      MenuItem[]
-  orders         Order[]
-  cartItems      CartItem[]
-  userRoles      UserRole[]
-  ratings        RestaurantRating[]
-  messages       Messages[]
+  id                    String                  @id @default(uuid())
+  published             Boolean
+  name                  String
+  description           String
+  street                String
+  streetNumber          String
+  zip                   String
+  city                  String
+  phone                 String
+  email                 String
+  image                 String
+  latitude              Float
+  longitude             Float
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  countryId             String
+  country               Country                 @relation(fields: [countryId], references: [code])
+  mainCategoryId        String
+  mainCategory          Category                @relation(fields: [mainCategoryId], references: [id])
+  openingTimes          OpeningTimes[]
+  menuItems             MenuItem[]
+  orders                Order[]
+  cartItems             CartItem[]
+  userRoles             UserRole[]
+  ratings               RestaurantRating[]
+  messages              Messages[]
+  RestaurantSiteContent RestaurantSiteContent[]
 
   @@map("restaurants")
+}
+
+model RestaurantSiteContent {
+  id           String     @id @default(uuid())
+  title        String
+  key          String
+  icon         String
+  code         String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@map("restaurant_site_content")
 }
 
 model RestaurantRating {
@@ -406,4 +424,65 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+// Code editor models
+model UI {
+  id         String      @id @default(uuid())
+  userId     String
+  public     Boolean     @default(true)
+  prompt     String
+  img        String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime
+  uiType     String
+  likesCount Int         @default(0)
+  viewCount  Int         @default(0)
+  subPrompts SubPrompt[]
+  likes      Like[]
+  forkedFrom String?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model SubPrompt {
+  id        String   @id @default(uuid())
+  UIId      String
+  SUBId     String   @unique
+  createdAt DateTime @default(now())
+  subPrompt String
+  modelId   String?
+
+  code Code?
+  UI   UI   @relation(fields: [UIId], references: [id], onDelete: Cascade)
+}
+
+model Code {
+  id          String    @id @default(uuid())
+  code        String
+  subPromptId String    @unique
+  subPrompt   SubPrompt @relation(fields: [subPromptId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  UIId      String
+  createdAt DateTime @default(now())
+
+  ui UI @relation(fields: [UIId], references: [id], onDelete: Cascade)
+}
+
+model BugReport {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  reportType  String
+  severity    String
+  steps       String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
