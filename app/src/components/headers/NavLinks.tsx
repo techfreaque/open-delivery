@@ -20,7 +20,7 @@ export default function NavLinks({ userType, handleNavigate }: NavLinksProps) {
   if (userType === "restaurant") {
     return (
       <View style={styles.navLinks}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.navLink}
           onPress={() => handleNavigate("/restaurant-dashboard")}
         >
@@ -39,7 +39,7 @@ export default function NavLinks({ userType, handleNavigate }: NavLinksProps) {
           onPress={() => handleNavigate("/restaurant-menu")}
         >
           <Text style={styles.navLinkText}>Menu</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={styles.navLink}
@@ -53,13 +53,13 @@ export default function NavLinks({ userType, handleNavigate }: NavLinksProps) {
   } else if (userType === "driver") {
     return (
       <View style={styles.navLinks}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.navLink}
           onPress={() => handleNavigate("/driver-dashboard")}
         >
           <Text style={styles.navLinkText}>Dashboard</Text>
-        </TouchableOpacity>
-
+        </TouchableOpacity> */}
+{/* 
         <TouchableOpacity
           style={styles.navLink}
           onPress={() => handleNavigate("/driver-deliveries")}
@@ -72,7 +72,7 @@ export default function NavLinks({ userType, handleNavigate }: NavLinksProps) {
           onPress={() => handleNavigate("/driver-history")}
         >
           <Text style={styles.navLinkText}>History</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={styles.navLink}

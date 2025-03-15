@@ -1,9 +1,12 @@
+import "./global.css";
+
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { DatabaseProvider } from "../lib/context/DatabaseContext";
-import { UserTypeProvider } from "../lib/context/UserTypeContext";
+import { AppModeProvider } from "../lib/context/UserTypeContext";
 
 declare global {
   interface Window {
@@ -13,17 +16,21 @@ declare global {
 
 export default function RootLayout() {
   useEffect(() => {
-    window.frameworkReady?.();
+    if (typeof window !== "undefined") {
+      window.frameworkReady?.();
+    }
   }, []);
 
   return (
-    <DatabaseProvider>
-      <UserTypeProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </UserTypeProvider>
-    </DatabaseProvider>
+    <SafeAreaProvider>
+      <DatabaseProvider>
+        <AppModeProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </AppModeProvider>
+      </DatabaseProvider>
+    </SafeAreaProvider>
   );
 }

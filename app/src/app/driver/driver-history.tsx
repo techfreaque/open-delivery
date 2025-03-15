@@ -21,8 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import DesktopHeader from "../../components/DesktopHeader";
-import { useUserType } from "../context/UserTypeContext";
+
 
 // Mock data for delivery history
 const deliveryHistory = [

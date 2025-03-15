@@ -29,10 +29,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import DesktopHeader from "../components/headers/DesktopHeader";
-import { useUserType } from "../lib/context/UserTypeContext";
+import { useAppModeType } from "../lib/context/UserTypeContext";
 
 export default function ProfileScreen() {
-  const { userType, setUserType } = useUserType();
+  const { appMode: userType, setUserType } = useAppModeType();
   const [name, setName] = useState("John Doe");
   const [email, setEmail] = useState("john.doe@example.com");
   const [phone, setPhone] = useState("(123) 456-7890");

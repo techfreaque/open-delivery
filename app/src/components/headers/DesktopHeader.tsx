@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
-import { useUserType } from "../../lib/context/UserTypeContext";
+import { useAppModeType } from "../../lib/context/UserTypeContext";
 import AddressSelector from "../address/AddressSelector";
 import Logo from "../branding/Logo";
 import CartButton from "../cart/CartButton";
@@ -20,7 +20,7 @@ export default function DesktopHeader({
   cartItemCount = 0,
 }: DesktopHeaderProps) {
   const router = useRouter();
-  const { userType } = useUserType();
+  const { appMode: userType } = useAppModeType();
 
   const handleNavigate = (path: string) => {
     router.push(path);

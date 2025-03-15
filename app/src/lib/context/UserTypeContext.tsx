@@ -1,31 +1,63 @@
-import type { ReactNode } from "react";
-import React, { createContext, useContext, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { JSX, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-import type { UserType } from "../../types";
+type AppMode = "customer" | "restaurant" | "driver";
 
-type UserTypeContextType = {
-  userType: UserType;
-  setUserType: (userType: UserType) => void;
+type AppModeContextType = {
+  appMode: AppMode;
+  setAppMode: (mode: AppMode) => void;
 };
 
-const UserTypeContext = createContext<UserTypeContextType | undefined>(
-  undefined,
-);
+const AppModeContext = createContext<AppModeContextType | undefined>(undefined);
 
-export const UserTypeProvider = ({ children }: { children: ReactNode }) => {
-  const [userType, setUserType] = useState<UserType>("customer");
+export function AppModeProvider({ children }: { children: ReactNode }): JSX.Element {
+  const [appMode, setAppModeSt] = useState<AppMode>("customer");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Load stored user type when component mounts
+    const loadAppMode = async () => {
+      try {
+        const storedMode = await AsyncStorage.getItem("appMode");
+        if (storedMode && (storedMode === "customer" || storedMode === "restaurant" || storedMode === "driver")) {
+          setAppModeSt(storedMode as AppMode);
+        }
+      } catch (error) {
+        console.error("Failed to load app mode:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAppMode();
+  }, []);
+
+  const setAppMode = async (mode: AppMode) => {
+    try {
+      await AsyncStorage.setItem("appMode", mode);
+      setAppModeSt(mode);
+    } catch (error) {
+      console.error("Failed to save app mode:", error);
+    }
+  };
+
+  if (isLoading) {
+    // You could return a loading state here if needed
+    return null;
+  }
 
   return (
-    <UserTypeContext.Provider value={{ userType, setUserType }}>
+    <AppModeContext.Provider value={{ appMode, setAppMode }}>
       {children}
-    </UserTypeContext.Provider>
+    </AppModeContext.Provider>
   );
-};
+}
 
-export const useUserType = (): UserTypeContextType => {
-  const context = useContext(UserTypeContext);
+export function useAppModeType(): AppModeContextType {
+  const context = useContext(AppModeContext);
   if (context === undefined) {
-    throw new Error("useUserType must be used within a UserTypeProvider");
+    throw new Error("useAppModeType must be used within an AppModeProvider");
   }
   return context;
-};
+}

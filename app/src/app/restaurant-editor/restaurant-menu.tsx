@@ -25,7 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import DesktopHeader from "../../components/DesktopHeader";
-import { useUserType } from "../../lib/context/UserTypeContext";
+import { useAppModeType } from "../../lib/context/UserTypeContext";
 
 // Mock data for menu items
 const initialMenuItems = [
@@ -111,7 +111,7 @@ export default function RestaurantMenuScreen() {
   const router = useRouter();
   const dimensions = useWindowDimensions();
   const isLargeScreen = dimensions.width >= 768;
-  const { userType } = useUserType();
+  const { appMode: userType } = useAppModeType();
 
   const [menuItems, setMenuItems] = useState(initialMenuItems);
   const [searchQuery, setSearchQuery] = useState("");

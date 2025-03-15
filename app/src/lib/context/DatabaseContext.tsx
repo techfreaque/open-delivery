@@ -1,105 +1,67 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { Alert } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { initDatabase, seedDatabase, syncWithServer } from "../database";
-import { isNetworkAvailable } from "../utils";
+// Define the context type
+type DatabaseContextType = {
+  isDbReady: boolean;
+};
 
-// Create context
-interface DatabaseContextType {
-  isLoading: boolean;
-  isInitialized: boolean;
-  syncData: () => Promise<void>;
-  lastSyncTime: Date | null;
+// Create the context with a default value
+const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
+
+// Hook for consuming the context
+export function useDatabase(): DatabaseContextType {
+  const context = useContext(DatabaseContext);
+  if (context === undefined) {
+    throw new Error('useDatabase must be used within a DatabaseProvider');
+  }
+  return context;
 }
 
-const DatabaseContext = createContext<DatabaseContextType>({
-  isLoading: true,
-  isInitialized: false,
-  syncData: async () => {},
-  lastSyncTime: null,
-});
-
 // Provider component
-export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export function DatabaseProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [isDbReady, setIsDbReady] = useState(false);
 
-  // Initialize database
+  // Initialize the database on component mount
   useEffect(() => {
-    const initialize = async () => {
+    const initDatabase = async () => {
       try {
-        await initDatabase();
-        await seedDatabase();
-        setIsInitialized(true);
-
-        // Try to sync with server on startup
-        await syncData();
+        // Check if DB was initialized before
+        const dbInitialized = await AsyncStorage.getItem('db_initialized');
+        if (!dbInitialized) {
+          // Here you would implement any database initialization logic
+          // For example, creating tables, etc.
+          
+          // Mark as initialized
+          await AsyncStorage.setItem('db_initialized', 'true');
+        }
+        
+        // Set database as ready
+        setIsDbReady(true);
       } catch (error) {
-        console.error("Error initializing database:", error);
-        Alert.alert(
-          "Database Error",
-          "There was an error initializing the database. Some features may not work properly.",
-        );
+        console.error('Failed to initialize database:', error);
+        // Even on error, we'll consider the DB as "ready" to not block the app
+        setIsDbReady(true);
       } finally {
         setIsLoading(false);
       }
     };
 
-    initialize();
+    initDatabase();
   }, []);
 
-  // Set up periodic sync (every 5 minutes)
-  useEffect(() => {
-    if (!isInitialized) {
-      return;
-    }
+  // Show loading state if needed
+  if (isLoading) {
+    // You could return a loading component here
+    // For now, return null to not show anything
+    return null;
+  }
 
-    const syncInterval = setInterval(
-      async () => {
-        await syncData();
-      },
-      5 * 60 * 1000,
-    ); // 5 minutes
-
-    return () => clearInterval(syncInterval);
-  }, [isInitialized]);
-
-  // Sync data with server
-  const syncData = async () => {
-    setIsLoading(true);
-    try {
-      if (await isNetworkAvailable()) {
-        await syncWithServer();
-        setLastSyncTime(new Date());
-        Alert.alert("Sync Complete", "Data has been synced with the server.");
-      } else {
-        Alert.alert(
-          "No Internet Connection",
-          "Please connect to the internet to sync data.",
-        );
-      }
-    } catch (error) {
-      console.error("Error syncing data:", error);
-      Alert.alert(
-        "Sync Failed",
-        "Failed to sync data with the server. Please try again later.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Provide the database context value
   return (
-    <DatabaseContext.Provider
-      value={{ isLoading, isInitialized, syncData, lastSyncTime }}
-    >
+    <DatabaseContext.Provider value={{ isDbReady }}>
       {children}
     </DatabaseContext.Provider>
   );
-};
-
-// Custom hook to use the database context
-export const useDatabase = () => useContext(DatabaseContext);
+}

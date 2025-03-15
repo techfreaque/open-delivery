@@ -1,25 +1,89 @@
 import { Tabs } from "expo-router";
 import {
-  Chrome as Home,
-  MapPin,
+  Home,
+  List,
+  Plus,
   Search,
   ShoppingBag,
-  Truck,
   User,
-  Utensils,
 } from "lucide-react-native";
+import type { JSX } from "react";
 import { useEffect, useState } from "react";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
-import { useUserType } from "../../lib/context/UserTypeContext";
+import AppModeSelector from "../../components/AppModeSelector";
+import { useAppModeType } from "../../lib/context/UserTypeContext";
 import { useCart } from "../../lib/hooks/useCart";
 
-export default function TabLayout() {
+// Custom tab bar to include the mode selector
+function CustomTabBar({ state, descriptors, navigation }) {
+  return (
+    <View style={styles.tabBarContainer}>
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+
+        if (options.href === null) {
+          return null; // Skip hidden tabs
+        }
+
+        // For the mode selector (right-most position)
+        if (index === state.routes.length - 1) {
+          return (
+            <View key={route.key} style={styles.tabItem}>
+              <AppModeSelector isCompact={true} />
+            </View>
+          );
+        }
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: "tabPress",
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        return (
+          <View key={route.key} style={styles.tabItem}>
+            <View
+              style={[styles.tabButton, isFocused && styles.activeTabButton]}
+            >
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={isFocused ? { selected: true } : {}}
+                onPress={onPress}
+                style={styles.tabButtonTouchable}
+              >
+                {options.tabBarIcon &&
+                  options.tabBarIcon({
+                    color: isFocused ? "#FF5A5F" : "#6B7280",
+                    size: 24,
+                  })}
+              </TouchableOpacity>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+export default function TabLayout(): JSX.Element {
   const dimensions = useWindowDimensions();
   const isLargeScreen = dimensions.width >= 768;
   const { cartItems } = useCart();
   const [cartCount, setCartCount] = useState(0);
-  const { userType } = useUserType();
+  const { appMode } = useAppModeType();
 
   useEffect(() => {
     if (cartItems) {
@@ -27,60 +91,38 @@ export default function TabLayout() {
     }
   }, [cartItems]);
 
+  // Common tab screen options
+  const tabScreenOptions = {
+    tabBarActiveTintColor: "#FF5A5F",
+    tabBarInactiveTintColor: "#6B7280",
+    tabBarStyle: {
+      backgroundColor: "#FFFFFF",
+      borderTopWidth: 1,
+      borderTopColor: "#E5E7EB",
+      height: 60,
+      paddingBottom: 10,
+      paddingTop: 10,
+      display: isLargeScreen ? "none" : "flex", // Hide tab bar on large screens
+    },
+    headerStyle: {
+      backgroundColor: "#FFFFFF",
+    },
+    headerTitleStyle: {
+      fontWeight: "bold",
+      color: "#1F2937",
+    },
+    headerShown: !isLargeScreen, // Hide header on large screens
+    tabBar: (props) => <CustomTabBar {...props} />,
+  };
+
   // Render different tab layouts based on user type
-  if (userType === "restaurant") {
+  if (appMode === "restaurant") {
     return (
-      <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: "#FF5A5F",
-          tabBarInactiveTintColor: "#6B7280",
-          tabBarStyle: {
-            backgroundColor: "#FFFFFF",
-            borderTopWidth: 1,
-            borderTopColor: "#E5E7EB",
-            height: 60,
-            paddingBottom: 10,
-            paddingTop: 10,
-            display: isLargeScreen ? "none" : "flex", // Hide tab bar on large screens
-          },
-          headerStyle: {
-            backgroundColor: "#FFFFFF",
-          },
-          headerTitleStyle: {
-            fontWeight: "bold",
-            color: "#1F2937",
-          },
-          headerShown: !isLargeScreen, // Hide header on large screens
-        }}
-      >
+      <Tabs screenOptions={tabScreenOptions}>
         <Tabs.Screen
-          name="restaurant-dashboard"
+          name="index"
           options={{
-            title: "Dashboard",
-            tabBarIcon: ({ color, size }) => (
-              <Utensils size={size} color={color} />
-            ),
-            headerTitle: "Restaurant Dashboard",
-          }}
-        />
-        <Tabs.Screen
-          name="restaurant-orders"
-          options={{
-            title: "Orders",
-            tabBarIcon: ({ color, size }) => (
-              <ShoppingBag size={size} color={color} />
-            ),
-            headerTitle: "Restaurant Orders",
-          }}
-        />
-        <Tabs.Screen
-          name="restaurant-menu"
-          options={{
-            title: "Menu",
-            tabBarIcon: ({ color, size }) => (
-              <Search size={size} color={color} />
-            ),
-            headerTitle: "Restaurant Menu",
+            href: null,
           }}
         />
         <Tabs.Screen
@@ -92,67 +134,45 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="restaurant-editor"
+          options={{
+            title: "Restaurant Editor",
+            tabBarIcon: ({ color, size }) => <Plus size={size} color={color} />,
+            headerTitle: "Restaurant Editor",
+          }}
+        />
+        <Tabs.Screen
           name="restaurant/[id]"
           options={{
             href: null,
             headerShown: false,
           }}
         />
+        {/* Mode selector tab (hidden, just for the selector) */}
+        <Tabs.Screen
+          name="mode-selector"
+          options={{
+            title: "Mode",
+            tabBarIcon: () => null,
+          }}
+        />
       </Tabs>
     );
-  } else if (userType === "driver") {
+  } else if (appMode === "driver") {
     return (
-      <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: "#FF5A5F",
-          tabBarInactiveTintColor: "#6B7280",
-          tabBarStyle: {
-            backgroundColor: "#FFFFFF",
-            borderTopWidth: 1,
-            borderTopColor: "#E5E7EB",
-            height: 60,
-            paddingBottom: 10,
-            paddingTop: 10,
-            display: isLargeScreen ? "none" : "flex", // Hide tab bar on large screens
-          },
-          headerStyle: {
-            backgroundColor: "#FFFFFF",
-          },
-          headerTitleStyle: {
-            fontWeight: "bold",
-            color: "#1F2937",
-          },
-          headerShown: !isLargeScreen, // Hide header on large screens
-        }}
-      >
+      <Tabs screenOptions={tabScreenOptions}>
         <Tabs.Screen
-          name="driver-dashboard"
+          name="index"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="driver"
           options={{
             title: "Dashboard",
-            tabBarIcon: ({ color, size }) => (
-              <Truck size={size} color={color} />
-            ),
+            tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
             headerTitle: "Driver Dashboard",
-          }}
-        />
-        <Tabs.Screen
-          name="driver-deliveries"
-          options={{
-            title: "Deliveries",
-            tabBarIcon: ({ color, size }) => (
-              <MapPin size={size} color={color} />
-            ),
-            headerTitle: "Active Deliveries",
-          }}
-        />
-        <Tabs.Screen
-          name="driver-history"
-          options={{
-            title: "History",
-            tabBarIcon: ({ color, size }) => (
-              <ShoppingBag size={size} color={color} />
-            ),
-            headerTitle: "Delivery History",
           }}
         />
         <Tabs.Screen
@@ -170,35 +190,21 @@ export default function TabLayout() {
             headerShown: false,
           }}
         />
+        {/* Mode selector tab (hidden, just for the selector) */}
+        <Tabs.Screen
+          name="mode-selector"
+          options={{
+            title: "Mode",
+            tabBarIcon: () => null,
+          }}
+        />
       </Tabs>
     );
   }
 
   // Default customer view
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: "#FF5A5F",
-        tabBarInactiveTintColor: "#6B7280",
-        tabBarStyle: {
-          backgroundColor: "#FFFFFF",
-          borderTopWidth: 1,
-          borderTopColor: "#E5E7EB",
-          height: 60,
-          paddingBottom: 10,
-          paddingTop: 10,
-          display: isLargeScreen ? "none" : "flex", // Hide tab bar on large screens
-        },
-        headerStyle: {
-          backgroundColor: "#FFFFFF",
-        },
-        headerTitleStyle: {
-          fontWeight: "bold",
-          color: "#1F2937",
-        },
-        headerShown: !isLargeScreen, // Hide header on large screens
-      }}
-    >
+    <Tabs screenOptions={tabScreenOptions}>
       <Tabs.Screen
         name="index"
         options={{
@@ -238,7 +244,7 @@ export default function TabLayout() {
         name="orders"
         options={{
           title: "Orders",
-          tabBarIcon: ({ color, size }) => <MapPin size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <List size={size} color={color} />,
           headerTitle: "Your Orders",
         }}
       />
@@ -251,10 +257,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="restaurant-editor"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="restaurant/[id]"
         options={{
           href: null,
           headerShown: false,
+        }}
+      />
+      {/* Mode selector tab (hidden, just for the selector) */}
+      <Tabs.Screen
+        name="mode-selector"
+        options={{
+          title: "Mode",
+          tabBarIcon: () => null,
         }}
       />
     </Tabs>
@@ -283,5 +303,30 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "#FF5A5F",
+  },
+  tabBarContainer: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    height: 60,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 8,
+  },
+  activeTabButton: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#FF5A5F",
+  },
+  tabButtonTouchable: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

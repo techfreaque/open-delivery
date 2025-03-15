@@ -19,8 +19,9 @@ import {
   View,
 } from "react-native";
 
-import { useUserType } from "../app/context/UserTypeContext";
+import { useAppModeType } from "../lib/context/UserTypeContext";
 import AddressSelector from "./AddressSelector";
+import AppModeSelector from "./AppModeSelector";
 import UserTypeSwitcher from "./UserTypeSwitcher";
 
 interface DesktopHeaderProps {
@@ -38,7 +39,7 @@ export default function DesktopHeader({
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { width } = useWindowDimensions();
-  const { userType } = useUserType();
+  const { appMode: userType } = useAppModeType();
 
   const isSmallScreen = width < 768;
   const isMediumScreen = width >= 768 && width < 1024;

@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import DesktopHeader from "../../components/DesktopHeader";
-import { useUserType } from "../../lib/context/UserTypeContext";
+import { useAppModeType } from "../../lib/context/UserTypeContext";
 
 // Mock data for driver dashboard
 const driverData = {
@@ -89,7 +89,7 @@ export default function DriverDashboardScreen() {
   const router = useRouter();
   const dimensions = useWindowDimensions();
   const isLargeScreen = dimensions.width >= 768;
-  const { userType } = useUserType();
+  const { appMode: userType } = useAppModeType();
 
   // Redirect if not a driver user
   useEffect(() => {
