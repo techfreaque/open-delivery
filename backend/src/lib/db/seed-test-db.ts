@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 
 import { createOrder } from "@/app/api/v1/orders/route";
 
+import { env } from "../env";
 import { examples } from "../examples/data";
 import { getCoordinatesFromAddress } from "../geo/distance";
 import { prisma } from "./prisma";
@@ -194,6 +195,13 @@ export default async function seedTestDatabase(): Promise<void> {
   // Create restaurants
   for (const restaurant of Object.values(restaurantExamples)) {
     try {
+      const coordinates = await getCoordinatesFromAddress(restaurant);
+      if ("error" in coordinates) {
+        throw new Error(
+          `Failed to get coordinates for restaurant ${restaurant.name}: ${coordinates.error}`,
+        );
+      }
+      const { latitude, longitude } = coordinates;
       const createdRestaurant = await prisma.restaurant.upsert({
         where: { id: restaurant.id },
         update: {
@@ -211,8 +219,8 @@ export default async function seedTestDatabase(): Promise<void> {
             create: restaurant.userRoles,
           },
           mainCategoryId: restaurant.mainCategoryId,
-          latitude: restaurant.latitude,
-          longitude: restaurant.longitude,
+          latitude: latitude,
+          longitude: longitude,
           published: restaurant.published,
           updatedAt: new Date(),
         },
@@ -232,8 +240,8 @@ export default async function seedTestDatabase(): Promise<void> {
             create: restaurant.userRoles,
           },
           mainCategoryId: restaurant.mainCategoryId,
-          latitude: restaurant.latitude,
-          longitude: restaurant.longitude,
+          latitude: latitude,
+          longitude: longitude,
           published: restaurant.published,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -332,7 +340,13 @@ export default async function seedTestDatabase(): Promise<void> {
 
   // Create driver profiles
   for (const driver of Object.values(driverExamples)) {
-    const { latitude, longitude } = await getCoordinatesFromAddress(driver);
+    const coordinates = await getCoordinatesFromAddress(driver);
+    if ("error" in coordinates) {
+      throw new Error(
+        `Failed to get coordinates for driver ${driver.id}: ${coordinates.error}`,
+      );
+    }
+    const { latitude, longitude } = coordinates;
     try {
       const createdDriver = await prisma.driver.upsert({
         where: { userId: driver.userId },
@@ -382,7 +396,9 @@ export default async function seedTestDatabase(): Promise<void> {
 async function cleanDatabase(): Promise<void> {
   // Clear all data to start fresh
   console.log("Cleaning database before tests...");
-
+  if (env.NODE_ENV === "production") {
+    throw new Error("Cannot clean production database");
+  }
   try {
     await prisma.$transaction([
       // First delete items that depend on orders
@@ -401,9 +417,12 @@ async function cleanDatabase(): Promise<void> {
       prisma.session.deleteMany({}),
       prisma.address.deleteMany({}),
       prisma.passwordReset.deleteMany({}),
+      prisma.code.deleteMany({}),
+      prisma.like.deleteMany({}),
+      prisma.bugReport.deleteMany({}),
+      prisma.subPrompt.deleteMany({}),
+      prisma.uI.deleteMany({}),
       prisma.user.deleteMany({}),
-      prisma.languages.deleteMany({}),
-      prisma.country.deleteMany({}),
     ]);
 
     console.log("Database cleaned successfully");

@@ -1,13 +1,21 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import type { ChangeEvent, FormEvent } from "react";
-import { type FC, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 
 import { useAuth } from "@/hooks/use-auth";
-import { parseError } from "@/lib/utils";
+import { errorLogger } from "@/lib/utils";
 import type { LoginFormType } from "@/types/types";
 
 const LoginPage: FC = () => {
+  const router = useRouter();
+  const { isLoggedIn } = useAuth();
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.push("/");
+    }
+  }, [isLoggedIn, router]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
@@ -21,13 +29,12 @@ const LoginPage: FC = () => {
 };
 
 const LoginForm: FC = () => {
-  const { login, loading: authLoading } = useAuth();
+  const { login, loading: authLoading, error } = useAuth();
 
   const [credentials, setCredentials] = useState<LoginFormType>({
     email: "",
     password: "",
   });
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [validationErrors, setValidationErrors] = useState<
     Partial<Record<keyof LoginFormType, string>>
@@ -51,7 +58,6 @@ const LoginForm: FC = () => {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
 
     // Client-side validation
     const newValidationErrors: Partial<Record<keyof LoginFormType, string>> =
@@ -79,8 +85,7 @@ const LoginForm: FC = () => {
     try {
       await login(credentials);
     } catch (err) {
-      const authError = parseError(err);
-      setError(authError.message || "Authentication failed");
+      errorLogger("Error logging in:", err);
     } finally {
       setIsLoading(false);
     }

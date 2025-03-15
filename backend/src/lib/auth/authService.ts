@@ -147,6 +147,7 @@ export async function getFullUser(userId: string): Promise<FullUserType> {
       lastName: true,
       email: true,
       password: true,
+      imageUrl: true,
       userRoles: {
         select: {
           role: true,

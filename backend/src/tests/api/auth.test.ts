@@ -9,6 +9,7 @@ import { env } from "@/lib/env";
 import type {
   ErrorResponse,
   LoginResponseType,
+  ResponseType,
   SuccessResponse,
   UserResponseType,
 } from "@/types/types";
@@ -25,7 +26,7 @@ describe("Auth API", () => {
           email: "customer@example.com",
           password: "password",
         });
-      const responseData = response.body as SuccessResponse<LoginResponseType>;
+      const responseData = response.body as ResponseType<LoginResponseType>;
       // Log response for debugging
       if (response.status !== 200) {
         console.log("Auth/me response:", response.body);

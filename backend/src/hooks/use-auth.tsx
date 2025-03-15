@@ -82,15 +82,14 @@ export function AuthProvider({
           body: JSON.stringify(credentials),
         });
 
-        const data = await response.json();
-        if (!response.ok) {
-          const errorData = data as { error: string };
-          setError(errorData.error || "Login failed");
+        const data = (await response.json()) as ResponseType<LoginResponseType>;
+        if (data.success === false) {
+          setError(data.message || "Login failed");
           setLoading(false);
           return null;
         }
 
-        const loginResponseData = data as ResponseType<LoginResponseType>;
+        const loginResponseData = data;
         return _login(loginResponseData, setUser, setLoading);
       } catch (err) {
         const error = parseError(err);

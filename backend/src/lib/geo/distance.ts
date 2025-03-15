@@ -75,6 +75,7 @@ export async function getCoordinatesFromAddress({
         key: env.GOOGLE_MAPS_API_KEY,
       },
     });
+    console.log("goog", address, response.data);
     if (response.data.results.length === 0) {
       throw new Error("No results found for the provided address");
     }
