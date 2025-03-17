@@ -34,11 +34,17 @@ enum PaymentMethod {
 }
 
 enum UserRoleValue {
+  PUBLIC
   CUSTOMER
   RESTAURANT_ADMIN
   RESTAURANT_EMPLOYEE
   DRIVER
   ADMIN
+}
+
+enum UiType {
+  SHADCN_REACT
+  NEXTUI_REACT
 }
 
 enum MessageType {
@@ -148,6 +154,7 @@ model Address {
 
 model OpeningTimes {
   id           String     @id @default(uuid())
+  published    Boolean
   day          String
   open         String
   close        String
@@ -435,7 +442,7 @@ model UI {
   img        String
   createdAt  DateTime    @default(now())
   updatedAt  DateTime
-  uiType     String
+  uiType     UiType
   likesCount Int         @default(0)
   viewCount  Int         @default(0)
   subPrompts SubPrompt[]
@@ -452,9 +459,8 @@ model SubPrompt {
   createdAt DateTime @default(now())
   subPrompt String
   modelId   String?
-
-  code Code?
-  UI   UI   @relation(fields: [UIId], references: [id], onDelete: Cascade)
+  code      Code?
+  UI        UI       @relation(fields: [UIId], references: [id], onDelete: Cascade)
 }
 
 model Code {

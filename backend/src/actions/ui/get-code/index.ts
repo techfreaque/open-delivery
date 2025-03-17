@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/db/prisma";
+import { prisma } from "@/next-portal/db";
 
 export const getCodeFromId = async (
   codeId: string,

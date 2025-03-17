@@ -4,11 +4,14 @@ import Link from "next/link";
 import type { JSX } from "react";
 import { useMemo, useState } from "react";
 
-import { ENDPOINT_DOMAINS } from "@/constants";
-import { APP_NAME } from "@/constants";
-import type { ActiveApiEndpoint } from "@/lib/api-docs/endpoints";
-import { getExampleForEndpoint } from "@/lib/api-docs/endpoints";
-import { envClient } from "@/lib/env-client";
+import { endpoints, loginEndpoint } from "@/client-package/schema/api/apis";
+import {
+  type ApiEndpoint,
+  getExampleForEndpoint,
+  type Methods,
+} from "@/next-portal/api/endpoint";
+import { APP_NAME, ENDPOINT_DOMAINS } from "@/next-portal/constants";
+import { envClient } from "@/next-portal/env/env-client";
 
 import {
   Card,
@@ -27,24 +30,42 @@ export function ApiExplorer(): JSX.Element {
     envClient.NEXT_PUBLIC_NODE_ENV === "production" ? "prod" : "dev",
   );
   const selectedDomain = ENDPOINT_DOMAINS[selectedEnv];
-  const initialExample = useMemo(
-    () => getExampleForEndpoint(["auth", "login"]),
-    [],
-  );
+  const [requestData, setRequestData] = useState<string>("");
+  const [urlPathVariables, setUrlPathVariables] = useState<string>("");
+  const initialExample = useMemo(() => {
+    const endpoint = loginEndpoint;
+    setRequestData(JSON.stringify(endpoint.examples.payloads.default));
+    return endpoint;
+  }, []);
   const [activeEndpoint, setActiveEndpoint] =
-    useState<ActiveApiEndpoint>(initialExample);
-  const [requestData, setRequestData] = useState<string>(() => {
-    return JSON.stringify(initialExample.endpoint.examples);
-  });
+    useState<ApiEndpoint<unknown, unknown, unknown>>(initialExample);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [responseStatus, setResponseStatus] = useState<number | null>(null);
 
   // Handlers
-  const handleEndpointChange = (newEndpointPath: string[]): void => {
-    const newEndpoint = getExampleForEndpoint(newEndpointPath);
+  const handleEndpointChange = (
+    newEndpointPath: string[],
+    newMethod: Methods,
+  ): void => {
+    const newEndpoint = getExampleForEndpoint(
+      newEndpointPath,
+      newMethod,
+      endpoints,
+    );
     setActiveEndpoint(newEndpoint);
-    setRequestData(JSON.stringify(newEndpoint.endpoint.examples));
+    if (newEndpoint.examples.payloads) {
+      setRequestData(JSON.stringify(newEndpoint.examples.payloads.default));
+    } else {
+      setRequestData("");
+    }
+    if (newEndpoint.examples.urlPathVariables) {
+      setUrlPathVariables(
+        JSON.stringify(newEndpoint.examples.urlPathVariables.default),
+      );
+    } else {
+      setUrlPathVariables("");
+    }
     setResponseData("");
     setResponseStatus(null);
   };
@@ -55,60 +76,35 @@ export function ApiExplorer(): JSX.Element {
     setResponseStatus(null);
 
     try {
-      // Parse the request path and replace any path parameters
-      let path: string = activeEndpoint.path.join("/");
-      let parsedData: Record<string, any> = {};
-
-      // try {
-      //   // Only parse request data if it's not empty
-      //   if (requestData.trim() !== "{}" && requestData.trim() !== "") {
-      //     parsedData = JSON.parse(requestData);
-      //   }
-
-      //   // Handle path parameters (replace {id} with actual values from request)
-      //   if (path.includes("{")) {
-      //     // Extract parameter name from the path
-      //     const pathParams = path.match(/{([^}]+)}/g) || [];
-
-      //     for (const param of pathParams) {
-      //       const paramName = param.replace(/[{}]/g, "");
-      //       if (parsedData[paramName]) {
-      //         path = path.replace(param, parsedData[paramName]);
-      //         // Remove used path parameters from the request body
-      //         delete parsedData[paramName];
-      //       } else {
-      //         // If no matching parameter found, replace with a placeholder
-      //         path = path.replace(param, "example-id");
-      //       }
-      //     }
-      //   }
-      // } catch (error) {
-      //   setResponseStatus(400);
-      //   setResponseData(JSON.stringify({ error: error }, null, 2));
-      //   setIsLoading(false);
-      //   return;
-      // }
-
-      // Use the selected domain
-      const url = `${selectedDomain}/${path}`;
-      console.log("url", url);
-      console.log("baseUrl", selectedDomain);
-      console.log("path", path);
-      // Make the actual API call
-      const response = await fetch(url, {
+      const { postBody, endpointUrl, success, message } =
+        activeEndpoint.getRequestData({
+          requestData: JSON.parse(requestData),
+          pathParams: JSON.parse(urlPathVariables),
+        });
+      if (!success) {
+        setResponseStatus(400);
+        setResponseData(
+          JSON.stringify(
+            {
+              error: "Invalid request data",
+              details: message,
+            },
+            null,
+            2,
+          ),
+        );
+        return;
+      }
+      const response = await fetch(endpointUrl, {
         method: activeEndpoint.method,
         headers: {
           "Content-Type": "application/json",
-          // Add authorization header if the endpoint requires it
-          ...(activeEndpoint.endpoint.requiresAuth && {
+          ...(activeEndpoint.requiresAuthentication() && {
             Authorization: `Bearer ${localStorage.getItem("authToken") || "YOUR_TOKEN_HERE"}`,
           }),
         },
         // Only include body for non-GET requests
-        body:
-          activeEndpoint.method !== "GET"
-            ? JSON.stringify(parsedData)
-            : undefined,
+        body: postBody,
       });
 
       // Get the response status

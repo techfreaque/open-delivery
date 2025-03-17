@@ -22,12 +22,34 @@
             "internalConsoleOptions": "neverOpen"
         },
         {
+            "name": "Debug TS File",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutor": "node",
+            "runtimeArgs": [
+                "--import",
+                "tsx"
+            ],
+            "args": [
+                "${file}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            }
+        },
+        {
             "name": "Debug Vitest Tests",
             "type": "node",
             "request": "launch",
             "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
             "args": [
-                "run",
+                "run"
             ],
             "smartStep": true,
             "console": "integratedTerminal",

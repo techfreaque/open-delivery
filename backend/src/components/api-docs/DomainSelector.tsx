@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ENDPOINT_DOMAINS } from "@/constants";
+import { ENDPOINT_DOMAINS } from "@/next-portal/constants";
 
 interface DomainSelectorProps {
   selectedDomain: keyof typeof ENDPOINT_DOMAINS;

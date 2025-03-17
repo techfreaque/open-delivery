@@ -1,12 +1,17 @@
 "use server";
 
-import { prisma } from "@/lib/db/prisma";
-import type { FullUI } from "@/types/website-editor";
+import type { UiType } from "@prisma/client";
+
+import type {
+  FullUI,
+  UiType as _UiType,
+} from "@/client-package/types/website-editor";
+import { prisma } from "@/next-portal/db";
 
 export const createUI = async (
   prompt: string,
   userId: string,
-  uiType: UiType,
+  uiType: _UiType,
 ): Promise<FullUI> => {
   const user = await prisma.user.findUnique({
     where: {
@@ -21,7 +26,7 @@ export const createUI = async (
     data: {
       userId: userId,
       prompt: prompt,
-      uiType: uiType,
+      uiType: uiType as unknown as UiType,
       updatedAt: new Date(),
       img: "",
     },

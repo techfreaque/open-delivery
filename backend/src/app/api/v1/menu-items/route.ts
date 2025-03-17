@@ -2,13 +2,16 @@ import type { NextRequest } from "next/server";
 import type { NextResponse } from "next/server";
 
 import {
+  menuItemCreateSchema,
+  menuItemResponseSchema,
+} from "@/client-package/schema/schemas";
+import {
   createErrorResponse,
   createSuccessResponse,
-  validateRequest,
-} from "@/lib/api/apiResponse";
-import { getCurrentUser } from "@/lib/auth/authService";
-import { prisma } from "@/lib/db/prisma";
-import { menuItemResponseSchema, menuItemSchema } from "@/schemas";
+  validatePostRequest,
+} from "@/next-portal/api/api-response";
+import { getCurrentUser } from "@/next-portal/api/auth/user";
+import { prisma } from "@/next-portal/db";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -17,7 +20,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return createErrorResponse("Unauthorized", 401);
     }
 
-    const validatedData = await validateRequest(request, menuItemSchema);
+    const validatedData = await validatePostRequest(
+      request,
+      menuItemCreateSchema,
+    );
 
     // Verify restaurant ownership
     const restaurant = await prisma.restaurant.findUnique({

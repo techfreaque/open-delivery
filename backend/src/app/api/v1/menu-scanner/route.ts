@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { z } from "zod";
 
-import { env } from "@/lib/env";
-import { menuItemCreateSchema } from "@/schemas";
-import type { MenuItem } from "@/types/types";
+import { menuItemCreateSchema } from "@/client-package/schema/schemas";
+import type { MenuItemCreateType } from "@/client-package/types/types";
+import { env } from "@/lib/env/env";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -95,7 +95,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Transform to MenuItem type
-    const menuItems: MenuItem[] = [];
+    const menuItems: MenuItemCreateType[] = [];
     const validationErrors: { item: any; errors: z.ZodError }[] = [];
 
     for (const item of extractedItems) {
@@ -114,7 +114,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         };
 
         // Validate using the schema
-        const validatedItem = menuItemCreateSchema.parse(menuItem) as MenuItem;
+        const validatedItem = menuItemCreateSchema.parse(menuItem);
         menuItems.push(validatedItem);
       } catch (validationError) {
         if (validationError instanceof z.ZodError) {

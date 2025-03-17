@@ -13,19 +13,19 @@ import { getCodeFromId } from "@/actions/ui/get-code";
 import { getUI } from "@/actions/ui/get-uis";
 import { updateSubPrompt } from "@/actions/ui/update-subprompt";
 import { updateUI } from "@/actions/ui/update-ui";
+import { useAuth } from "@/client-package/hooks/use-auth";
+import { useClientMode } from "@/client-package/hooks/website-editor/useMode";
+import { useModel } from "@/client-package/hooks/website-editor/useModel";
+import { useUIState } from "@/client-package/hooks/website-editor/useUIState";
+import type { FullUI } from "@/client-package/types/website-editor";
 import { Button, Card, Input } from "@/components/ui";
 import Sidebar from "@/components/website-editor/sidebar";
 import UIBody from "@/components/website-editor/ui-body";
 import UIHeader from "@/components/website-editor/ui-header";
 import UIRigthHeader from "@/components/website-editor/ui-right-header";
-import { useAuth } from "@/hooks/use-auth";
-import { useClientMode } from "@/hooks/website-editor/useMode";
-import { useModel } from "@/hooks/website-editor/useModel";
-import { useUIState } from "@/hooks/website-editor/useUIState";
-import { errorLogger } from "@/lib/utils";
 import { isParent } from "@/lib/website-editor/helper";
 import { isModelSupported } from "@/lib/website-editor/supportedllm";
-import type { FullUI } from "@/types/website-editor";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 export const ClientUI = ({ uiid }: { uiid: string }): JSX.Element => {
   const ref = useRef<ImperativePanelGroupHandle>(null);
@@ -944,40 +944,38 @@ export const ClientUI = ({ uiid }: { uiid: string }): JSX.Element => {
       setUi((prevUi) => {
         if (prevUi) {
           const updatedSubPrompts = [...prevUi.subPrompts];
-
+          const firstResult = successfulResults[0]!;
           // TODO when it is image generation handle this in a better way
-          updatedSubPrompts.push([
-            {
-              id: successfulResults[0]!.id,
-              UIId: uiid,
-              SUBId: successfulResults[0]!.SUBId,
-              createdAt: new Date(),
-              subPrompt: successfulResults[0]!.subPrompt,
-              codeId: successfulResults[0]!.codeId,
-              modelId: successfulResults[0]!.modelId || "",
-              code: successfulResults[0]!.code,
+          updatedSubPrompts.push({
+            id: firstResult.id,
+            UIId: uiid,
+            SUBId: firstResult.SUBId,
+            createdAt: new Date(),
+            subPrompt: firstResult.subPrompt,
+            modelId: firstResult.modelId || "",
+            code: {
+              id: firstResult.codeId,
+              code: firstResult.code,
             },
-            {
-              id: "",
-              UIId: uiid,
-              SUBId: "b-0",
-              createdAt: new Date(),
-              subPrompt: "",
-              codeId: "",
-              modelId: "",
-              code: "",
-            },
-            {
-              id: "",
-              UIId: uiid,
-              SUBId: "c-0",
-              createdAt: new Date(),
-              subPrompt: "",
-              codeId: "",
-              modelId: "",
-              code: "",
-            },
-          ]);
+          });
+          updatedSubPrompts.push({
+            id: "",
+            UIId: uiid,
+            SUBId: "b-0",
+            createdAt: new Date(),
+            subPrompt: "",
+            modelId: "",
+            code: null,
+          });
+          updatedSubPrompts.push({
+            id: "",
+            UIId: uiid,
+            SUBId: "c-0",
+            createdAt: new Date(),
+            subPrompt: "",
+            modelId: "",
+            code: null,
+          });
           setMode("precise");
 
           return {
@@ -1135,33 +1133,38 @@ export const ClientUI = ({ uiid }: { uiid: string }): JSX.Element => {
           ];
 
           if (ui?.subPrompts.length === 0) {
-            updatedSubPrompts.push(
-              successfulResults.map((result) => ({
+            const results = successfulResults
+              .filter((result) => !!result)
+              .map((result) => ({
                 id: result.id,
                 UIId: uiid,
                 SUBId: result.SUBId,
                 createdAt: new Date(),
                 subPrompt: result.subPrompt,
-                codeId: result.codeId,
                 modelId: result.modelId || "",
                 code: {
+                  id: result.codeId,
                   code: result.code,
                 },
-              })),
-            );
+              }));
+            updatedSubPrompts.push(...results);
           } else {
-            updatedSubPrompts.push([
-              {
-                id: successfulResults[0]!.id,
-                UIId: uiid,
-                SUBId: successfulResults[0]!.SUBId,
-                createdAt: new Date(),
-                subPrompt: successfulResults[0]!.subPrompt,
-                codeId: successfulResults[0]!.codeId,
-                modelId: successfulResults[0]!.modelId || "",
-                code: successfulResults[0]!.code,
-              },
-            ]);
+            updatedSubPrompts.push(
+              ...[
+                {
+                  id: successfulResults[0]!.id,
+                  UIId: uiid,
+                  SUBId: successfulResults[0]!.SUBId,
+                  createdAt: new Date(),
+                  subPrompt: successfulResults[0]!.subPrompt,
+                  modelId: successfulResults[0]!.modelId || "",
+                  code: {
+                    id: successfulResults[0]!.codeId,
+                    code: successfulResults[0]!.code,
+                  },
+                },
+              ],
+            );
             setMode("precise");
           }
 
@@ -1208,14 +1211,14 @@ export const ClientUI = ({ uiid }: { uiid: string }): JSX.Element => {
     selectedVersion.subid,
     setVersion,
     ui?.subPrompts.length,
-    ui?.userId,
+    ui?.user.id,
     uiid,
     user,
     userId,
   ]);
 
   const regenerateCode = useCallback(async (): Promise<void> => {
-    if (userId !== ui?.userId) {
+    if (userId !== ui?.user.id) {
       toast.warning("Fork the UI to modify the code");
       return;
     }
@@ -1234,15 +1237,16 @@ export const ClientUI = ({ uiid }: { uiid: string }): JSX.Element => {
       if (result) {
         setUi((prevUi) => {
           if (prevUi) {
-            const updatedSubPrompts = prevUi.subPrompts.map((subPromptArray) =>
-              subPromptArray.map((subPrompt) =>
-                subPrompt.SUBId === result.SUBId
-                  ? {
-                      ...subPrompt,
+            const updatedSubPrompts = prevUi.subPrompts.map((subPrompt) =>
+              subPrompt.SUBId === result.SUBId
+                ? {
+                    ...subPrompt,
+                    code: {
+                      id: subPrompt.code?.id || result.codeId,
                       code: result.code,
-                    }
-                  : subPrompt,
-              ),
+                    },
+                  }
+                : subPrompt,
             );
 
             return {
@@ -1277,7 +1281,7 @@ export const ClientUI = ({ uiid }: { uiid: string }): JSX.Element => {
     router,
     selectedVersion.subid,
     setVersion,
-    ui?.userId,
+    ui?.user.id,
     userId,
   ]);
 
@@ -1368,26 +1372,34 @@ export const ClientUI = ({ uiid }: { uiid: string }): JSX.Element => {
         );
 
         const combinedSubPrompts = [
-          ...groupedSubPrompts,
-          ...sortedRemainingSubPrompts.map(
-            (subPrompt) =>
-              [
-                {
-                  ...subPrompt,
-                  code: "",
-                },
-              ] as {
+          ...fetchedUI.subPrompts,
+          ...fetchedUI.subPrompts.map(
+            (
+              subPrompt,
+            ): {
+              id: string;
+              UIId: string;
+              SUBId: string;
+              createdAt: Date;
+              subPrompt: string;
+              modelId: string | null;
+              code: {
                 id: string;
-                UIId: string;
-                SUBId: string;
-                createdAt: Date;
-                subPrompt: string;
-                codeId: string;
-                modelId?: string;
                 code: string;
-              }[],
+              } | null;
+            } => {
+              return {
+                id: subPrompt.id,
+                UIId: subPrompt.UIId,
+                SUBId: subPrompt.SUBId,
+                createdAt: subPrompt.createdAt,
+                subPrompt: subPrompt.subPrompt,
+                modelId: subPrompt.modelId || null,
+                code: subPrompt.code,
+              };
+            },
           ),
-        ];
+        ].flat();
 
         const filterfetchedUI = {
           ...fetchedUI,
@@ -1395,10 +1407,11 @@ export const ClientUI = ({ uiid }: { uiid: string }): JSX.Element => {
         };
         setUi({
           ...filterfetchedUI,
+          subPrompts: combinedSubPrompts,
           forkedFrom: filterfetchedUI.forkedFrom || "",
           user: {
             ...filterfetchedUI.user,
-            imageUrl: filterfetchedUI.user.imageUrl || "",
+            imageUrl: filterfetchedUI.user.imageUrl || null,
           },
         });
         setBackendCheck(1);

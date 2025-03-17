@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type { JSX } from "react";
 
+import { Button } from "@/client-package/components/button";
+import { frontendRoutes } from "@/client-package/constants";
 import { ApiExplorer } from "@/components/api-docs/ApiExplorer";
-import { Button } from "@/components/ui/button";
-import { frontendRoutes } from "@/constants";
 
 export default function Home(): JSX.Element {
   return (

@@ -6,7 +6,7 @@ import type React from "react";
 import type { JSX } from "react";
 
 import { Layout } from "@/components/layout";
-import { APP_NAME } from "@/constants";
+import { APP_NAME } from "@/next-portal/constants";
 
 const inter = Inter({ subsets: ["latin"] });
 

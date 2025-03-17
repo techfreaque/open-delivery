@@ -12,7 +12,7 @@ import { createAnthropicVertex } from "anthropic-vertex-ai";
 import { GoogleAuth } from "google-auth-library";
 import { createOllama } from "ollama-ai-provider";
 
-import { env } from "../env";
+import { env } from "../env/env";
 
 const googleAuth = new GoogleAuth({
   scopes: "https://www.googleapis.com/auth/cloud-platform",

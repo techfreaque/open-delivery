@@ -1,12 +1,12 @@
-import type { UiType } from "@/types/website-editor";
+import { UiType } from "@/client-package/types/website-editor";
 
 export const embededCode = (
   htmlCode: string,
   uiType: UiType,
 ): string | undefined => {
-  if (uiType === "shadcn-react") {
+  if (uiType === UiType.SHADCN_REACT) {
     return shadcnCode(htmlCode);
-  } else if (uiType === "nextui-react") {
+  } else if (uiType === UiType.NEXTUI_REACT) {
     return nextUICode(htmlCode);
   }
 };

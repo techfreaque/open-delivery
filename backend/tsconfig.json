@@ -7,7 +7,8 @@
     ],
     "types": [
       "node",
-      "vitest/globals"
+      "vitest/globals",
+      "src/client-package/components/ui-native/nativewind.d.ts"
     ],
     "allowJs": true,
     "target": "ES2018",
@@ -19,6 +20,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // "declaration": true,
     "jsx": "preserve",
     "incremental": true,
     "baseUrl": ".",
@@ -28,22 +30,28 @@
       }
     ],
     "paths": {
+      "react-native": [
+        "./node_modules/react-native-web"
+      ],
       "@/*": [
         "./src/*"
+      ],
+      "@/next-portal/*": [
+        "./packages/next-portal/src/*"
       ]
     }
   },
   "include": [
     "next-env.d.ts",
+    ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.test.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "prisma/schema-builder.ts",
-    "src/tests/api/restaurants.test.ts.n"
   ],
   "exclude": [
     "node_modules",
-    ".next"
+    ".next",
+    "code-server",
+    "postgres_data"
   ]
 }

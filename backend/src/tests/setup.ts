@@ -2,8 +2,8 @@
 import { PrismaClient, UserRoleValue } from "@prisma/client";
 import { afterAll, beforeAll } from "vitest";
 
-import { signJwt } from "@/lib/auth/jwt";
-import { env } from "@/lib/env";
+import { env } from "@/lib/env/env";
+import { signJwt } from "@/next-portal/api/auth/jwt";
 
 // Add at the beginning:
 const DEBUG = env.DEBUG_TESTS === "true";

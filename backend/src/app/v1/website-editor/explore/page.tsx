@@ -5,6 +5,7 @@ import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import { getUIs } from "@/actions/ui/get-uis";
+import type { FullUI } from "@/client-package/types/website-editor";
 import {
   Avatar,
   AvatarFallback,
@@ -28,7 +29,6 @@ import {
 import Header from "@/components/website-editor/header";
 import PromptBadge from "@/components/website-editor/prompt-badge";
 import { timeAgo } from "@/lib/website-editor/time";
-import type { FullUI } from "@/types/website-editor";
 
 const Page = (): JSX.Element => {
   const [mode, setMode] = useState<string>("latest");

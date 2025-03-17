@@ -1,6 +1,6 @@
 import type { HTMLAttributes, JSX } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/next-portal/utils/utils";
 
 function Skeleton({
   className,

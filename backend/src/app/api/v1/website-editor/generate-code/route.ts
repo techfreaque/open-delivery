@@ -1,10 +1,10 @@
 import { generateText } from "ai";
 import { z } from "zod";
 
-import { errorLogger } from "@/lib/utils";
 import { trimCode } from "@/lib/website-editor/code";
 import { llm } from "@/lib/website-editor/llm";
 import { getGenerationPrompt } from "@/lib/website-editor/prompt";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";

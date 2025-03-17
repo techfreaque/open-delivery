@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import type { JSX } from "react";
 import { useState } from "react";
 
+import { useAuthModal } from "@/client-package/hooks/website-editor/useAuthModal";
 import {
   Button,
   Dialog,
@@ -11,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui";
-import { useAuthModal } from "@/hooks/website-editor/useAuthModal";
 
 const AuthModal = (): JSX.Element => {
   const { isOpen, toggle } = useAuthModal();
@@ -19,7 +19,7 @@ const AuthModal = (): JSX.Element => {
   const router = useRouter();
   const handleSignIn = (): void => {
     setLoading(true);
-    router.push("/v1/auth/login");
+    router.push("/v1/auth/public/login");
   };
 
   return (

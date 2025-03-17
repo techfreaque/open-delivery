@@ -4,10 +4,10 @@ import type { JSX } from "react";
 import { useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ActiveApiEndpoint } from "@/lib/api-docs/endpoints";
+import type { ApiEndpoint } from "@/next-portal/api/endpoint";
 
 interface CodeExamplesProps {
-  activeEndpoint: ActiveApiEndpoint;
+  activeEndpoint: ApiEndpoint<unknown, unknown, unknown>;
   selectedDomain: string;
 }
 
@@ -33,9 +33,9 @@ export function CodeExamples({
 
     // Choose an example - either use default or the first available
     const example =
-      activeEndpoint.endpoint.examples?.default ||
-      (activeEndpoint.endpoint.examples &&
-        Object.values(activeEndpoint.endpoint.examples)[0]);
+      activeEndpoint.examples.payloads?.default ||
+      (activeEndpoint.examples.payloads &&
+        Object.values(activeEndpoint.examples.payloads)[0]);
 
     switch (language) {
       case "curl":
@@ -46,7 +46,7 @@ ${
 -d '${JSON.stringify(example, null, 2)}' \\`
     : ""
 }
-${activeEndpoint.endpoint.requiresAuth ? `-H "Authorization: Bearer YOUR_TOKEN_HERE" \\` : ""}
+${activeEndpoint.requiresAuthentication() ? `-H "Authorization: Bearer YOUR_TOKEN_HERE" \\` : ""}
 -H "Accept: application/json"`;
 
       case "javascript":
@@ -56,7 +56,7 @@ const response = await fetch("${apiUrl}", {
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json",
-    ${activeEndpoint.endpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
+    ${activeEndpoint.requiresAuthentication() ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
   },
   ${hasBody ? `body: JSON.stringify(${JSON.stringify(example, null, 2)})` : ""}
 });
@@ -70,7 +70,7 @@ console.log(data);`;
 url = "${apiUrl}"
 headers = {
     "Accept": "application/json",
-    ${activeEndpoint.endpoint.requiresAuth ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
+    ${activeEndpoint.requiresAuthentication() ? `"Authorization": "Bearer YOUR_TOKEN_HERE",` : ""}
     ${hasBody ? `"Content-Type": "application/json"` : ""}
 }
 ${
@@ -91,7 +91,7 @@ $url = "${apiUrl}";
 $options = [
     'http' => [
         'header' => "Accept: application/json\\r\\n" . 
-                    ${activeEndpoint.endpoint.requiresAuth ? `"Authorization: Bearer YOUR_TOKEN_HERE\\r\\n" .` : ""} 
+                    ${activeEndpoint.requiresAuthentication() ? `"Authorization: Bearer YOUR_TOKEN_HERE\\r\\n" .` : ""} 
                     ${hasBody ? `"Content-Type: application/json\\r\\n",` : `",`}
         'method' => "${method}",
         ${hasBody ? `'content' => '${JSON.stringify(example)}'` : ""}
@@ -111,7 +111,7 @@ print_r($response);
   };
 
   // Get available tabs based on examples
-  const availableExamples = Object.keys(activeEndpoint.endpoint.examples || {});
+  const availableExamples = Object.keys(activeEndpoint.examples || {});
   const defaultTab =
     availableExamples.length > 0 ? availableExamples[0] : "default";
 
@@ -164,7 +164,7 @@ print_r($response);
                 <div className="bg-gray-50 rounded-lg p-4 border">
                   <pre className="text-sm overflow-auto max-h-[200px]">
                     {JSON.stringify(
-                      activeEndpoint.endpoint.examples?.[example],
+                      activeEndpoint.examples.payloads?.[example],
                       null,
                       2,
                     )}

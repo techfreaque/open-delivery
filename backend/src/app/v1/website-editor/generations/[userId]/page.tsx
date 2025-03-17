@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getUIProfile } from "@/actions/ui/get-uis";
 import type { WebsiteEditorUser } from "@/actions/user";
 import { getUser } from "@/actions/user";
+import type { FullUI } from "@/client-package/types/website-editor";
 import {
   Avatar,
   AvatarFallback,
@@ -27,7 +28,6 @@ import {
 import Header from "@/components/website-editor/header";
 import PromptBadge from "@/components/website-editor/prompt-badge";
 import { timeAgo } from "@/lib/website-editor/time";
-import type { FullUI } from "@/types/website-editor";
 
 // interface User {
 //   id: string;

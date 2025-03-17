@@ -1,13 +1,8 @@
-interface SubPrompts {
-  id: string;
-  UIId: string;
-  SUBId: string;
-  createdAt: Date;
-  subPrompt: string;
-  code: string;
-}
+import type { FullUI } from "@/client-package/types/website-editor";
 
-type SubPromptsArray = SubPrompts[][] | undefined;
+export type SubPrompts = FullUI["subPrompts"];
+
+type SubPromptsArray = SubPrompts[] | undefined;
 
 export const isParent = (
   subId: string,

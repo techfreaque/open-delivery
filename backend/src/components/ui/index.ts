@@ -1,4 +1,8 @@
 export {
+  Button,
+  // buttonVariants
+} from "../../client-package/components/button";
+export {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -33,10 +37,6 @@ export {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "./breadcrumb";
-export {
-  Button,
-  // buttonVariants
-} from "./button";
 export { Calendar } from "./calendar";
 export {
   Card,

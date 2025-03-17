@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { JSX } from "react";
 
+import { useAuth } from "@/client-package/hooks/use-auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/use-auth";
 
 import { Button } from "../ui";
 
@@ -24,7 +24,7 @@ export default function UserButton(): JSX.Element {
     return <></>;
   }
   const handleSignOut = (): void => {
-    logout();
+    void logout();
     router.push("/v1/website-editor/");
   };
 

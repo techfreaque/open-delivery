@@ -1,21 +1,22 @@
-import type { NextResponse } from "next/server";
+import { meEndpoint } from "@/client-package/schema/api/v1/auth/me";
+import type { LoginResponseType } from "@/client-package/types/types";
+import { createSessionAndGetUser } from "@/lib/api/auth/login";
+import type {
+  ApiHandlerCallBackProps,
+  SafeReturnType,
+} from "@/next-portal/api/api-handler";
+import { apiHandler } from "@/next-portal/api/api-handler";
+import type { UndefinedType } from "@/next-portal/types/common.schema";
 
-import {
-  createErrorResponse,
-  createSuccessResponse,
-} from "@/lib/api/apiResponse";
-import { getFullUser, getVerifiedUser } from "@/lib/auth/authService";
-import { userResponseSchema } from "@/schemas";
-import type { ErrorResponse, SuccessResponse } from "@/types/types";
-import { type UserResponseType, UserRoleValue } from "@/types/types";
+export const GET = apiHandler({
+  endpoint: meEndpoint,
+  handler: getUser,
+});
 
-export async function GET(): Promise<
-  NextResponse<SuccessResponse<UserRoleValue> | ErrorResponse>
+export async function getUser({
+  user,
+}: ApiHandlerCallBackProps<UndefinedType, UndefinedType>): Promise<
+  SafeReturnType<LoginResponseType>
 > {
-  const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
-  if (!user) {
-    return createErrorResponse("Not signed in", 401);
-  }
-  const fullUser = await getFullUser(user.id);
-  return createSuccessResponse<UserResponseType>(fullUser, userResponseSchema);
+  return createSessionAndGetUser(user.id);
 }

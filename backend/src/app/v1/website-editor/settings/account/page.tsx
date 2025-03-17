@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import type { JSX } from "react";
 
+import { useAuth } from "@/client-package/hooks/use-auth";
 import { Badge, Button } from "@/components/ui";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -13,14 +14,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/use-auth";
 
 export default function AccountPage(): JSX.Element {
   const { logout, user } = useAuth();
   const router = useRouter();
 
   const handleSignOut = (): void => {
-    logout();
+    void logout();
     router.push("/v1/website-editor/");
   };
 

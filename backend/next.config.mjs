@@ -13,10 +13,17 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
+    if (dev) {
+      // Set webpack stats to verbose
+      config.stats = 'verbose';
+    }
     // Add a fallback for the Handlebars module
     config.resolve.alias['handlebars'] = 'handlebars/dist/handlebars.min.js';
-    
+    if (!isServer) {
+      config.resolve.alias['react-native$'] = 'react-native-web';
+      // config.resolve.alias['./button'] = './button.web';
+    }
     return config;
   },
   images: {

@@ -5,8 +5,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { submitBugReport } from "@/actions/ui/submit-bug-report";
+import { Button } from "@/client-package/components/button";
+import { useAuth } from "@/client-package/hooks/use-auth";
+import { useAuthModal } from "@/client-package/hooks/website-editor/useAuthModal";
+import { useBugReportModal } from "@/client-package/hooks/website-editor/useBugReportModal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -24,10 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/hooks/use-auth";
-import { useAuthModal } from "@/hooks/website-editor/useAuthModal";
-import { useBugReportModal } from "@/hooks/website-editor/useBugReportModal";
-import { errorLogger } from "@/lib/utils";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 import { Badge, RadioGroup, RadioGroupItem } from "../ui";
 

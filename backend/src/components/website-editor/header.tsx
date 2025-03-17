@@ -2,9 +2,9 @@
 import { useRouter } from "next/navigation";
 import type { JSX } from "react";
 
-import { useAuth } from "@/hooks/use-auth";
-import { useAuthModal } from "@/hooks/website-editor/useAuthModal";
-import { useBugReportModal } from "@/hooks/website-editor/useBugReportModal";
+import { useAuth } from "@/client-package/hooks/use-auth";
+import { useAuthModal } from "@/client-package/hooks/website-editor/useAuthModal";
+import { useBugReportModal } from "@/client-package/hooks/website-editor/useBugReportModal";
 
 import { Button } from "../ui";
 import { BugReportModal } from "./bug-report-modal";

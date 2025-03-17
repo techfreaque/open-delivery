@@ -4,49 +4,17 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import type { JSX } from "react";
 import { useState } from "react";
 
-import { type ActiveApiEndpoint, apiDocsData } from "@/lib/api-docs/endpoints";
-import { errorLogger } from "@/lib/utils";
-
-interface EndpointData {
-  description?: string;
-  summary?: string;
-  parameters?: Array<{
-    name: string;
-    in: string;
-    required?: boolean;
-    description?: string;
-    schema?: Record<string, unknown>;
-  }>;
-  requestBody?: {
-    content?: Record<string, { schema?: Record<string, unknown> }>;
-    required?: boolean;
-    description?: string;
-  };
-  responses?: Record<
-    string,
-    {
-      description?: string;
-      content?: Record<string, { schema?: Record<string, unknown> }>;
-    }
-  >;
-  tags?: string[];
-  operationId?: string;
-  [key: string]:
-    | string
-    | string[]
-    | boolean
-    | undefined
-    | Record<string, unknown>
-    | Array<{ [key: string]: unknown }>;
-}
-
-interface ApiSection {
-  [key: string]: ApiSection | EndpointData;
-}
+import { endpoints } from "@/client-package/schema/api/apis";
+import type {
+  ApiEndpoint,
+  ApiSection,
+  Methods,
+} from "@/next-portal/api/endpoint";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 interface EndpointsListProps {
-  activeEndpoint: ActiveApiEndpoint;
-  onEndpointChange: (path: string[]) => void;
+  activeEndpoint: ApiEndpoint<unknown, unknown, unknown>;
+  onEndpointChange: (path: string[], method: Methods) => void;
   compact?: boolean;
 }
 
@@ -61,8 +29,7 @@ export function EndpointsList({
     auth: true, // Default expanded sections
   });
 
-  // Get all endpoints from the API docs data
-  const endpointsData = apiDocsData.endpoints as ApiSection;
+  const endpointsData = endpoints;
 
   // Toggle section expansion
   const toggleSection = (section: string): void => {
@@ -83,13 +50,13 @@ export function EndpointsList({
   const getCurrentSection = (
     data: ApiSection,
     path: string[],
-  ): ApiSection | EndpointData | null => {
-    let current: ApiSection | EndpointData = data;
+  ): ApiSection | ApiEndpoint<unknown, unknown, unknown> | null => {
+    let current: ApiSection | ApiEndpoint<unknown, unknown, unknown> = data;
     for (const segment of path) {
       if (!current[segment]) {
         return null;
       }
-      current = current[segment] as ApiSection | EndpointData;
+      current = current[segment];
     }
     return current;
   };
@@ -125,7 +92,11 @@ export function EndpointsList({
         typeof sectionData === "object" &&
         method in sectionData
       ) {
-        const methodData = sectionData[method] as EndpointData;
+        const methodData = sectionData[method] as ApiEndpoint<
+          unknown,
+          unknown,
+          unknown
+        >;
         return methodData.description || path.join("/");
       }
       return path.join("/");
@@ -155,11 +126,12 @@ export function EndpointsList({
 
   // Render a specific endpoint (HTTP method)
   const renderEndpoint = (
-    method: string,
+    method: Methods,
     path: string[],
   ): JSX.Element | null => {
-    const fullPath = [...path, method];
-    const isActive = activeEndpoint.fullPath.join("/") === fullPath.join("/");
+    const isSameMethod = method === activeEndpoint.method;
+    const isSamePath = activeEndpoint.path.join("/") === path.join("/");
+    const isActive = (isSameMethod && isSamePath) || false;
 
     return (
       <div
@@ -167,7 +139,7 @@ export function EndpointsList({
         className={`py-1 px-2 text-xs cursor-pointer rounded ${
           isActive ? "bg-blue-100 text-blue-700" : "hover:bg-gray-50"
         }`}
-        onClick={() => onEndpointChange(fullPath)}
+        onClick={() => onEndpointChange(path, method)}
       >
         <div className="flex items-center">
           <span className={`font-mono ${getMethodColor(method)}`}>
@@ -226,7 +198,9 @@ export function EndpointsList({
             <div className="ml-4 mt-1 space-y-1">
               {Object.keys(currentSection)
                 .filter(isHttpMethod)
-                .map((method) => renderEndpoint(method, [...currentPath]))}
+                .map((method) =>
+                  renderEndpoint(method as Methods, [...currentPath]),
+                )}
             </div>
           )}
         </div>
@@ -259,7 +233,7 @@ export function EndpointsList({
             <div className="ml-4 mt-1 space-y-1">
               {Object.keys(currentSection).map((subSection) => {
                 return isHttpMethod(subSection)
-                  ? renderEndpoint(subSection, currentPath)
+                  ? renderEndpoint(subSection as Methods, currentPath)
                   : renderSection(subSection, currentPath);
               })}
             </div>

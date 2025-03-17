@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 import { getUIHome } from "@/actions/ui/get-uis";
+import type { FullUI } from "@/client-package/types/website-editor";
 import {
   Avatar,
   AvatarFallback,
@@ -16,7 +17,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui";
 import { timeAgo } from "@/lib/website-editor/time";
-import type { FullUI } from "@/types/website-editor";
 
 import PromptBadge from "./prompt-badge";
 

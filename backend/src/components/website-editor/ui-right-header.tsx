@@ -20,9 +20,12 @@ import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { toast } from "sonner";
 
 import { toggleLike } from "@/actions/ui/toggle-like-ui";
+import { Button } from "@/client-package/components/button";
+import { useAuth } from "@/client-package/hooks/use-auth";
+import { useAuthModal } from "@/client-package/hooks/website-editor/useAuthModal";
+import type { UiType } from "@/client-package/types/website-editor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -48,15 +51,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useAuth } from "@/hooks/use-auth";
-import { useAuthModal } from "@/hooks/website-editor/useAuthModal";
-import { errorLogger } from "@/lib/utils";
 import { embededCode } from "@/lib/website-editor/code";
 import { getCss } from "@/lib/website-editor/globalCss";
 import type { Theme } from "@/lib/website-editor/themes";
 import { themes as defaultThemes } from "@/lib/website-editor/themes";
 import { themes } from "@/lib/website-editor/themes";
-import type { UiType } from "@/types/website-editor";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui";
 import LikeButton from "./like-button";

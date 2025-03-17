@@ -2,9 +2,9 @@
 import { redirect } from "next/navigation";
 import React, { useEffect } from "react";
 
+import { useAuth } from "@/client-package/hooks/use-auth";
 import Header from "@/components/website-editor/header";
 import SettingsSidebar from "@/components/website-editor/settings-sidebar";
-import { useAuth } from "@/hooks/use-auth";
 
 export default function SettingsLayout({
   children,

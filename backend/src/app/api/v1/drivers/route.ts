@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { prisma } from "@/lib/db/prisma";
+import { prisma } from "@/next-portal/db";
 
 // GET available drivers (for admin or restaurant)
 export async function GET(): Promise<NextResponse> {

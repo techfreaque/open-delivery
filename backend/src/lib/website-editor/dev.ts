@@ -1,6 +1,5 @@
-import { prisma } from "@/lib/db/prisma";
-
-import { debugLogger } from "../utils";
+import { prisma } from "@/next-portal/db";
+import { debugLogger } from "@/next-portal/utils/logger";
 
 export const updateUpdatedAtFields = async (): Promise<void> => {
   const batchSize = 100;

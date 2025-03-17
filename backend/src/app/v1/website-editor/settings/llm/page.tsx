@@ -3,7 +3,8 @@
 import { InfoIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/client-package/components/button";
+import { useModel } from "@/client-package/hooks/website-editor/useModel";
 import {
   Card,
   CardContent,
@@ -30,7 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useModel } from "@/hooks/website-editor/useModel";
 import { models } from "@/lib/website-editor/modellist";
 import { isModelSupported } from "@/lib/website-editor/supportedllm";
 

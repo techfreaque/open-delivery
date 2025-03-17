@@ -2,8 +2,8 @@
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import React, { useState } from "react";
 
-import { useSidebar } from "@/hooks/website-editor/useSidebar";
-import { cn } from "@/lib/utils";
+import { useSidebar } from "@/client-package/hooks/website-editor/useSidebar";
+import { cn } from "@/next-portal/utils/utils";
 
 import { Button } from "../ui";
 

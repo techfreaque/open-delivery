@@ -5,12 +5,12 @@ import { PrismaClient } from "@prisma/client";
 import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { env } from "@/lib/env";
+import { env } from "@/lib/env/env";
 import type {
-  ErrorResponse,
+  ErrorResponseType,
   MessageResponseType,
-  SuccessResponse,
-} from "@/types/types";
+  SuccessResponseType,
+} from "@/next-portal/types/response.schema";
 
 // Create a prisma client for direct DB operations in tests
 const prisma = new PrismaClient();
@@ -36,10 +36,10 @@ describe("Auth Password Reset API", () => {
     }
   });
 
-  describe("POST /api/v1/auth/reset-password", () => {
+  describe("POST /api/v1/auth/public/reset-password", () => {
     it("should send a password reset email", async () => {
       const response = await request(baseUrl)
-        .post("/api/v1/auth/reset-password")
+        .post("/api/v1/auth/public/reset-password")
         .send({
           email: testEmail,
         });
@@ -54,7 +54,7 @@ describe("Auth Password Reset API", () => {
       // Update expectations to be more forgiving during debugging
       if (response.status === 200) {
         const responseData =
-          response.body as SuccessResponse<MessageResponseType>;
+          response.body as SuccessResponseType<MessageResponseType>;
         expect(responseData).toHaveProperty("success", true);
         expect(responseData.data).toContain("Password reset email sent");
       } else {
@@ -82,33 +82,33 @@ describe("Auth Password Reset API", () => {
     it("should handle invalid email format", async () => {
       // Test with an invalid email format will succeed as we dont want to give away valid emails
       const response = await request(baseUrl)
-        .post("/api/v1/auth/reset-password")
+        .post("/api/v1/auth/public/reset-password")
         .send({
           email: "invalid-email",
         });
 
       expect(response.status).toBe(400);
-      const responseData = response.body as ErrorResponse;
+      const responseData = response.body as ErrorResponseType;
       expect(responseData).toHaveProperty("success", false);
       expect(responseData).toHaveProperty("message");
       expect(responseData.message).toContain("enter a valid email");
     });
   });
 
-  describe("POST /api/v1/auth/reset-password-confirm", () => {
+  describe("POST /api/v1/auth/public/reset-password-confirm", () => {
     it("should reject missing data", async () => {
       if (!realResetToken) {
         throw new Error("No real token available");
       }
 
       const response = await request(baseUrl)
-        .post("/api/v1/auth/reset-password-confirm")
+        .post("/api/v1/auth/public/reset-password-confirm")
         .send({
           token: realResetToken,
           password: "newPassword123",
         });
       expect([400]).toContain(response.status);
-      const responseData = response.body as ErrorResponse;
+      const responseData = response.body as ErrorResponseType;
       expect(responseData).toHaveProperty("success", false);
       expect(responseData.message).toContain(
         "email: Required, confirmPassword: Required",
@@ -117,7 +117,7 @@ describe("Auth Password Reset API", () => {
 
     it("should reject an empty token", async () => {
       const response = await request(baseUrl)
-        .post("/api/v1/auth/reset-password-confirm")
+        .post("/api/v1/auth/public/reset-password-confirm")
         .send({
           token: "",
           email: testEmail,
@@ -126,20 +126,20 @@ describe("Auth Password Reset API", () => {
         });
 
       expect(response.status).toBe(400);
-      const responseData = response.body as ErrorResponse;
+      const responseData = response.body as ErrorResponseType;
       expect(responseData).toHaveProperty("success", false);
       expect(responseData.message).toContain("Invalid or expired token");
     });
   });
 
-  describe("POST /api/v1/auth/reset-password-confirm", () => {
+  describe("POST /api/v1/auth/public/reset-password-confirm", () => {
     it("should handle password reset with token", async () => {
       if (!realResetToken) {
         throw new Error("No real token available");
       }
 
       const response = await request(baseUrl)
-        .post("/api/v1/auth/reset-password-confirm")
+        .post("/api/v1/auth/public/reset-password-confirm")
         .send({
           email: testEmail,
           token: realResetToken,
@@ -153,7 +153,7 @@ describe("Auth Password Reset API", () => {
 
       // Verify we can now login with the new password
       const loginResponse = await request(baseUrl)
-        .post("/api/v1/auth/login")
+        .post("/api/v1/auth/public/login")
         .send({
           email: testEmail,
           password: newPassword,
@@ -164,7 +164,7 @@ describe("Auth Password Reset API", () => {
 
     it("should validate passwords match", async () => {
       const response = await request(baseUrl)
-        .post("/api/v1/auth/reset-password-confirm")
+        .post("/api/v1/auth/public/reset-password-confirm")
         .send({
           token: "any-token", // Token validation happens after password match check
           password: "newPassword123",
@@ -176,7 +176,7 @@ describe("Auth Password Reset API", () => {
 
     it("should validate password requirements", async () => {
       const response = await request(baseUrl)
-        .post("/api/v1/auth/reset-password-confirm")
+        .post("/api/v1/auth/public/reset-password-confirm")
         .send({
           token: "any-token", // Token validation happens after password requirements check
           password: "short", // Too short

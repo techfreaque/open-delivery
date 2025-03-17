@@ -1,7 +1,8 @@
 import { Client } from "@googlemaps/google-maps-services-js";
 
-import { env } from "../env";
-import { errorLogger } from "../utils";
+import { errorLogger } from "@/next-portal/utils/logger";
+
+import { env } from "../env/env";
 
 /**
  * Calculate the distance between two geographical coordinates using the Haversine formula
@@ -46,7 +47,30 @@ export async function getCoordinatesFromAddress({
   zip?: string;
   city?: string;
   country?: string;
-}): Promise<{ latitude: number; longitude: number } | { error: string }> {
+}): Promise<
+  | {
+      success: true;
+      latitude: number;
+      longitude: number;
+      street?: string;
+      streetNumber?: string;
+      zip?: string;
+      city?: string;
+      country?: string;
+      error?: never;
+    }
+  | {
+      success: false;
+      error: string;
+      latitude?: never;
+      longitude?: never;
+      street?: never;
+      streetNumber?: never;
+      zip?: never;
+      city?: never;
+      country?: never;
+    }
+> {
   const client = new Client({});
   const addressParts = [];
   if (street) {
@@ -75,14 +99,52 @@ export async function getCoordinatesFromAddress({
         key: env.GOOGLE_MAPS_API_KEY,
       },
     });
-    console.log("goog", address, response.data);
     if (response.data.results.length === 0) {
       throw new Error("No results found for the provided address");
     }
     const { lat, lng } = response.data.results[0].geometry.location;
-    return { latitude: lat, longitude: lng };
+    // Extract specific address components from the response
+    const addressComponents = response.data.results[0].address_components;
+
+    // Map components to the exact fields we need
+    const street = findAddressComponent(addressComponents, "route");
+    const streetNumber = findAddressComponent(
+      addressComponents,
+      "street_number",
+    );
+    const zip = findAddressComponent(addressComponents, "postal_code");
+    const city = findAddressComponent(addressComponents, "locality");
+    const country = findAddressComponent(addressComponents, "country");
+
+    return {
+      latitude: lat,
+      longitude: lng,
+      street,
+      streetNumber,
+      zip,
+      city,
+      country,
+    };
   } catch (error) {
     errorLogger("Error geocoding address:", error);
     return { error: "Failed to geocode address" };
   }
+}
+
+/**
+ * Helper function to extract address components by type from Google Geocoding API response
+ * @param components Array of address components from Google Geocoding API
+ * @param type The type of address component to find
+ * @returns The long_name of the component if found, empty string otherwise
+ */
+function findAddressComponent(
+  components: Array<{
+    long_name: string;
+    short_name: string;
+    types: string[];
+  }>,
+  type: string,
+): string {
+  const component = components.find((c) => c.types.includes(type));
+  return component ? component.long_name : "";
 }

@@ -1,3 +1,5 @@
+import { UiType } from "@/client-package/types/website-editor";
+
 import { getComponents } from "./components";
 
 const tailwindCssVariables = `Tailwind themes:
@@ -71,7 +73,7 @@ export const getGenerationPrompt = (
             For icons, use the ionicons library eg- (<ion-icon size="large" name="logoname"></ion-icon>). ion-icon is an global html context means no need to import anything
             Do not use any other icon libraries.
 
-            ${uiType === "shadcn-react" && tailwindCssVariables}
+            ${uiType === UiType.SHADCN_REACT && tailwindCssVariables}
 
             ${uiType} Components:
             Use ${uiType} components whenever possible. 
@@ -86,7 +88,7 @@ export const getGenerationPrompt = (
             eg- cases like when there are cards in a row, ensure that the cards are stacked on top of each other on smaller screens.
             
             Fine-tune:
-            ${uiType === "shadcn-react" && "Only use css variables when necessary else generate appropriate colors. Use of css variables is encouraged for background color and text color."}
+            ${uiType === UiType.SHADCN_REACT && "Only use css variables when necessary else generate appropriate colors. Use of css variables is encouraged for background color and text color."}
             Ensure than none of the element contains 'asChild' as attribute.
             Ensure no code like variable declaration or any other code is present outside the component function.
             When using icons with text, ensure that it is inside display flex with items center and add some gap between icon and the text so that icon and text are vertically aligned.
@@ -97,7 +99,7 @@ export const getGenerationPrompt = (
             -------------
             After generating the code, ensure the below is followed:
             - All comments and explanations are removed from the code.
-            ${false && "- No custom interface or types are defined. Use predefined types like string, number etc."}
+            ${useTypeScript && "- No custom interface or types are defined. Use predefined types like string, number etc."}
         `;
 };
 
@@ -117,7 +119,7 @@ export const getCreativePrompt = (prompt: string): string => {
             Ensure a visually consistent and appealing presentation across all devices.
             eg1 - if its a landing page - generate description for elements like header, pricing, contacts, faq, features, footer, testimonials etc.
             eg2 - if its a login page - generate description for forget password, oauth providers like google, microsoft, signup, terms accepting checkbox.
-            eg3 - if its a music player - generate description for detailed sidebar including different nav items like playlists, settings, etc, sticking bottom music preview, header with search , rpofile, body with different sections like recomended, new , most liked , with approriate icons to be placed etc.
+            eg3 - if its a music player - generate description for detailed sidebar including different nav items like playlists, settings, etc, sticking bottom music preview, header with search , profile, body with different sections like recommended, new , most liked , with appropriate icons to be placed etc.
             depending on the prompt asked generates detailed description based on the attributes that is relevant for the prompt.
         `;
 };
@@ -147,6 +149,7 @@ export const getModifierPromt = (
   precode: string,
   modifyDescription: string,
   uiType: UiType,
+  useTypeScript: boolean,
 ): string => {
   return `
             Instructions:
@@ -160,7 +163,7 @@ export const getModifierPromt = (
             End every js/ts statement with a semicolon. Make sure to include semicolon to import statements as well.
             Do not add explanations like here is the code, i have added the code etc. Just provide the react code.
             I need the response such that i can directly map it a file without any syntax errors.
-            ${false ? "use typescript for the code. Do not define custom interface or types. just use predefined types like string, number etc " : "use javascript for the code"}
+            ${useTypeScript ? "use typescript for the code. Do not define custom interface or types. just use predefined types like string, number etc " : "use javascript for the code"}
 
             eg of Code:
             import { useState } from 'react';
@@ -183,15 +186,15 @@ export const getModifierPromt = (
             No elements should be neither touching each other nor overflowing other elements unless required.
 
             Images: 
-            When images are required, ${true ? "check if you can generate those images else utilize the img tag with picsum.photos as the source" : ""}.
+            When images are required, check if you can generate those images else utilize the img tag with picsum.photos as the source.
             While using images, ensure that the images are of the correct size and resolution using the width and height attributes.
 
             Icons: 
-            For icons, ${true ? 'use the ionicons library eg- (<ion-icon size="large" name="logoname"></ion-icon>). ion-icon is an global html context means no need to import anything' : ""}
+            For icons, use the ionicons library eg- (<ion-icon size="large" name="logoname"></ion-icon>). ion-icon is an global html context means no need to import anything
             Do not use any other icon libraries.
 
             Helpers:
-            ${uiType === "shadcn-react" && "Only use tailwind css variables while styling background and text colors. Also asign component border radius to radius.All tailwind css variables eg are - [background, foreground, card, card-foreground, popover, popover-foreground, primary, primary-foreground, secondary, secondary-foreground, muted, muted-foreground, accent, accent-foreground, destructive, destructive-foreground, border, input, ring, radius]"}
+            ${uiType === UiType.SHADCN_REACT && "Only use tailwind css variables while styling background and text colors. Also assign component border radius to radius.All tailwind css variables eg are - [background, foreground, card, card-foreground, popover, popover-foreground, primary, primary-foreground, secondary, secondary-foreground, muted, muted-foreground, accent, accent-foreground, destructive, destructive-foreground, border, input, ring, radius]"}
             Use ${uiType} components whenever possible.
             Go through the list of components and use them whenever necessary.
             Do not use hallucinated component names like (Flex,Box, etc) which are not available.
@@ -204,7 +207,7 @@ export const getModifierPromt = (
             eg- cases like when there are cards in a row, ensure that the cards are stacked on top of each other on smaller screens.
 
             Fine-tune:
-            ${uiType === "shadcn-react" && "Only use css variables when necessary else generate appropriate colors. Use of css variables is encouraged for background color and text color."}
+            ${uiType === UiType.SHADCN_REACT && "Only use css variables when necessary else generate appropriate colors. Use of css variables is encouraged for background color and text color."}
             Ensure than none of the element contains 'asChild' as attribute.
             Ensure no code like variable declaration or any other code is present outside the component function.
             When using icons with text, ensure that it is inside display flex with items center and add some gap between icon and the text so that icon and text are vertically aligned.
@@ -217,6 +220,7 @@ export const getModifierPromt = (
 export const getScreenshotPrompt = (
   codeDescription: string,
   properties: string,
+  useTypeScript: boolean,
 ): string => {
   return `
             Instructions:
@@ -230,7 +234,7 @@ export const getScreenshotPrompt = (
             End every js/ts statement with a semicolon. Make sure to include semicolon to import statements as well.
             Do not add explanations like here is the code, i have added the code etc. Just provide the react code.
             I need the response such that i can directly map it a file without any syntax errors.
-            ${false ? "use typescript for the code. Do not define custom interface or types. just use predefined types like string, number etc " : "use javascript for the code"}
+            ${useTypeScript ? "use typescript for the code. Do not define custom interface or types. just use predefined types like string, number etc " : "use javascript for the code"}
 
             Images:
             When images are required, check if you can generate those images else utilize the img tag with picsum.photos as the source.
@@ -271,7 +275,7 @@ export const getElementProperty = (): string => {
             - color: value1
             - background color: value2
 
-        Also for each elements like input, button etc let the element description be its title or placholder to identify it and provide its properties like border, border radius, padding, margin etc along with color and background color
+        Also for each elements like input, button etc let the element description be its title or placeholder to identify it and provide its properties like border, border radius, padding, margin etc along with color and background color
     `;
 };
 

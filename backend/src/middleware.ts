@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { verifyJwt } from "@/lib/auth/jwt";
+import { verifyJwt } from "@/next-portal/api/auth/jwt";
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const response = NextResponse.next();
@@ -26,10 +26,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   // Skip middleware for public routes and auth endpoints
   if (
-    request.nextUrl.pathname.startsWith("/api/v1/auth") ||
-    request.nextUrl.pathname.startsWith("/v1/api-docs") ||
     request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname.startsWith("/v1/auth") ||
+    request.nextUrl.pathname.startsWith("/v1/api-docs") ||
+    request.nextUrl.pathname.startsWith("/api/v1/auth/public") ||
+    request.nextUrl.pathname.startsWith("/v1/auth/public") ||
     request.nextUrl.pathname.startsWith("/_next") ||
     request.nextUrl.pathname.startsWith("/public") ||
     request.nextUrl.pathname.includes("favicon.ico")
@@ -48,7 +48,19 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   // No token found
   if (!tokenToVerify) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Check if this is an API request
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    } else {
+      // For non-API routes, redirect to login or return HTML-formatted error
+      // You can customize this based on your app's needs
+      return NextResponse.redirect(new URL("/login", request.url));
+      // Or return a different response format for non-API routes
+      // return new NextResponse(
+      //   '<html><body><h1>Unauthorized</h1><p>Please log in to continue.</p></body></html>',
+      //   { status: 401, headers: { 'Content-Type': 'text/html' } }
+      // );
+    }
   }
 
   try {

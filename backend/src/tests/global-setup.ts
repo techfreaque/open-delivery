@@ -3,9 +3,9 @@
  * Global setup for all tests
  * This runs once before all test files
  */
-import { prisma } from "@/lib/db/prisma";
+import { prisma } from "@/next-portal/db";
 
-import seedTestDatabase from "../lib/db/seed-test-db";
+import seedTestDatabase from "../scripts/seed-test-db";
 import { startServer } from "./test-server";
 
 export default async function setup() {

@@ -2,23 +2,24 @@ import type { NextRequest } from "next/server";
 import type { NextResponse } from "next/server";
 
 import {
-  createErrorResponse,
-  createSuccessResponse,
-  validateRequest,
-} from "@/lib/api/apiResponse";
-import { getVerifiedUser } from "@/lib/auth/authService";
-import { prisma } from "@/lib/db/prisma";
-import { cartItemsResponseSchema, cartItemUpdateSchema } from "@/schemas";
+  cartItemsResponseSchema,
+  cartItemUpdateSchema,
+} from "@/client-package/schema/schemas";
 import {
   type CartItemsResponseType,
   type DBCartItemExtended,
-  type ErrorResponse,
-  type SuccessResponse,
-  UserRoleValue,
-} from "@/types/types";
+} from "@/client-package/types/types";
+import {
+  createErrorResponse,
+  createSuccessResponse,
+} from "@/next-portal/api/api-response";
+import { getVerifiedUser } from "@/next-portal/api/auth/user";
+import { prisma } from "@/next-portal/db";
+import { UserRoleValue } from "@/next-portal/types/enums";
+import type { ResponseType } from "@/next-portal/types/response.schema";
 
 export async function GET(): Promise<
-  NextResponse<SuccessResponse<CartItemsResponseType> | ErrorResponse>
+  NextResponse<ResponseType<CartItemsResponseType>>
 > {
   const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
   if (!user) {
@@ -83,7 +84,10 @@ export async function POST(
   if (!user) {
     return createErrorResponse("Not signed in", 401);
   }
-  const validatedData = await validateRequest(request, cartItemUpdateSchema);
+  const validatedData = await validatePostRequest(
+    request,
+    cartItemUpdateSchema,
+  );
   try {
     const menuItem = await prisma.menuItem.findUnique({
       where: { id: validatedData.menuItemId },

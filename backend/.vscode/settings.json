@@ -1,7 +1,8 @@
 {
   "cSpell.words": [
-    "vitest",
-    "tsconfigPaths"
+    "mjml",
+    "tsconfigPaths",
+    "vitest"
   ],
   "editor.formatOnSave": true, // Format files on save
   "editor.codeActionsOnSave": {
@@ -14,9 +15,13 @@
     "typescript",
     "typescriptreact"
   ],
+  "typescript.suggest.autoImports": true,
   "prettier.requireConfig": true, // Ensure Prettier uses your configuration file
   "files.eol": "\n",
   "files.associations": {
     "schema.prisma.template": "prisma"
+  },
+  "files.exclude": {
+    "postgres_data": true
   }
 }

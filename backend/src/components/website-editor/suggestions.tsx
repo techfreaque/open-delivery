@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { createUI } from "@/actions/ui/create-ui";
-import { useAuth } from "@/hooks/use-auth";
-import { useAuthModal } from "@/hooks/website-editor/useAuthModal";
-import { useUIState } from "@/hooks/website-editor/useUIState";
-import { errorLogger } from "@/lib/utils";
+import { useAuth } from "@/client-package/hooks/use-auth";
+import { useAuthModal } from "@/client-package/hooks/website-editor/useAuthModal";
+import { useUIState } from "@/client-package/hooks/website-editor/useUIState";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 import { Badge } from "../ui";
 

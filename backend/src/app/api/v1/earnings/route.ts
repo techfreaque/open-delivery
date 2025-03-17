@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { getCurrentUser } from "@/lib/auth/authService";
-import { prisma } from "@/lib/db/prisma";
+import { getCurrentUser } from "@/next-portal/api/auth/user";
+import { prisma } from "@/next-portal/db";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {

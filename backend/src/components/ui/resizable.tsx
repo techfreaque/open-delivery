@@ -5,7 +5,7 @@ import type { ComponentProps, JSX, LegacyRef } from "react";
 import { forwardRef } from "react";
 import * as ResizablePrimitive from "react-resizable-panels";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/next-portal/utils/utils";
 
 const ResizablePanelGroup = forwardRef(
   (

@@ -2,25 +2,25 @@ import { OrderStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import {
+  orderCreateSchema,
+  orderResponseSchema,
+} from "@/client-package/schema/schemas";
+import type { OrderCreateType } from "@/client-package/types/types";
+import { type OrderResponseType } from "@/client-package/types/types";
+import {
   createErrorResponse,
   createSuccessResponse,
   validateData,
-  validateRequest,
-} from "@/lib/api/apiResponse";
-import { getVerifiedUser } from "@/lib/auth/authService";
-import { prisma } from "@/lib/db/prisma";
-import { orderCreateSchema, orderResponseSchema } from "@/schemas";
-import type { OrderCreateType } from "@/types/types";
-import {
-  type ErrorResponse,
-  type OrderResponseType,
-  type SuccessResponse,
-  UserRoleValue,
-} from "@/types/types";
+  validatePostRequest,
+} from "@/next-portal/api/api-response";
+import { getVerifiedUser } from "@/next-portal/api/auth/user";
+import { prisma } from "@/next-portal/db";
+import { UserRoleValue } from "@/next-portal/types/enums";
+import type { ResponseType } from "@/next-portal/types/response.schema";
 
 export async function POST(
   request: Request,
-): Promise<NextResponse<SuccessResponse<OrderResponseType> | ErrorResponse>> {
+): Promise<NextResponse<ResponseType<OrderResponseType>>> {
   const user = await getVerifiedUser(UserRoleValue.CUSTOMER);
   if (!user) {
     return createErrorResponse("Not signed in", 401);
@@ -28,7 +28,7 @@ export async function POST(
 
   try {
     // Validate request body
-    const validatedData = await validateRequest<OrderCreateType>(
+    const validatedData = await validatePostRequest<OrderCreateType>(
       request,
       orderCreateSchema,
     );

@@ -3,13 +3,13 @@
 import type { JSX } from "react";
 import { useState } from "react";
 
+import { Button } from "@/client-package/components/button";
 import { CodeExamples } from "@/components/api-docs/CodeExamples";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ActiveApiEndpoint } from "@/lib/api-docs/endpoints";
+import type { ApiEndpoint } from "@/next-portal/api/endpoint";
 
 interface EndpointDetailsProps {
-  endpoint: ActiveApiEndpoint;
+  endpoint: ApiEndpoint<unknown, unknown, unknown>;
   requestData: string;
   responseData: string;
   responseStatus: number | null;
@@ -20,7 +20,7 @@ interface EndpointDetailsProps {
 }
 
 export function EndpointDetails({
-  endpoint, // Using correct prop name
+  endpoint,
   requestData,
   responseData,
   responseStatus,
@@ -53,13 +53,13 @@ export function EndpointDetails({
             </span>
             <span className="font-mono text-sm">{endpoint.path.join("/")}</span>
           </div>
-          {endpoint.endpoint.requiresAuth && (
+          {endpoint.requiresAuthentication() && (
             <span className="text-xs bg-gray-200 px-2 py-1 rounded">
               🔒 Auth Required
             </span>
           )}
         </div>
-        <p className="text-sm text-gray-600">{endpoint.endpoint.description}</p>
+        <p className="text-sm text-gray-600">{endpoint.description}</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -145,9 +145,9 @@ export function EndpointDetails({
               <div>
                 <h4 className="text-sm font-medium mb-2">Request Schema</h4>
                 <div className="bg-gray-50 p-4 rounded-lg border">
-                  {endpoint.endpoint.requestSchema ? (
+                  {endpoint.requestSchema ? (
                     <pre className="text-sm overflow-auto max-h-[300px]">
-                      {JSON.stringify(endpoint.endpoint.requestSchema, null, 2)}
+                      {JSON.stringify(endpoint.requestSchema, null, 2)}
                     </pre>
                   ) : (
                     <p className="text-gray-500 text-sm">
@@ -159,13 +159,9 @@ export function EndpointDetails({
               <div>
                 <h4 className="text-sm font-medium mb-2">Response Schema</h4>
                 <div className="bg-gray-50 p-4 rounded-lg border">
-                  {endpoint.endpoint.responseSchema ? (
+                  {endpoint.responseSchema ? (
                     <pre className="text-sm overflow-auto max-h-[300px]">
-                      {JSON.stringify(
-                        endpoint.endpoint.responseSchema,
-                        null,
-                        2,
-                      )}
+                      {JSON.stringify(endpoint.responseSchema, null, 2)}
                     </pre>
                   ) : (
                     <p className="text-gray-500 text-sm">
@@ -176,8 +172,8 @@ export function EndpointDetails({
               </div>
             </div>
 
-            {endpoint.endpoint.errorCodes &&
-              Object.keys(endpoint.endpoint.errorCodes).length > 0 && (
+            {endpoint.errorCodes &&
+              Object.keys(endpoint.errorCodes).length > 0 && (
                 <div className="mt-6">
                   <h4 className="text-sm font-medium mb-2">Error Codes</h4>
                   <div className="bg-gray-50 p-4 rounded-lg border">
@@ -193,7 +189,7 @@ export function EndpointDetails({
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries(endpoint.endpoint.errorCodes).map(
+                        {Object.entries(endpoint.errorCodes).map(
                           ([code, description]) => (
                             <tr key={code} className="border-t border-gray-200">
                               <td className="py-2">{code}</td>

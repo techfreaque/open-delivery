@@ -13,6 +13,11 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { createUI } from "@/actions/ui/create-ui";
+import { useAuth } from "@/client-package/hooks/use-auth";
+import { useAuthModal } from "@/client-package/hooks/website-editor/useAuthModal";
+import { useModel } from "@/client-package/hooks/website-editor/useModel";
+import { useUIState } from "@/client-package/hooks/website-editor/useUIState";
+import { UiType } from "@/client-package/types/website-editor";
 import {
   Badge,
   Button,
@@ -27,11 +32,7 @@ import {
 import Header from "@/components/website-editor/header";
 import HomeUICards from "@/components/website-editor/home-uis";
 import Suggestions from "@/components/website-editor/suggestions";
-import { useAuth } from "@/hooks/use-auth";
-import { useAuthModal } from "@/hooks/website-editor/useAuthModal";
-import { useModel } from "@/hooks/website-editor/useModel";
-import { useUIState } from "@/hooks/website-editor/useUIState";
-import { errorLogger } from "@/lib/utils";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 export default function Home(): JSX.Element {
   const router = useRouter();
@@ -53,7 +54,6 @@ export default function Home(): JSX.Element {
   } = useUIState();
   const { toggle } = useAuthModal();
   const { user } = useAuth();
-  const userId = user?.id;
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,9 +87,9 @@ export default function Home(): JSX.Element {
       return;
     }
     try {
-      if (status === "authenticated" && userId) {
+      if (user) {
         setLoading(true);
-        const ui = await createUI(input, userId, uiType);
+        const ui = await createUI(input, user.id, uiType);
         router.push(`/ui/${ui.id}`);
         setLoading(false);
       } else {
@@ -225,7 +225,7 @@ export default function Home(): JSX.Element {
               </p>
             </div>
           )}
-          {uiType === "nextui-react" && (
+          {uiType === UiType && (
             <div className="bg-yellow-50 p-2 rounded-md flex items-start space-x-2 text-yellow-800">
               <InfoIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <p className="text-sm">

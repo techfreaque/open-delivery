@@ -1,7 +1,7 @@
 "use server";
 
-import { prisma } from "@/lib/db/prisma";
-import type { FullUI } from "@/types/website-editor";
+import type { FullUI } from "@/client-package/types/website-editor";
+import { prisma } from "@/next-portal/db";
 
 export const updateUI = async (
   UIId: string,

@@ -18,28 +18,36 @@ import nodePlugin from "eslint-plugin-node";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// If you want to “clean” up browser globals to remove weird whitespace:
+// Clean up browser globals to remove any weird whitespace:
 function cleanGlobals(globalsObj) {
   return Object.fromEntries(
-    Object.entries(globalsObj).map(([key, value]) => [key.trim(), value]),
+    Object.entries(globalsObj).map(([key, value]) => [key.trim(), value])
   );
 }
 
 export default [
-  // 1) Ignored files/folders
+  // 1) Files/Folders to ignore
   {
     ignores: [
       ".next",
       "dist",
       "postcss.config.mjs",
       "next.config.mjs",
-      "eslint.config.mjs"
+      "eslint.config.mjs",
+      "code-server",
+      "postgres_data",
     ],
   },
 
-  // 2) Base config, TypeScript support
+  // 2) Base configuration for TypeScript files
   {
-    files: ["**/*.ts", "**/*.tsx", "**/*.d.ts", "**/*.test.ts", "**/*.test.tsx"],
+    files: [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.d.ts",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+    ],
 
     languageOptions: {
       parser: tsParser,
@@ -49,13 +57,10 @@ export default [
         project: [resolve(__dirname, "tsconfig.json")],
         tsconfigRootDir: __dirname,
       },
-      // Add whichever globals you need here
       globals: {
         ...globals.node,
-        ...cleanGlobals(globals.browser), // If you want browser
-        ...globals.webextensions,         // If you want webextensions
-        ...globals.node,
-        // ...globals.jest,
+        ...cleanGlobals(globals.browser),
+        ...globals.webextensions,
       },
     },
     settings: {
@@ -76,14 +81,13 @@ export default [
       "react-compiler": reactCompiler,
       import: importPlugin,
       prettier: eslintPluginPrettier,
-      node: nodePlugin
+      node: nodePlugin,
     },
 
     rules: {
-
-      // Pull in ESLint’s base recommended rules
+      // ESLint base recommended rules
       ...js.configs.recommended.rules,
-      // Merge TS recommended
+      // TypeScript recommended rules
       ...ts.configs.recommended.rules,
       ...ts.configs["recommended-requiring-type-checking"].rules,
 
@@ -92,7 +96,6 @@ export default [
         "error",
         { argsIgnorePattern: "^_" },
       ],
-      "@typescript-eslint/no-unused-vars": "warn",
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/await-thenable": "error",
@@ -106,7 +109,7 @@ export default [
         { allow: ["arrowFunctions"] },
       ],
 
-      // node
+      // Node
       "node/no-process-env": "error",
 
       // React Hooks
@@ -118,7 +121,7 @@ export default [
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "unused-imports/no-unused-imports": "error",
-      "import/no-unresolved": "error", // optional from eslint-plugin-import
+      "import/no-unresolved": "error",
 
       // General code-quality rules
       curly: "error",
@@ -127,7 +130,15 @@ export default [
       "no-console": "warn",
       "no-debugger": "error",
 
-      // Prettier (linting for code style)
+      // force relative imports
+      "no-restricted-imports": [
+        "error",
+        {
+          "patterns": ["^(?!\\./|\\.\\./)"]
+        }
+      ],
+
+      // Prettier code style integration
       "prettier/prettier": [
         "error",
         {
@@ -150,7 +161,7 @@ export default [
     },
   },
 
-  // 3) For plain JS files
+  // 3) Configuration for plain JavaScript files
   {
     files: ["**/*.js", "**/*.jsx"],
     languageOptions: {

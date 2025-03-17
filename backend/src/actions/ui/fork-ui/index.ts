@@ -1,7 +1,7 @@
 "use server";
-import { prisma } from "@/lib/db/prisma";
-import { errorLogger } from "@/lib/utils";
-import type { FullUI } from "@/types/website-editor";
+import type { FullUI } from "@/client-package/types/website-editor";
+import { prisma } from "@/next-portal/db";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 export async function forkUI(uiId: string, userId: string): Promise<FullUI> {
   try {

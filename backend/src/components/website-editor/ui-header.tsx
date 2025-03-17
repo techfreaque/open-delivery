@@ -5,9 +5,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { forkUI } from "@/actions/ui/fork-ui";
-import { useAuth } from "@/hooks/use-auth";
-import { useAuthModal } from "@/hooks/website-editor/useAuthModal";
-import { errorLogger } from "@/lib/utils";
+import { useAuth } from "@/client-package/hooks/use-auth";
+import { useAuthModal } from "@/client-package/hooks/website-editor/useAuthModal";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 import {
   Badge,

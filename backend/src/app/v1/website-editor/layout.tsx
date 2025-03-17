@@ -9,7 +9,7 @@ import type { JSX, ReactNode } from "react";
 
 import { TooltipProvider } from "@/components/ui";
 import { Toaster } from "@/components/ui/sonner";
-import { envClient } from "@/lib/env-client";
+import { envClient } from "@/next-portal/env/env-client";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,7 +49,7 @@ export default function RootLayout({
 
           <Analytics />
 
-          <GoogleAnalytics gaId={envClient.NEXT_PUBLIC_GA_ID || ""} />
+          <GoogleAnalytics gaId={envClient.NEXT_PUBLIC_GA_ID} />
         </body>
       </html>
     </TooltipProvider>

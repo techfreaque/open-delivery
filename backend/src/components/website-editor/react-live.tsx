@@ -3,16 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { LiveError, LivePreview, LiveProvider } from "react-live";
 
-import { errorLogger } from "@/lib/utils";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 const ReactLiveContent = ({
   react_code,
   theme,
-  uiType,
 }: {
   react_code: string;
   theme: string;
-  uiType: UiType;
 }): React.JSX.Element => {
   const [scope, setScope] = useState<Record<string, any> | null>(null);
   const [codeString, setCodeString] = useState<string>("");

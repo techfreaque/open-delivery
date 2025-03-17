@@ -1,7 +1,7 @@
 "use server";
 
-import { prisma } from "@/lib/db/prisma";
-import { errorLogger } from "@/lib/utils";
+import { prisma } from "@/next-portal/db";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 export const updateSubPrompt = async (
   UIId: string,

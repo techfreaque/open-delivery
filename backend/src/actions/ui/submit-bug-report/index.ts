@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 
-import { prisma } from "@/lib/db/prisma";
-import { errorLogger } from "@/lib/utils";
+import { prisma } from "@/next-portal/db";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 const bugReportSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),

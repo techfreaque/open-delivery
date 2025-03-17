@@ -32,3 +32,5 @@ prisma/schema.prisma
 
 .dev-db
 .env.nope
+postgres_data
+code-server

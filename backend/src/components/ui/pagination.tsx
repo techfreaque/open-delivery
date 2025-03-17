@@ -5,9 +5,9 @@ import {
 } from "@radix-ui/react-icons";
 import * as React from "react";
 
-import type { ButtonProps } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import type { ButtonProps } from "@/client-package/components/button";
+import { buttonVariants } from "@/client-package/components/button";
+import { cn } from "@/next-portal/utils/utils";
 
 const Pagination = ({
   className,

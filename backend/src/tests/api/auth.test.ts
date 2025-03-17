@@ -5,23 +5,22 @@ import "../setup"; // Import test setup
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
-import { env } from "@/lib/env";
+import type { LoginResponseType } from "@/client-package/schema/api/v1/auth/public/login.schema";
+import type { UserResponseType } from "@/client-package/types/types";
+import { env } from "@/lib/env/env";
 import type {
-  ErrorResponse,
-  LoginResponseType,
+  ErrorResponseType,
   ResponseType,
-  SuccessResponse,
-  UserResponseType,
-} from "@/types/types";
+} from "@/next-portal/types/response.schema";
 
 describe("Auth API", () => {
   // Storage for test-generated auth tokens
   let customerAuthToken: string;
 
-  describe("POST /api/v1/auth/login", () => {
+  describe("POST /api/v1/auth/public/login", () => {
     it("should authenticate a user with valid credentials", async () => {
       const response = await request(env.TEST_SERVER_URL)
-        .post("/api/v1/auth/login")
+        .post("/api/v1/auth/public/login")
         .send({
           email: "customer@example.com",
           password: "password",
@@ -31,7 +30,9 @@ describe("Auth API", () => {
       if (response.status !== 200) {
         console.log("Auth/me response:", response.body);
       }
-
+      if (responseData.success === false) {
+        throw new Error(responseData.message);
+      }
       expect([200]).toContain(response.status);
       expect(responseData).toHaveProperty("success", true);
       expect(responseData).toHaveProperty("data");
@@ -50,7 +51,7 @@ describe("Auth API", () => {
 
     it("should reject authentication with invalid credentials", async () => {
       const response = await request(env.TEST_SERVER_URL)
-        .post("/api/v1/auth/login")
+        .post("/api/v1/auth/public/login")
         .send({
           email: "customer@example.com",
           password: "wrongPassword",
@@ -62,13 +63,13 @@ describe("Auth API", () => {
 
       // API should return 401 for invalid credentials
       expect(response.status).toBe(401);
-      const responseData = response.body as ErrorResponse;
+      const responseData = response.body as ErrorResponseType;
       expect(responseData).toHaveProperty("success", false);
       expect(responseData.message).toContain("Invalid email or password");
     });
   });
 
-  describe("GET /api/v1/auth/me", () => {
+  describe("GET /api/v1/auth/public/me", () => {
     it("should return user data when authenticated", async () => {
       // Use the global token
       const token =
@@ -79,7 +80,7 @@ describe("Auth API", () => {
       }
 
       const response = await request(env.TEST_SERVER_URL)
-        .get("/api/v1/auth/me")
+        .get("/api/v1/auth/public/me")
         .set("Authorization", `Bearer ${token}`);
 
       // Log response for debugging
@@ -89,8 +90,10 @@ describe("Auth API", () => {
 
       // Make test more permissive for now
       expect([200]).toContain(response.status);
-      const responseData = response.body as SuccessResponse<UserResponseType>;
-
+      const responseData = response.body as ResponseType<UserResponseType>;
+      if (responseData.success === false) {
+        throw new Error(responseData.message);
+      }
       expect(responseData).toHaveProperty("success", true);
       expect(responseData).toHaveProperty("data");
       expect(responseData.data).toHaveProperty("email");
@@ -100,7 +103,7 @@ describe("Auth API", () => {
 
     it("should reject unauthorized requests", async () => {
       const response = await request(env.TEST_SERVER_URL).get(
-        "/api/v1/auth/me",
+        "/api/v1/auth/public/me",
       );
       expect([401]).toContain(response.status);
     });

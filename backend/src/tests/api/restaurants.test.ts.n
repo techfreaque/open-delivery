@@ -194,7 +194,7 @@ describe("Restaurant API endpoints", () => {
 
   beforeAll(async () => {
     // Login as admin or create test account
-    const loginResponse = await fetch(`${TEST_SERVER_URL}/api/v1/auth/login`, {
+    const loginResponse = await fetch(`${TEST_SERVER_URL}/api/v1/auth/public/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

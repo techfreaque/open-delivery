@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { prisma } from "@/lib/db/prisma"; // replaced db with prisma, for example
-import { DeliveryStatus } from "@/types/types";
+import { DeliveryStatus } from "@/client-package/types/types";
+import { prisma } from "@/next-portal/db";
+// replaced db with prisma, for example
 
 export async function GET(): Promise<NextResponse> {
   try {

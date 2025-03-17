@@ -11,10 +11,11 @@ import React, { useEffect, useRef, useState } from "react";
 import JsxParser from "react-jsx-parser";
 import { toast } from "sonner";
 
+import useTheme from "@/client-package/hooks/website-editor/useTheme";
+import { UiType } from "@/client-package/types/website-editor";
 import * as UI from "@/components/ui";
-import useTheme from "@/hooks/website-editor/useTheme";
-import { errorLogger } from "@/lib/utils";
 import * as NextComponents from "@/lib/website-editor/nextui-components";
+import { errorLogger } from "@/next-portal/utils/logger";
 
 import ReactLiveContent from "./react-live";
 
@@ -111,19 +112,19 @@ const ParsedContent = ({
       setParsedJsx(
         <JsxParser
           components={
-            uiType === "shadcn-react"
+            uiType === UiType.SHADCN_REACT
               ? castComponents(UI)
               : castComponents(NextComponents)
           }
           jsx={html_code}
           onError={(e) => {
-            console.error("Error in JsxParser:", e);
+            errorLogger("Error in JsxParser:", e);
             setRenderError(e);
           }}
         />,
       );
     } catch (err) {
-      console.error("Error in ParsedContent:", err);
+      errorLogger("Error in ParsedContent:", err);
     }
     return (): void => {
       setParsedJsx(null);
@@ -216,7 +217,7 @@ const PreviewScreen = ({
     <NextUIProvider>
       {/* <iframe ref={iframeRef} style={{ width: '100%', height: '100%', border: 'none' }} /> */}
       {/* <ParsedContent html_code={html_code} theme={theme} uiType={uiType} /> */}
-      <ReactLiveContent react_code={html_code} theme={theme} uiType={uiType} />
+      <ReactLiveContent react_code={html_code} theme={theme} />
     </NextUIProvider>
   );
 };

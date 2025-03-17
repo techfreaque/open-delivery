@@ -3,6 +3,9 @@
 import { InfoIcon } from "lucide-react";
 import React from "react";
 
+import useLangauge from "@/client-package/hooks/website-editor/useLanguage";
+import type { ModeStore } from "@/client-package/hooks/website-editor/useMode";
+import { useClientMode } from "@/client-package/hooks/website-editor/useMode";
 import {
   Label,
   Select,
@@ -19,9 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import useLangauge from "@/hooks/website-editor/useLanguage";
-import type { ModeStore } from "@/hooks/website-editor/useMode";
-import { useClientMode } from "@/hooks/website-editor/useMode";
 
 export default function LLMSettingsPage(): React.JSX.Element {
   const { preciseMode, balancedMode, creativeMode, setMode }: ModeStore =

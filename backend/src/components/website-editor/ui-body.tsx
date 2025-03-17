@@ -6,6 +6,8 @@ import type {
   ImperativePanelHandle,
 } from "react-resizable-panels";
 
+import type { UiType } from "@/client-package/types/website-editor";
+
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "../ui";
 import PreviewScreen from "./preview-screen";
 const UIBody = forwardRef(
