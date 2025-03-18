@@ -1,7 +1,7 @@
 /* eslint-disable node/no-process-env */
 import { z } from "zod";
 
-import { validateData } from "../api/api-response";
+import { validateData } from "../utils/validation";
 
 const isServer = typeof window === "undefined";
 const isReactNative = !isServer && !window.document;
@@ -32,7 +32,7 @@ export const envSchema = z.object({
 export type EnvFrontend = z.infer<typeof envSchema>;
 
 const validateEnv = (): EnvFrontend => {
-  const { data, error } = validateData(
+  const { data, success, message } = validateData(
     {
       // explicitly use env variables so next.js can replace them
       NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
@@ -47,8 +47,8 @@ const validateEnv = (): EnvFrontend => {
     } as Partial<EnvFrontend> as EnvFrontend,
     envSchema,
   );
-  if (!data || error) {
-    throw new Error(`Environment validation error: ${error}`);
+  if (!success) {
+    throw new Error(`Environment validation error: ${message}`);
   }
   return data;
 };

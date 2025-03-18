@@ -1,6 +1,5 @@
 import {
   restaurantCreateSchema,
-  restaurantGetSchema,
   restaurantResponseSchema,
   restaurantUpdateSchema,
 } from "@/client-package/schema/schemas";
@@ -9,6 +8,7 @@ import { undefinedSchema } from "@/next-portal/types/common.schema";
 import { UserRoleValue } from "@/next-portal/types/enums";
 
 import { examples } from "../../examples/data";
+import { restaurantGetSchema } from "./restaurants.schema";
 
 export const restaurantGetEndpoint = typedEndpoint({
   description: "Get restaurant by ID",

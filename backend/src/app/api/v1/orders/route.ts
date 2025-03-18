@@ -10,13 +10,14 @@ import { type OrderResponseType } from "@/client-package/types/types";
 import {
   createErrorResponse,
   createSuccessResponse,
-  validateData,
   validatePostRequest,
 } from "@/next-portal/api/api-response";
 import { getVerifiedUser } from "@/next-portal/api/auth/user";
 import { prisma } from "@/next-portal/db";
+import type { UndefinedType } from "@/next-portal/types/common.schema";
 import { UserRoleValue } from "@/next-portal/types/enums";
 import type { ResponseType } from "@/next-portal/types/response.schema";
+import { validateData } from "@/next-portal/utils/validation";
 
 export async function POST(
   request: Request,
@@ -33,7 +34,11 @@ export async function POST(
       orderCreateSchema,
     );
     const order = await createOrder(validatedData);
-    return createSuccessResponse<OrderResponseType>(order, orderResponseSchema);
+    return createSuccessResponse<
+      OrderCreateType,
+      OrderResponseType,
+      UndefinedType
+    >(endpoint, order, orderResponseSchema);
   } catch (err) {
     const error = err as Error;
     if (error.name === "ValidationError") {
@@ -199,12 +204,13 @@ export async function createOrder(
         },
       },
     });
-    const { error, data: validatedData } = validateData<OrderResponseType>(
-      order,
-      orderResponseSchema,
-    );
-    if (error) {
-      throw new Error(error);
+    const {
+      message,
+      data: validatedData,
+      success,
+    } = validateData<OrderResponseType>(order, orderResponseSchema);
+    if (!success) {
+      throw new Error(message);
     }
     return validatedData;
   } catch (err) {

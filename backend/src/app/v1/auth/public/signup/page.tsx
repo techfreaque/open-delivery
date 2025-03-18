@@ -1,72 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import type { ChangeEvent, FormEvent, JSX } from "react";
-import { useState } from "react";
-import { z } from "zod";
+import { useRouter } from "next/navigation";
+import type { JSX } from "react";
 
+import { backendPages } from "@/client-package/constants";
 import { useAuth } from "@/client-package/hooks/use-auth";
-import type { RegisterType } from "@/client-package/schema/schemas";
-import { registerSchema } from "@/client-package/schema/schemas";
-
-// Add missing type definitions
-interface ValidationErrors {
-  [key: string]: string | undefined;
-}
-
-interface SignupFormFields {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
+import { registerEndpoint } from "@/client-package/schema/api/apis";
+import { useApiForm } from "@/next-portal/client/api/api-form";
 
 export default function SignupPage(): JSX.Element {
-  const [formData, setFormData] = useState<RegisterType>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    imageUrl: "",
-  });
-  const [errors, setErrors] = useState<ValidationErrors>({});
-  const { signup, isLoading, error } = useAuth();
-  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const { signup } = useAuth();
+  const router = useRouter();
 
-    // Clear errors when user starts typing
-    if (errors[name as keyof SignupFormFields]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    try {
-      registerSchema.parse(formData);
-      setErrors({});
-      return true;
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        const newErrors: ValidationErrors = {};
-        err.errors.forEach((error) => {
-          const path = error.path[0] as keyof SignupFormFields;
-          newErrors[path] = error.message;
-        });
-        setErrors(newErrors);
-      }
-      return false;
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    if (!validateForm()) {
-      return;
-    }
-    await signup(formData);
-  };
+  const {
+    register,
+    handleSubmit,
+    formError,
+    isSubmitting,
+    formState: { errors },
+  } = useApiForm(
+    registerEndpoint,
+    {
+      defaultValues: {
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        imageUrl: "",
+      },
+    },
+    {
+      onSuccess: async (data) => {
+        if (data.token) {
+          await signup({
+            firstName: data.user.firstName,
+            lastName: data.user.lastName,
+            email: data.user.email,
+            password: "", // Password was already used and is not returned
+            confirmPassword: "",
+            imageUrl: data.user.imageUrl || "",
+          });
+          router.push(backendPages.login);
+        }
+      },
+    },
+  );
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -77,43 +57,43 @@ export default function SignupPage(): JSX.Element {
           </h2>
         </div>
 
-        {error && (
+        {formError && (
           <div className="rounded-md bg-red-50 p-4">
             <div className="flex">
               <div className="ml-3">
-                <h2 className="text-md font-medium text-red-800">
-                  {error.name}
-                </h2>
                 <h3 className="text-sm font-medium text-red-800">
-                  {error.message}
+                  {formError.message}
                 </h3>
               </div>
             </div>
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={(e) => void handleSubmit(e)}>
+        <form
+          className="mt-8 space-y-6"
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          onSubmit={handleSubmit((data) => signup(data))}
+        >
           <div className="space-y-4">
             <div>
               <label
                 htmlFor="firstName"
                 className="block text-sm font-medium text-gray-700"
               >
-                Name
+                First Name
               </label>
               <input
                 id="firstName"
-                name="firstName"
+                {...register("firstName")}
                 type="text"
-                required
-                value={formData.firstName}
-                onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${
                   errors.firstName ? "ring-red-300" : "ring-gray-300"
                 } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
               />
               {errors.firstName && (
-                <p className="mt-2 text-sm text-red-600">{errors.firstName}</p>
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.firstName.message}
+                </p>
               )}
             </div>
             <div>
@@ -121,21 +101,20 @@ export default function SignupPage(): JSX.Element {
                 htmlFor="lastName"
                 className="block text-sm font-medium text-gray-700"
               >
-                Name
+                Last Name
               </label>
               <input
                 id="lastName"
-                name="lastName"
+                {...register("lastName")}
                 type="text"
-                required
-                value={formData.lastName}
-                onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${
-                  errors.name ? "ring-red-300" : "ring-gray-300"
+                  errors.lastName ? "ring-red-300" : "ring-gray-300"
                 } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
               />
               {errors.lastName && (
-                <p className="mt-2 text-sm text-red-600">{errors.lastName}</p>
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.lastName.message}
+                </p>
               )}
             </div>
             <div>
@@ -147,17 +126,16 @@ export default function SignupPage(): JSX.Element {
               </label>
               <input
                 id="email"
-                name="email"
+                {...register("email")}
                 type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${
                   errors.email ? "ring-red-300" : "ring-gray-300"
                 } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
               />
               {errors.email && (
-                <p className="mt-2 text-sm text-red-600">{errors.email}</p>
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -170,17 +148,16 @@ export default function SignupPage(): JSX.Element {
               </label>
               <input
                 id="password"
-                name="password"
+                {...register("password")}
                 type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${
                   errors.password ? "ring-red-300" : "ring-gray-300"
                 } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
               />
               {errors.password && (
-                <p className="mt-2 text-sm text-red-600">{errors.password}</p>
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
@@ -193,18 +170,15 @@ export default function SignupPage(): JSX.Element {
               </label>
               <input
                 id="confirmPassword"
-                name="confirmPassword"
+                {...register("confirmPassword")}
                 type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ${
                   errors.confirmPassword ? "ring-red-300" : "ring-gray-300"
                 } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
               />
               {errors.confirmPassword && (
                 <p className="mt-2 text-sm text-red-600">
-                  {errors.confirmPassword}
+                  {errors.confirmPassword.message}
                 </p>
               )}
             </div>
@@ -213,10 +187,10 @@ export default function SignupPage(): JSX.Element {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-400"
             >
-              {isLoading ? "Creating account..." : "Create account"}
+              {isSubmitting ? "Creating account..." : "Create account"}
             </button>
           </div>
 

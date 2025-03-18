@@ -13,7 +13,7 @@ export const loginEndpoint = typedEndpoint({
   requestUrlSchema: undefinedSchema,
   responseSchema: loginResponseSchema,
   apiQueryOptions: {
-    queryKey: ["login"],
+    queryKey: ["user"],
   },
   fieldDescriptions: {
     email: "User's email address",

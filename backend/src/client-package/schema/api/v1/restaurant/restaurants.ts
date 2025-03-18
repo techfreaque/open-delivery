@@ -1,12 +1,12 @@
-import {
-  restaurantsResponseSchema,
-  restaurantsSearchSchema,
-} from "@/client-package/schema/schemas";
 import { typedEndpoint } from "@/next-portal/api/endpoint";
 import { undefinedSchema } from "@/next-portal/types/common.schema";
 import { UserRoleValue } from "@/next-portal/types/enums";
 
 import { examples } from "../../examples/data";
+import {
+  restaurantsResponseSchema,
+  restaurantsSearchSchema,
+} from "./restaurants.schema";
 
 export const restaurantsEndpoint = typedEndpoint({
   description: "Get restaurants based on search criteria",

@@ -10,6 +10,7 @@ import {
   getExampleForEndpoint,
   type Methods,
 } from "@/next-portal/api/endpoint";
+import { useApiForm } from "@/next-portal/client/api/api-form";
 import { APP_NAME, ENDPOINT_DOMAINS } from "@/next-portal/constants";
 import { envClient } from "@/next-portal/env/env-client";
 
@@ -30,18 +31,53 @@ export function ApiExplorer(): JSX.Element {
     envClient.NEXT_PUBLIC_NODE_ENV === "production" ? "prod" : "dev",
   );
   const selectedDomain = ENDPOINT_DOMAINS[selectedEnv];
-  const [requestData, setRequestData] = useState<string>("");
   const [urlPathVariables, setUrlPathVariables] = useState<string>("");
-  const initialExample = useMemo(() => {
-    const endpoint = loginEndpoint;
-    setRequestData(JSON.stringify(endpoint.examples.payloads.default));
-    return endpoint;
-  }, []);
   const [activeEndpoint, setActiveEndpoint] =
-    useState<ApiEndpoint<unknown, unknown, unknown>>(initialExample);
+    useState<ApiEndpoint<unknown, unknown, unknown>>(loginEndpoint);
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [responseStatus, setResponseStatus] = useState<number | null>(null);
+
+  // Create a form using useApiForm
+  const {
+    handleSubmit,
+    reset,
+    formState,
+    register,
+    formError,
+    isSubmitting,
+    submitForm,
+    watch,
+    setValue,
+    control,
+  } = useApiForm(
+    activeEndpoint,
+    {},
+    {
+      onSuccess: async (data) => {
+        setResponseStatus(200);
+        setResponseData(JSON.stringify(data, null, 2));
+      },
+      onError: async (error) => {
+        setResponseStatus(error.statusCode || 500);
+        setResponseData(
+          JSON.stringify(
+            {
+              error: error.message,
+              details: error.details || error.stack,
+            },
+            null,
+            2,
+          ),
+        );
+      },
+    },
+  );
+
+  // Get the current form data as JSON string for display
+  const currentFormValues = watch();
+  const formattedFormValues = useMemo(() => {
+    return JSON.stringify(currentFormValues, null, 2);
+  }, [currentFormValues]);
 
   // Handlers
   const handleEndpointChange = (
@@ -54,11 +90,16 @@ export function ApiExplorer(): JSX.Element {
       endpoints,
     );
     setActiveEndpoint(newEndpoint);
-    if (newEndpoint.examples.payloads) {
-      setRequestData(JSON.stringify(newEndpoint.examples.payloads.default));
+    setResponseData("");
+    setResponseStatus(null);
+
+    // Reset form with default values from examples if available
+    if (newEndpoint.examples.payloads?.default) {
+      reset(newEndpoint.examples.payloads.default);
     } else {
-      setRequestData("");
+      reset({});
     }
+
     if (newEndpoint.examples.urlPathVariables) {
       setUrlPathVariables(
         JSON.stringify(newEndpoint.examples.urlPathVariables.default),
@@ -66,78 +107,21 @@ export function ApiExplorer(): JSX.Element {
     } else {
       setUrlPathVariables("");
     }
-    setResponseData("");
-    setResponseStatus(null);
   };
 
   const handleTryIt = async (): Promise<void> => {
-    setIsLoading(true);
-    setResponseData("");
-    setResponseStatus(null);
-
-    try {
-      const { postBody, endpointUrl, success, message } =
-        activeEndpoint.getRequestData({
-          requestData: JSON.parse(requestData),
-          pathParams: JSON.parse(urlPathVariables),
-        });
-      if (!success) {
-        setResponseStatus(400);
-        setResponseData(
-          JSON.stringify(
-            {
-              error: "Invalid request data",
-              details: message,
-            },
-            null,
-            2,
-          ),
-        );
-        return;
-      }
-      const response = await fetch(endpointUrl, {
-        method: activeEndpoint.method,
-        headers: {
-          "Content-Type": "application/json",
-          ...(activeEndpoint.requiresAuthentication() && {
-            Authorization: `Bearer ${localStorage.getItem("authToken") || "YOUR_TOKEN_HERE"}`,
-          }),
-        },
-        // Only include body for non-GET requests
-        body: postBody,
-      });
-
-      // Get the response status
-      setResponseStatus(response.status);
-
-      // Try to parse the response as JSON, fall back to text if needed
-      try {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const data = await response.json();
-          setResponseData(JSON.stringify(data, null, 2));
-        } else {
-          const text = await response.text();
-          setResponseData(text || "(Empty response)");
-        }
-      } catch (err) {
-        const error = err instanceof Error ? err.message : String(err);
-        setResponseData(`Unable to parse response, error: ${error}`);
-      }
-    } catch (error) {
-      setResponseStatus(500);
-      setResponseData(
-        JSON.stringify(
-          {
-            error: "Request failed",
-            details: error instanceof Error ? error.message : String(error),
-          },
-          null,
-          2,
-        ),
-      );
-    } finally {
-      setIsLoading(false);
+    // Special handling for GET requests that don't have required parameters
+    if (
+      activeEndpoint.method === "GET" &&
+      (!activeEndpoint.requestSchema ||
+        Object.keys(currentFormValues || {}).length === 0)
+    ) {
+      // Directly call submitForm with undefined for parameterless GET requests
+      // This ensures no validation is attempted for the request body
+      await submitForm(undefined);
+    } else {
+      // For all other requests, use the standard form validation flow
+      await handleSubmit(submitForm)();
     }
   };
 
@@ -356,13 +340,18 @@ export function ApiExplorer(): JSX.Element {
               <div className="lg:col-span-2">
                 <EndpointDetails
                   endpoint={activeEndpoint}
-                  requestData={requestData}
+                  requestData={formattedFormValues}
                   responseData={responseData}
                   responseStatus={responseStatus}
-                  isLoading={isLoading}
+                  isLoading={isSubmitting}
                   selectedDomain={selectedDomain}
                   handleTryIt={handleTryIt}
-                  setRequestData={setRequestData}
+                  register={register}
+                  control={control}
+                  formState={formState}
+                  formError={formError}
+                  setValue={setValue}
+                  watch={watch}
                 />
               </div>
             </div>

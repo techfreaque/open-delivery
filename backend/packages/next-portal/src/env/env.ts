@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { validateData } from "../api/api-response";
+import { validateData } from "../utils/validation";
 
 export const envSchema = z.object({
   NODE_ENV: z.string(),
@@ -10,13 +10,13 @@ export const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export const validateEnv = (): Env => {
-  const { data, error } = validateData<Env>(
+  const { data, success, message } = validateData<Env>(
     // eslint-disable-next-line node/no-process-env
     process.env as unknown as Env,
     envSchema,
   );
-  if (!data || error) {
-    throw new Error(`Environment validation error: ${error}`);
+  if (!success) {
+    throw new Error(`Environment validation error: ${message}`);
   }
   return data;
 };

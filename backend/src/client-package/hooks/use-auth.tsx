@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import type { JSX, ReactNode } from "react";
 import { createContext, useContext } from "react";
 
-import {
-  useApiMutation,
-  useApiQuery,
-} from "@/next-portal/client/api/api-client";
+import { useApiQuery } from "@/next-portal/client/api/use-api-query";
+import { useApiMutation } from "@/next-portal/client/api/utils";
 import {
   removeAuthToken,
   setAuthToken,
 } from "@/next-portal/client/auth/auth-client";
+import {
+  generateStorageKey,
+  setStorageItem,
+} from "@/next-portal/client/storage/storage-client";
 import type { UndefinedType } from "@/next-portal/types/common.schema";
 import { errorLogger } from "@/next-portal/utils/logger";
 import { parseError } from "@/next-portal/utils/parse-error";
@@ -61,7 +63,7 @@ export function AuthProvider({
     error,
     isLoadingFresh: isLoadingInitial,
     statusMessage,
-  } = useApiQuery(["user"], meEndpoint, {
+  } = useApiQuery(meEndpoint, undefined, undefined, {
     retry: false,
     staleTime: 5 * 60 * 1000, // Cache the user data for 5 minutes
     refetchOnWindowFocus: false,
@@ -79,7 +81,16 @@ export function AuthProvider({
         await setAuthToken(data.token);
 
         // Update the user cache upon successful login
-        queryClient.setQueryData(["user"], data.user);
+        queryClient.setQueryData(
+          loginEndpoint.apiQueryOptions.queryKey,
+          data.user,
+        );
+        const storageKey = generateStorageKey(
+          loginEndpoint.apiQueryOptions.queryKey,
+        );
+        void setStorageItem<LoginResponseType>(storageKey, data).catch((err) =>
+          errorLogger("Failed to store API response in storage:", err),
+        );
       }
     },
   });

@@ -1,5 +1,5 @@
 import { Truck, User, Utensils } from "lucide-react-native";
-import React from "react";
+import type { JSX } from "react";
 import {
   StyleSheet,
   Text,
@@ -17,7 +17,7 @@ interface UserTypeSwitcherProps {
 
 export default function UserTypeSwitcher({
   compact = false,
-}: UserTypeSwitcherProps) {
+}: UserTypeSwitcherProps): JSX.Element {
   const { userType, setUserType } = useUserType();
   const dimensions = useWindowDimensions();
   const isLargeScreen = dimensions.width >= 768;

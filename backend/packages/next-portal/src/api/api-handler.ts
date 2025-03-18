@@ -2,10 +2,10 @@ import type { NextResponse } from "next/server";
 
 import type { ResponseType } from "../types/response.schema";
 import type { JwtPayloadType } from "../types/types";
+import { validateData } from "../utils/validation";
 import {
   createErrorResponse,
   createSuccessResponse,
-  validateData,
   validateGetRequest,
   validatePostRequest,
 } from "./api-response";
@@ -52,7 +52,7 @@ export function apiHandler<TRequest, TResponse, TUrlVariables>({
     }
     const {
       data: urlVariables,
-      error: urlSchemaError,
+      message: urlSchemaError,
       success: urlSchemaSuccess,
     } = validateData(await params, endpoint.requestUrlSchema);
     if (!urlSchemaSuccess) {

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { z } from "zod";
 
+import type { MenuItemCreateType } from "@/client-package/schema/schemas";
 import { menuItemCreateSchema } from "@/client-package/schema/schemas";
-import type { MenuItemCreateType } from "@/client-package/types/types";
 import { env } from "@/lib/env/env";
 
 // Initialize OpenAI client

@@ -1,5 +1,5 @@
 import { meEndpoint } from "@/client-package/schema/api/v1/auth/me";
-import type { LoginResponseType } from "@/client-package/types/types";
+import type { LoginResponseType } from "@/client-package/schema/api/v1/auth/public/login.schema";
 import { createSessionAndGetUser } from "@/lib/api/auth/login";
 import type {
   ApiHandlerCallBackProps,

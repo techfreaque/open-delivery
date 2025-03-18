@@ -17,7 +17,10 @@ export type ResponseType<TResponseData> =
   | ErrorResponseType;
 
 export type MessageResponseType = z.input<typeof messageResponseSchema>;
-export type ErrorResponseType = z.input<typeof errorResponseSchema>;
+export type ErrorResponseType = {
+  success: false;
+  message: string;
+};
 
 export type SuccessResponseType<T> = {
   success: true;

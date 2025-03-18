@@ -2,9 +2,17 @@
 
 import type { JSX } from "react";
 import { useState } from "react";
+import type {
+  Control,
+  FieldErrors,
+  UseFormRegister,
+  UseFormSetValue,
+  UseFormWatch,
+} from "react-hook-form";
 
 import { Button } from "@/client-package/components/button";
 import { CodeExamples } from "@/components/api-docs/CodeExamples";
+import { DynamicFormFields } from "@/components/api-docs/DynamicFormFields";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ApiEndpoint } from "@/next-portal/api/endpoint";
 
@@ -16,7 +24,12 @@ interface EndpointDetailsProps {
   isLoading: boolean;
   selectedDomain: string;
   handleTryIt: () => Promise<void>;
-  setRequestData: (data: string) => void;
+  register: UseFormRegister<any>;
+  control: Control<any>;
+  formState: { errors: FieldErrors };
+  formError: Error | null;
+  setValue: UseFormSetValue<any>;
+  watch: UseFormWatch<any>;
 }
 
 export function EndpointDetails({
@@ -27,9 +40,15 @@ export function EndpointDetails({
   isLoading,
   selectedDomain,
   handleTryIt,
-  setRequestData,
+  register,
+  control,
+  formState,
+  formError,
+  setValue,
+  watch,
 }: EndpointDetailsProps): JSX.Element {
   const [activeTab, setActiveTab] = useState("try-it");
+  const [viewMode, setViewMode] = useState<"form" | "json">("form");
 
   return (
     <div className="border rounded-md overflow-hidden">
@@ -75,21 +94,52 @@ export function EndpointDetails({
             <div>
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-medium">Request</h3>
-                <div className="text-xs px-2 py-1 bg-gray-100 rounded">
-                  {endpoint.method} {endpoint.path}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant={viewMode === "form" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("form")}
+                  >
+                    Form
+                  </Button>
+                  <Button
+                    variant={viewMode === "json" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("json")}
+                  >
+                    JSON
+                  </Button>
                 </div>
               </div>
-              <div className="bg-gray-800 rounded-lg p-4 mb-4 relative min-h-[200px]">
-                <div className="absolute top-2 right-2 text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                  JSON
-                </div>
-                <textarea
-                  className="w-full h-full min-h-[150px] bg-gray-800 text-green-400 font-mono p-2 focus:outline-none resize-none"
-                  value={requestData}
-                  onChange={(e) => setRequestData(e.target.value)}
-                  spellCheck="false"
-                ></textarea>
+
+              <div className="bg-white rounded-lg border p-4 mb-4 min-h-[250px]">
+                {viewMode === "form" ? (
+                  <DynamicFormFields
+                    endpoint={endpoint}
+                    register={register}
+                    control={control}
+                    formState={formState}
+                    setValue={setValue}
+                    watch={watch}
+                  />
+                ) : (
+                  <div className="bg-gray-800 rounded-lg p-4 relative min-h-[200px]">
+                    <div className="absolute top-2 right-2 text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                      JSON
+                    </div>
+                    <pre className="text-green-400 font-mono text-sm overflow-auto h-[200px]">
+                      {requestData}
+                    </pre>
+                  </div>
+                )}
               </div>
+
+              {formError && (
+                <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 text-sm">
+                  {formError.message}
+                </div>
+              )}
+
               <Button
                 className="w-full"
                 // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -119,11 +169,11 @@ export function EndpointDetails({
                   </span>
                 )}
               </div>
-              <div className="bg-gray-800 rounded-lg p-4 relative min-h-[200px]">
+              <div className="bg-gray-800 rounded-lg p-4 relative min-h-[250px]">
                 <div className="absolute top-2 right-2 text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
                   JSON
                 </div>
-                <pre className="text-green-400 font-mono h-full overflow-auto max-h-[200px]">
+                <pre className="text-green-400 font-mono h-full overflow-auto max-h-[250px]">
                   {responseData || "// Response will appear here"}
                 </pre>
               </div>
@@ -171,6 +221,34 @@ export function EndpointDetails({
                 </div>
               </div>
             </div>
+
+            {endpoint.fieldDescriptions && (
+              <div className="mt-6">
+                <h4 className="text-sm font-medium mb-2">Field Descriptions</h4>
+                <div className="bg-gray-50 p-4 rounded-lg border">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="text-left font-medium py-2">Field</th>
+                        <th className="text-left font-medium py-2">
+                          Description
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(endpoint.fieldDescriptions).map(
+                        ([field, description]) => (
+                          <tr key={field} className="border-t border-gray-200">
+                            <td className="py-2 font-mono">{field}</td>
+                            <td className="py-2">{description}</td>
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {endpoint.errorCodes &&
               Object.keys(endpoint.errorCodes).length > 0 && (

@@ -1,7 +1,7 @@
 import type {
   RestaurantsResponseType,
   RestaurantsSearchType,
-} from "@/client-package/schema/schemas";
+} from "@/client-package/schema/api/v1/restaurant/restaurants.schema";
 import {
   calculateDistance,
   getCoordinatesFromAddress,

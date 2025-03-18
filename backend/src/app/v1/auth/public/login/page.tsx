@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { ChangeEvent, FormEvent } from "react";
-import { type FC, useEffect, useState } from "react";
+import type { FC } from "react";
+import { useEffect } from "react";
 
 import { useAuth } from "@/client-package/hooks/use-auth";
-import type { LoginFormType } from "@/client-package/schema/api/v1/auth/public/login.schema";
-import { errorLogger } from "@/next-portal/utils/logger";
+import { loginEndpoint } from "@/client-package/schema/api/apis";
+import { useApiForm } from "@/next-portal/client/api/api-form";
 
 const LoginPage: FC = () => {
   const router = useRouter();
@@ -29,75 +29,35 @@ const LoginPage: FC = () => {
 };
 
 const LoginForm: FC = () => {
-  const { login, isLoading: authLoading, error } = useAuth();
+  const { login } = useAuth();
+  const router = useRouter();
 
-  const [credentials, setCredentials] = useState<LoginFormType>({
-    email: "",
-    password: "",
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [validationErrors, setValidationErrors] = useState<
-    Partial<Record<keyof LoginFormType, string>>
-  >({});
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const { name, value } = e.target;
-    setCredentials((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear validation error for this field when user starts typing
-    if (validationErrors[name as keyof LoginFormType]) {
-      setValidationErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }));
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-
-    // Client-side validation
-    const newValidationErrors: Partial<Record<keyof LoginFormType, string>> =
-      {};
-
-    if (!credentials.email) {
-      newValidationErrors.email = "Email is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(credentials.email)) {
-      newValidationErrors.email = "Please enter a valid email";
-    }
-
-    if (!credentials.password) {
-      newValidationErrors.password = "Password is required";
-    } else if (credentials.password.length < 6) {
-      newValidationErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (Object.keys(newValidationErrors).length > 0) {
-      setValidationErrors(newValidationErrors);
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      await login(credentials);
-    } catch (err) {
-      errorLogger("Error logging in:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    register,
+    handleSubmit,
+    formError,
+    isSubmitting,
+    formState: { errors },
+  } = useApiForm(
+    loginEndpoint,
+    {},
+    {
+      onSuccess: async (data) => {
+        if (data.token && data.user) {
+          await login(data);
+          router.push("/");
+        }
+      },
+    },
+  );
 
   return (
     <form
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit((data) => login(data))}
       className="mt-8 space-y-6"
     >
-      {error && (
+      {formError && (
         <div className="rounded-md bg-red-50 p-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -116,7 +76,7 @@ const LoginForm: FC = () => {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-red-800">
-                {error.message}
+                {formError.message}
               </p>
             </div>
           </div>
@@ -133,17 +93,15 @@ const LoginForm: FC = () => {
         <input
           type="email"
           id="email"
-          name="email"
-          value={credentials.email}
-          onChange={handleChange}
+          {...register("email")}
           required
           className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm ${
-            validationErrors.email ? "border-red-300" : "border-gray-300"
+            errors.email ? "border-red-300" : "border-gray-300"
           }`}
         />
-        {validationErrors.email && (
+        {errors.email && (
           <div className="mt-1 text-sm text-red-600">
-            {validationErrors.email}
+            {errors.email.message}
           </div>
         )}
       </div>
@@ -158,17 +116,15 @@ const LoginForm: FC = () => {
         <input
           type="password"
           id="password"
-          name="password"
-          value={credentials.password}
-          onChange={handleChange}
+          {...register("password")}
           required
           className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm ${
-            validationErrors.password ? "border-red-300" : "border-gray-300"
+            errors.password ? "border-red-300" : "border-gray-300"
           }`}
         />
-        {validationErrors.password && (
+        {errors.password && (
           <div className="mt-1 text-sm text-red-600">
-            {validationErrors.password}
+            {errors.password.message}
           </div>
         )}
       </div>
@@ -176,10 +132,10 @@ const LoginForm: FC = () => {
       <div>
         <button
           type="submit"
-          disabled={isLoading || authLoading}
+          disabled={isSubmitting}
           className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
         >
-          {isLoading || authLoading ? "Logging in..." : "Login"}
+          {isSubmitting ? "Logging in..." : "Login"}
         </button>
       </div>
       <div>

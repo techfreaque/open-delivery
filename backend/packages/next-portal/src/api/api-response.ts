@@ -8,6 +8,7 @@ import {
   type ResponseType,
   type SuccessResponseType,
 } from "../types/response.schema";
+import { validateData } from "../utils/validation";
 import type { SafeReturnType } from "./api-handler";
 import type { ApiEndpoint } from "./endpoint";
 
@@ -20,11 +21,15 @@ export function createSuccessResponse<TRequest, TResponse, TUrlVariables>(
   schema: z.ZodSchema<TResponse>,
   status: number = 200,
 ): NextResponse<ResponseType<TResponse>> {
-  const { error, data: validatedData } = validateData(data, schema);
-  if (error) {
+  const {
+    message,
+    data: validatedData,
+    success,
+  } = validateData<TResponse>(data, schema);
+  if (!success) {
     return createErrorResponse<TRequest, TResponse, TUrlVariables>(
       endpoint,
-      error,
+      message,
       400,
     );
   }
@@ -32,46 +37,6 @@ export function createSuccessResponse<TRequest, TResponse, TUrlVariables>(
     { data: validatedData, success: true },
     { status },
   ) as NextResponse<SuccessResponseType<TResponse>>;
-}
-
-export function validateData<T>(
-  data: T,
-  schema: z.ZodSchema<T>,
-):
-  | {
-      success: true;
-      data: T;
-      error?: never;
-    }
-  | {
-      success: false;
-      data?: never;
-      error: string;
-    } {
-  try {
-    // Validate the data against the schema
-    const result = schema.safeParse(data);
-
-    if (!result.success) {
-      const errorMessage = formatZodErrors(result.error);
-      return { error: errorMessage, success: false };
-    }
-
-    // For API responses, don't wrap the response in a success object, return the data directly
-    return { data: result.data, success: true };
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unknown error validating response";
-    return { error: message, success: false };
-  }
-}
-
-export function formatZodErrors(errors: ZodError): string {
-  return errors.errors
-    .map((err) => `${err.path.join(".")}: ${err.message}`)
-    .join(", ");
 }
 
 /**
@@ -82,20 +47,28 @@ export function createErrorResponse<TRequest, TResponse, TUrlVariables>(
   message: string,
   status: number = 400,
 ): NextResponse<ErrorResponseType> {
-  const { data, success, error } = errorResponseSchema.safeParse({
-    success: false,
-    message,
-  });
+  const {
+    message: validationError,
+    data,
+    success,
+  } = validateData<ErrorResponseType>(
+    {
+      success: false,
+      message,
+    },
+    errorResponseSchema,
+  );
+
   if (!success) {
     return NextResponse.json(
-      { success: false, message: formatZodErrors(error) } as ErrorResponseType,
+      { success: false, message: validationError } as ErrorResponseType,
       { status: 500 },
     );
   }
   data.message = `[${endpoint.path.join("/")}:${endpoint.method}]: ${message}`;
   return NextResponse.json(data, {
     status,
-  }) as NextResponse<ErrorResponseType>;
+  });
 }
 
 /**
@@ -140,30 +113,10 @@ export async function validateGetRequest<T>(
   request: Request,
   schema: ZodSchema<T>,
 ): Promise<SafeReturnType<T>> {
-  try {
-    const { searchParams } = new URL(request.url);
-    const params = Object.fromEntries(searchParams.entries());
-    const validatedData = schema.parse(params);
-    return { success: true, data: validatedData };
-  } catch (error) {
-    if (error instanceof ZodError) {
-      // Create a validation error with formatted message
-      const validationError = new Error(
-        `Validation error: ${error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")}`,
-      );
-      return {
-        success: false,
-        message: validationError.message,
-        errorCode: 400,
-      };
-    }
-    return {
-      success: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Unknown error validating request",
-      errorCode: 400,
-    };
-  }
+  const { searchParams } = new URL(request.url);
+  const params = Object.fromEntries(searchParams.entries()) as T;
+  return validateData<T>(
+    Object.keys(params).length ? params : undefined,
+    schema,
+  );
 }

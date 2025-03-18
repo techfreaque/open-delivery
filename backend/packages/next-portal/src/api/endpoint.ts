@@ -1,6 +1,6 @@
 import type { z } from "zod";
 
-import type { ApiQueryOptions } from "../client/api/api-client";
+import type { ApiQueryOptions } from "../client/api/types";
 import { envClient } from "../env/env-client";
 import { UserRoleValue } from "../types/enums";
 import { format } from "../utils/parse-error";
@@ -56,7 +56,7 @@ export class ApiEndpoint<TRequest, TResponse, TUrlVariables> {
   >) {
     this.description = description;
     this.method = method;
-    this.path = path;
+    this.path = ["api", ...path];
     this.allowedRoles = allowedRoles;
     this.requestSchema = requestSchema;
     this.requestUrlSchema = requestUrlSchema;
@@ -115,7 +115,7 @@ export class ApiEndpoint<TRequest, TResponse, TUrlVariables> {
     const path = pathParams
       ? format<TUrlVariables>(this.path, pathParams)
       : this.path;
-    let endpointUrl = `${envClient.NEXT_PUBLIC_BACKEND_URL}/api/${path.join("/")}`;
+    let endpointUrl = `${envClient.NEXT_PUBLIC_BACKEND_URL}/${path.join("/")}`;
     if (this.method === "GET" && requestData) {
       endpointUrl += `?${new URLSearchParams(requestData as Record<string, string>).toString()}`;
     }

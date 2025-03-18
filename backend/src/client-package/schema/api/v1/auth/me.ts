@@ -13,7 +13,7 @@ export const meEndpoint = typedEndpoint({
   requestUrlSchema: undefinedSchema,
   fieldDescriptions: undefined,
   apiQueryOptions: {
-    queryKey: ["register"],
+    queryKey: ["user"],
   },
   allowedRoles: [
     UserRoleValue.CUSTOMER,

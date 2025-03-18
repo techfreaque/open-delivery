@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { DatabaseProvider } from "@/client-package/types/types";
-import { validateData } from "@/next-portal/api/api-response";
+import { validateData } from "@/next-portal/utils/validation";
 
 export const envSchema = z.object({
   NEXT_PUBLIC_FRONTEND_APP_URL: z.string(),
@@ -60,13 +60,13 @@ export const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export const validateEnv = (): Env => {
-  const { data, error } = validateData<Env>(
+  const { data, message, success } = validateData<Env>(
     // eslint-disable-next-line node/no-process-env
     process.env as unknown as Env,
     envSchema,
   );
-  if (!data || error) {
-    throw new Error(`Environment validation error: ${error}`);
+  if (!success) {
+    throw new Error(`Environment validation error: ${message}`);
   }
   return data;
 };
