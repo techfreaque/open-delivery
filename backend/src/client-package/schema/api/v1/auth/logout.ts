@@ -1,15 +1,14 @@
 import { typedEndpoint } from "@/next-portal/api/endpoint";
 import { undefinedSchema } from "@/next-portal/types/common.schema";
 import { UserRoleValue } from "@/next-portal/types/enums";
-
-import { loginResponseSchema } from "./public/login.schema";
+import { messageResponseSchema } from "@/next-portal/types/response.schema";
 
 export const logoutEndpoint = typedEndpoint({
   description: "Logout a user, clear the session and JWT token",
-  path: ["v1", "auth", "public", "logout"],
+  path: ["v1", "auth", "logout"],
   method: "GET",
   requestSchema: undefinedSchema,
-  responseSchema: loginResponseSchema,
+  responseSchema: messageResponseSchema,
   requestUrlSchema: undefinedSchema,
   fieldDescriptions: undefined,
   apiQueryOptions: {

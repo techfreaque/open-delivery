@@ -6,6 +6,7 @@ import type {
 } from "@/next-portal/api/api-handler";
 import { prisma } from "@/next-portal/db/index";
 import type { UndefinedType } from "@/next-portal/types/common.schema";
+import type { MessageResponseType } from "@/next-portal/types/response.schema";
 
 /**
  * Logout user
@@ -13,7 +14,7 @@ import type { UndefinedType } from "@/next-portal/types/common.schema";
 export async function logoutUser({
   user,
 }: ApiHandlerCallBackProps<UndefinedType, UndefinedType>): Promise<
-  SafeReturnType<UndefinedType>
+  SafeReturnType<MessageResponseType>
 > {
   // Clear auth cookie
   try {
@@ -28,5 +29,5 @@ export async function logoutUser({
   } catch {
     // empty
   }
-  return { success: true, data: undefined };
+  return { success: true, data: "Successfully Signed out!" };
 }

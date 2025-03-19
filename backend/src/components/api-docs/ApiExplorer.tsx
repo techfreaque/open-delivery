@@ -126,7 +126,7 @@ export function ApiExplorer(): JSX.Element {
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 p-5 mx-auto max-w-[1900px]">
       {/* Download App Section */}
 
       <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">

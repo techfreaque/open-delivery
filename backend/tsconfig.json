@@ -8,7 +8,6 @@
     "types": [
       "node",
       "vitest/globals",
-      "src/client-package/components/ui-native/nativewind.d.ts"
     ],
     "allowJs": true,
     "target": "ES2018",
@@ -30,9 +29,9 @@
       }
     ],
     "paths": {
-      "react-native": [
-        "./node_modules/react-native-web"
-      ],
+      // "react-native": [
+      //   "./node_modules/react-native-web"
+      // ],
       "@/*": [
         "./src/*"
       ],

@@ -42,7 +42,7 @@ export default function Home(): JSX.Element {
           </div>
         </div>
       </section>
-      <main className="flex-1 container mx-auto px-4 py-12">
+      <main>
         <ApiExplorer />
       </main>
     </>

@@ -21,7 +21,7 @@ const nextConfig = {
     // Add a fallback for the Handlebars module
     config.resolve.alias['handlebars'] = 'handlebars/dist/handlebars.min.js';
     if (!isServer) {
-      config.resolve.alias['react-native$'] = 'react-native-web';
+      // config.resolve.alias['react-native$'] = 'react-native-web';
       // config.resolve.alias['./button'] = './button.web';
     }
     return config;

@@ -1,8 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { envClient } from "@/next-portal/env/env-client";
-
-import { Button as NativeButton } from "./button.native";
+// import { Button as NativeButton } from "./button.native";
 import { Button as WebButton } from "./button.web";
 
 export const buttonVariants = cva(
@@ -36,6 +34,8 @@ export const buttonVariants = cva(
 
 export type ButtonVariantProps = VariantProps<typeof buttonVariants>;
 
-export const Button = envClient.platform.isReactNative
-  ? NativeButton
-  : WebButton;
+export const Button =
+  // envClient.platform.isReactNative
+  // ? NativeButton
+  //   :
+  WebButton;

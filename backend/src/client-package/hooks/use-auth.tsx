@@ -30,17 +30,17 @@ import type {
   LoginFormType,
   LoginResponseType,
 } from "../schema/api/v1/auth/public/login.schema";
-import type { RegisterType, UserResponseType } from "../schema/schemas";
+import type { RegisterType } from "../schema/schemas";
 
 interface AuthContextType {
-  user: UserResponseType | null;
+  user: LoginResponseType | null;
   isLoggedIn: boolean;
   isLoading: boolean;
   isLoadingInitial: boolean;
   error: Error | null;
-  login: (credentials: LoginFormType) => Promise<UserResponseType | null>;
+  login: (credentials: LoginFormType) => Promise<LoginResponseType | null>;
   logout: () => Promise<void>;
-  signup: (formData: RegisterType) => Promise<void>;
+  signup: (formData: RegisterType) => Promise<LoginResponseType | null>;
   statusMessage: string;
 }
 
@@ -68,7 +68,6 @@ export function AuthProvider({
     staleTime: 5 * 60 * 1000, // Cache the user data for 5 minutes
     refetchOnWindowFocus: false,
   });
-
   // Mutation for login
   const loginMutation = useApiMutation<
     LoginResponseType,
@@ -77,20 +76,13 @@ export function AuthProvider({
   >(loginEndpoint, {
     onSuccess: async (data) => {
       if (data.token) {
-        // Store the token in storage
         await setAuthToken(data.token);
-
-        // Update the user cache upon successful login
-        queryClient.setQueryData(
-          loginEndpoint.apiQueryOptions.queryKey,
-          data.user,
-        );
+        queryClient.setQueryData(loginEndpoint.apiQueryOptions.queryKey, data);
         const storageKey = generateStorageKey(
           loginEndpoint.apiQueryOptions.queryKey,
         );
-        void setStorageItem<LoginResponseType>(storageKey, data).catch((err) =>
-          errorLogger("Failed to store API response in storage:", err),
-        );
+        void setStorageItem<LoginResponseType>(storageKey, data);
+        router.push(backendPages.home);
       }
     },
   });
@@ -104,8 +96,15 @@ export function AuthProvider({
     onSuccess: async (data) => {
       if (data.token) {
         await setAuthToken(data.token);
-        queryClient.setQueryData(["user"], data.user);
-        router.push(backendPages.login);
+        queryClient.setQueryData(
+          registerEndpoint.apiQueryOptions.queryKey,
+          data,
+        );
+        const storageKey = generateStorageKey(
+          loginEndpoint.apiQueryOptions.queryKey,
+        );
+        void setStorageItem<LoginResponseType>(storageKey, data);
+        router.push(backendPages.home);
       }
     },
   });
@@ -117,14 +116,20 @@ export function AuthProvider({
       await queryClient.invalidateQueries({ queryKey: ["user"] });
       router.push(backendPages.login);
     },
+    onError: async (err) => {
+      errorLogger("An error occurred during logout", err);
+      await removeAuthToken();
+      queryClient.setQueryData(["user"], null);
+      await queryClient.invalidateQueries({ queryKey: ["user"] });
+      router.push(backendPages.login);
+    },
   });
 
   const login = async (
     credentials: LoginFormType,
-  ): Promise<UserResponseType | null> => {
+  ): Promise<LoginResponseType | null> => {
     try {
-      const response = await loginMutation.mutateAsync(credentials);
-      return response.user;
+      return loginMutation.mutateAsync(credentials);
     } catch (err) {
       const error = parseError(err);
       errorLogger(`An error occurred during login`, error);
@@ -132,13 +137,16 @@ export function AuthProvider({
     }
   };
 
-  const signup = async (formData: RegisterType): Promise<void> => {
+  const signup = async (
+    formData: RegisterType,
+  ): Promise<LoginResponseType | null> => {
     try {
-      await signupMutation.mutateAsync(formData);
+      return signupMutation.mutateAsync(formData);
     } catch (err) {
       const error = parseError(err);
       errorLogger(`An error occurred during signup`, error);
     }
+    return null;
   };
 
   const logout = async (): Promise<void> => {

@@ -112,8 +112,6 @@
     "react-hook-form": "7.54.2",
     "react-jsx-parser": "^2.4.0",
     "react-live": "^4.1.8",
-    "react-native": "^0.78.0",
-    "react-native-web": "^0.19.13",
     "react-resizable-panels": "^2.1.7",
     "react-syntax-highlighter": "^15.6.1",
     "recharts": "^2.15.1",

@@ -16,6 +16,8 @@ import { DynamicFormFields } from "@/components/api-docs/DynamicFormFields";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ApiEndpoint } from "@/next-portal/api/endpoint";
 
+import { SchemaViewer } from "./SchemaViewer";
+
 interface EndpointDetailsProps {
   endpoint: ApiEndpoint<unknown, unknown, unknown>;
   requestData: string;
@@ -179,6 +181,9 @@ export function EndpointDetails({
               </div>
             </div>
           </div>
+          <div className="p-4">
+            <EndpointErrorCodes endpoint={endpoint} />
+          </div>
         </TabsContent>
 
         <TabsContent value="examples">
@@ -191,98 +196,43 @@ export function EndpointDetails({
         <TabsContent value="schema">
           <div className="p-4">
             <h3 className="font-medium mb-4">Endpoint Schema</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Request Schema</h4>
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  {endpoint.requestSchema ? (
-                    <pre className="text-sm overflow-auto max-h-[300px]">
-                      {JSON.stringify(endpoint.requestSchema, null, 2)}
-                    </pre>
-                  ) : (
-                    <p className="text-gray-500 text-sm">
-                      No request schema defined
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium mb-2">Response Schema</h4>
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  {endpoint.responseSchema ? (
-                    <pre className="text-sm overflow-auto max-h-[300px]">
-                      {JSON.stringify(endpoint.responseSchema, null, 2)}
-                    </pre>
-                  ) : (
-                    <p className="text-gray-500 text-sm">
-                      No response schema defined
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {endpoint.fieldDescriptions && (
-              <div className="mt-6">
-                <h4 className="text-sm font-medium mb-2">Field Descriptions</h4>
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr>
-                        <th className="text-left font-medium py-2">Field</th>
-                        <th className="text-left font-medium py-2">
-                          Description
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(endpoint.fieldDescriptions).map(
-                        ([field, description]) => (
-                          <tr key={field} className="border-t border-gray-200">
-                            <td className="py-2 font-mono">{field}</td>
-                            <td className="py-2">{description}</td>
-                          </tr>
-                        ),
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {endpoint.errorCodes &&
-              Object.keys(endpoint.errorCodes).length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium mb-2">Error Codes</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg border">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr>
-                          <th className="text-left font-medium py-2">
-                            Status Code
-                          </th>
-                          <th className="text-left font-medium py-2">
-                            Description
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(endpoint.errorCodes).map(
-                          ([code, description]) => (
-                            <tr key={code} className="border-t border-gray-200">
-                              <td className="py-2">{code}</td>
-                              <td className="py-2">{description}</td>
-                            </tr>
-                          ),
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+            <SchemaViewer endpoint={endpoint} />
+            <EndpointErrorCodes endpoint={endpoint} />
           </div>
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export function EndpointErrorCodes({
+  endpoint,
+}: {
+  endpoint: ApiEndpoint<unknown, unknown, unknown>;
+}): JSX.Element {
+  return endpoint.errorCodes && Object.keys(endpoint.errorCodes).length > 0 ? (
+    <div className="mt-6">
+      <h4 className="text-sm font-medium mb-2">Error Codes</h4>
+      <div className="bg-gray-50 p-4 rounded-lg border">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr>
+              <th className="text-left font-medium py-2">Status Code</th>
+              <th className="text-left font-medium py-2">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(endpoint.errorCodes).map(([code, description]) => (
+              <tr key={code} className="border-t border-gray-200">
+                <td className="py-2">{code}</td>
+                <td className="py-2">{description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ) : (
+    <></>
   );
 }

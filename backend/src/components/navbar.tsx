@@ -6,7 +6,8 @@ import { useAuth } from "@/client-package/hooks/use-auth";
 import { APP_NAME } from "@/next-portal/constants";
 
 export function Navbar(): JSX.Element {
-  const { isLoggedIn, user, logout, isLoading } = useAuth();
+  const { isLoggedIn, user, logout, isLoading, isLoadingInitial } = useAuth();
+  const shouldRenderLoginButton = !isLoading && !isLoadingInitial;
   return (
     <header className="bg-primary text-primary-foreground sticky top-0 z-50 border-b shadow-sm">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -19,10 +20,10 @@ export function Navbar(): JSX.Element {
           </div>
         </Link>
         <nav className="flex items-center space-x-2">
-          {!isLoading &&
+          {shouldRenderLoginButton &&
             (isLoggedIn ? (
               <>
-                <div>{user!.email}</div>
+                <div>{user!.user.email}</div>
                 <Button
                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
                   onClick={logout}

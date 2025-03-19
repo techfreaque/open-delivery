@@ -1,11 +1,12 @@
 import { type QueryKey, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { ApiEndpoint } from "../../api/endpoint";
 import { errorLogger } from "../../utils/logger";
 import {
   generateStorageKey,
   getStorageItem,
+  removeStorageItem,
   setStorageItem,
 } from "../storage/storage-client";
 import type { ApiQueryOptions, EnhancedQueryResult } from "./types";
@@ -47,6 +48,11 @@ export function useApiQuery<TRequest, TResponse, TUrlVariables>(
   // Flag to indicate if we've loaded data from storage
   const [loadedFromStorage, setLoadedFromStorage] = useState<boolean>(false);
 
+  const storageKey = useMemo(
+    () => generateStorageKey(mergedOptions.queryKey),
+    [mergedOptions.queryKey],
+  );
+
   // Effect to load data from storage on mount
   useEffect(() => {
     const loadInitialData = async (): Promise<void> => {
@@ -56,9 +62,6 @@ export function useApiQuery<TRequest, TResponse, TUrlVariables>(
       }
 
       try {
-        // Generate a consistent storage key from the query key
-        const storageKey = generateStorageKey(mergedOptions.queryKey);
-
         // Attempt to load data from storage
         const storedData = await getStorageItem<TResponse>(storageKey);
 
@@ -67,7 +70,6 @@ export function useApiQuery<TRequest, TResponse, TUrlVariables>(
           setIsCachedData(true);
         }
       } catch (error) {
-        // Keep console.error for error logging
         errorLogger("Failed to load data from storage:", error);
       } finally {
         setLoadedFromStorage(true);
@@ -75,7 +77,7 @@ export function useApiQuery<TRequest, TResponse, TUrlVariables>(
     };
 
     void loadInitialData();
-  }, [options.disableLocalCache, mergedOptions.queryKey]);
+  }, [options.disableLocalCache, mergedOptions.queryKey, storageKey]);
 
   // Only proceed with React Query if we've checked storage first
   const query = useQuery<TResponse, Error>({
@@ -95,6 +97,7 @@ export function useApiQuery<TRequest, TResponse, TUrlVariables>(
         postBody,
       );
       if (!response.success) {
+        await removeStorageItem(storageKey);
         throw new Error(response.message);
       }
       return response.data;
@@ -136,6 +139,7 @@ export function useApiQuery<TRequest, TResponse, TUrlVariables>(
   // We're loading fresh data if we're loading and haven't fetched data yet,
   // or if we're refetching but had no initial data
   const computedIsLoadingFresh: boolean =
+    !loadedFromStorage ||
     (query.isLoading && !initialData) ||
     (query.isFetching && !query.data && isLoadingFresh);
 
